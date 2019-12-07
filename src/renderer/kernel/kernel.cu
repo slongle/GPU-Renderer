@@ -13,6 +13,17 @@
 #include <vector_functions.h>
 #include <driver_functions.h>
 
+class Material {
+public:
+    __host__ __device__ virtual void evaluate() = 0;
+};
+
+class DiffuseMaterial :public::Material {
+public:
+    __host__ __device__ void evaluate() {}
+
+};
+
 typedef struct
 {
     float4 m[3];
@@ -86,6 +97,9 @@ __device__ uint rgbaFloatToInt(float4 rgba)
 __global__ void
 d_render(uint* d_output, uint imageW, uint imageH)
 {
+    DiffuseMaterial a;
+    a.evaluate();
+
     const float3 boxMin = make_float3(-1.0f, -1.0f, -1.0f);
     const float3 boxMax = make_float3(1.0f, 1.0f, 1.0f);
 
