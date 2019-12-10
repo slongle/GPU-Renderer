@@ -3,6 +3,7 @@
 #define __SCENELOADER_H
 
 #include "renderer/core/scene.h"
+#include "renderer/core/parameterset.h"
 
 #include <string>
 #include <iostream>
@@ -20,7 +21,7 @@ public:
      * \brief load scene description file and parse it into Scene
      * 
      */
-    virtual void load() = 0;
+    virtual void Load() = 0;
 
 
     filesystem::path m_filepath;

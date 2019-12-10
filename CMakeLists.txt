@@ -1,22 +1,28 @@
-﻿cmake_minimum_required (VERSION 3.8)
+﻿CMAKE_MINIMUM_REQUIRED(VERSION 3.8)
+PROJECT("GPU Renderer")
 
-project ("GPU-Renderer")
+FIND_PACKAGE(CUDA REQUIRED)
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++17")
 
-include_directories(
-    # MachineLearning include files
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
+# MESSAGE(${CMAKE_CURRENT_SOURCE_DIR})
+# MESSAGE(${CMAKE_CURRENT_BINARY_DIR})
+# MESSAGE(${CMAKE_BINARY_DIR})
+# MESSAGE(${CMAKE_SOURCE_DIR})
+
+INCLUDE_DIRECTORIES(
+    "${CMAKE_SOURCE_DIR}/src/"    
 )
 
-add_executable(GPURenderer
-    # Header files
-    # include/MachineLearning/*.h
+LINK_DIRECTORIES(
+)
+
+CUDA_ADD_EXECUTABLE(GPURenderer
     
-    # Source code files
-    src/main.cpp
 )
 
-# Include sub-projects.
-# add_subdirectory ("MachineLearning")
+#Include sub-projects.
+#add_subdirectory ("MachineLearning")
 
-# target_link_libraries(MachineLearning )
+#target_link_libraries(MachineLearning)

@@ -25,7 +25,7 @@ std::string MitsubaLoader::getOffset(ptrdiff_t pos) const
 }
 
 
-void MitsubaLoader::load()
+void MitsubaLoader::Load()
 {
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(m_filepath.str().c_str());
