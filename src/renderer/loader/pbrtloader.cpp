@@ -326,6 +326,11 @@ void Parse(std::unique_ptr<Tokenizer> tokenizer) {
                 parseParameterList(apiCamera);
             }
             break;
+        case 'F' :
+            if (token == "Film") {
+                parseParameterList(apiFilm);
+            }
+            break;
         case 'I' :
             if (token == "Integrator") {
                 parseParameterList(apiIntegrator);
