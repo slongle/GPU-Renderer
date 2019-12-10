@@ -4,7 +4,6 @@
 using std::cout;
 using std::endl;
 
-#include "renderer/core/fwd.h"
 #include "renderer/loader/pbrtloader.h"
 
 #include "utility/helper_logger.h"

@@ -1,6 +1,6 @@
 #include "transform.h"
 
-Transform::Transform(Float m[16])
+Transform::Transform(const Float m[16])
 {
 }
 
@@ -15,5 +15,5 @@ Transform Transform::operator*(const Transform& t) const
 
 Transform& Transform::operator*=(const Transform& t)
 {
-    // TODO: insert return statement here
+    return *this;
 }

@@ -107,8 +107,9 @@ bool isQuotedString(const std::string_view& str) {
     return str.front() == '"' && str.back() == '"';
 }
 
-std::string_view dequotedString(const std::string_view& str) {
-    return str.substr(1, str.length() - 2);
+void dequotedString(std::string_view& str) {
+    str.remove_prefix(1);
+    str.remove_suffix(1);
 }
 
 enum {
@@ -196,8 +197,8 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
         ASSERT(val.size() % 3 == 0, "The number of value is not a multiple of 3");
         char* endPtr;
         for (int i = 0; i < val.size(); i += 3) {            
-            attributeVal.push_back(Point3f{ strtof(val[i].c_str(), &endPtr),
-                strtof(val[i + 1].c_str(), &endPtr), strtof(val[i + 2].c_str(), &endPtr) });
+            attributeVal.push_back(Point3f(strtof(val[i].c_str(), &endPtr),
+                strtof(val[i + 1].c_str(), &endPtr), strtof(val[i + 2].c_str(), &endPtr)));
         }
         params.AddPoint(item.m_name, std::move(attributeVal));
     }
@@ -207,8 +208,8 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
         ASSERT(val.size() % 3 == 0, "The number of value is not a multiple of 3");
         char* endPtr;
         for (int i = 0; i < val.size(); i += 3) {
-            attributeVal.push_back(Normal3f{ strtof(val[i].c_str(), &endPtr),
-                strtof(val[i + 1].c_str(), &endPtr), strtof(val[i + 2].c_str(), &endPtr) });
+            attributeVal.push_back(Normal3f(strtof(val[i].c_str(), &endPtr),
+                strtof(val[i + 1].c_str(), &endPtr), strtof(val[i + 2].c_str(), &endPtr)));
         }
         params.AddNormal(item.m_name, std::move(attributeVal));
     }
@@ -254,7 +255,8 @@ void Parse(std::unique_ptr<Tokenizer> tokenizer) {
 
         auto addVal = [&](ParameterItem& item, std::string_view& token) {
             if (isQuotedString(token)) {
-                item.m_val.emplace_back(dequotedString(token));
+                dequotedString(token);
+                item.m_val.emplace_back(token);
             }
             else {
                 item.m_val.emplace_back(token);
@@ -270,8 +272,8 @@ void Parse(std::unique_ptr<Tokenizer> tokenizer) {
                 break;
             }
             else {
-                std::string_view attributeName = dequotedString(token);
-                item.m_name = std::string(attributeName);
+                dequotedString(token);
+                item.m_name = std::string(token);
                 token = nextToken();
                 ASSERT(token[0] == '[', "Expected '\"'");
                 token = nextToken();
@@ -289,8 +291,8 @@ void Parse(std::unique_ptr<Tokenizer> tokenizer) {
         std::function<void(const std::string&, ParameterSet)> apiFunc) {
         std::string_view token = nextToken();
         ASSERT(isQuotedString(token), "Expected quoted string");
-        std::string_view dequoted = dequotedString(token);
-        std::string type(dequoted);
+        dequotedString(token);
+        std::string type(token);        
 
         ParameterSet params = parseParameters();
 

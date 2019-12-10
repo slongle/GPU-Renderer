@@ -17,6 +17,7 @@ inline bool isNaN(const int x) {
 template <typename T>
 class Vector2 {
 public:
+    Vector2(T x = 0, T y = 0) :x(x), y(y) {}
 
     // Vector2 Public Data
     T x, y;
@@ -26,7 +27,7 @@ public:
 template <typename T>
 class Vector3 {
 public:
-    
+    Vector3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
 
     // Vector3 Public Data
     T x, y, z;
@@ -41,7 +42,7 @@ typedef Vector3<int> Vector3i;
 template <typename T>
 class Point2 {
 public:
-    
+    Point2(T x = 0, T y = 0) :x(x), y(y) {}
 
     // Point2 Public Data
     T x, y;
@@ -51,7 +52,8 @@ public:
 template <typename T>
 class Point3 {
 public:
-    
+    Point3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
+
     // Point3 Public Data
     T x, y, z;
 };
@@ -66,7 +68,7 @@ typedef Point3<int> Point3i;
 template <typename T>
 class Normal3 {
 public:
-    
+    Normal3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
 
     // Normal3 Public Data
     T x, y, z;

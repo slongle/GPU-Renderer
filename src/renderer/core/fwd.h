@@ -40,6 +40,9 @@ typedef Bounds2<int> Bounds2i;
 typedef Bounds3<Float> Bounds3f;
 typedef Bounds3<int> Bounds3i;
 
+class Light;
+class Shape;
+class Primitive;
 class Material;
 class Medium;
 

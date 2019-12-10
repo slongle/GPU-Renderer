@@ -31,6 +31,9 @@
     <Filter Include="ext\tinyformat">
       <UniqueIdentifier>{ef18e5e3-0f9b-4dd2-bcdb-a5eb3446a961}</UniqueIdentifier>
     </Filter>
+    <Filter Include="renderer\light">
+      <UniqueIdentifier>{13274383-9e56-4b70-a3f9-5f16c6991e94}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\main.cpp" />
@@ -146,6 +149,24 @@
     </ClInclude>
     <ClInclude Include="..\src\renderer\core\geometry.h">
       <Filter>renderer\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\renderer\core\material.h">
+      <Filter>renderer\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\renderer\core\medium.h">
+      <Filter>renderer\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\renderer\core\shape.h">
+      <Filter>renderer\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\renderer\core\primitive.h">
+      <Filter>renderer\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\renderer\core\light.h">
+      <Filter>renderer\core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\renderer\light\arealight.h">
+      <Filter>renderer\light</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

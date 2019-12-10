@@ -2,6 +2,10 @@
 
 #include "renderer/core/transform.h"
 
+#include "renderer/core/shape.h"
+
+#include "renderer/light/arealight.h"
+
 
 class Options {
 public:
@@ -10,8 +14,19 @@ public:
         m_hasAreaLight = false;
     }
 
-    void MakeNamedMaterial(const std::string& name, const ParameterSet& params);
-    std::shared_ptr<Material> GetNamedMaterial(const std::string& name);
+    void 
+        MakeNamedMaterial(
+        const std::string& name, 
+        const ParameterSet& params);
+
+    std::shared_ptr<Material> 
+        GetNamedMaterial(
+        const std::string& name);
+
+    std::vector<std::shared_ptr<Shape>>
+        MakeShape(const std::string& type,
+            const ParameterSet& params,
+            const Transform& objToWorld);
 
 
     Transform m_currentTransform;
@@ -38,7 +53,7 @@ public:
     std::map<std::string, std::shared_ptr<Medium>> m_namedMedium;
 };
 
-static std::unique_ptr<Options> options;
+static std::unique_ptr<Options> options(new Options);
 
 void apiAttributeBegin()
 {
@@ -100,13 +115,39 @@ void apiShape(const std::string& type, ParameterSet params)
 {
     std::vector<std::shared_ptr<Primitive>> primitives;
     std::vector<std::shared_ptr<AreaLight>> areaLights;
-    std::vector<std::shared_ptr<Shape>> shapes;
+    std::vector<std::shared_ptr<Shape>> shapes = options->MakeShape(
+        type, params, options->m_currentTransform);
     std::shared_ptr<Material> mtl = options->m_currentMaterial;
-    
+    for (auto s : shapes) {
+
+    }
 }
 
 void apiAreaLightSource(const std::string& type, ParameterSet params)
 {
     options->m_areaLightType = type;
     options->m_areaLightParameterSet = params;
+}
+
+void 
+Options::MakeNamedMaterial(
+    const std::string& name, 
+    const ParameterSet& params)
+{
+}
+
+std::shared_ptr<Material> 
+Options::GetNamedMaterial(
+    const std::string& name)
+{
+    return std::shared_ptr<Material>();
+}
+
+std::vector<std::shared_ptr<Shape>> 
+Options::MakeShape(
+    const std::string& type, 
+    const ParameterSet& params, 
+    const Transform& objToWorld)
+{
+    return std::vector<std::shared_ptr<Shape>>();
 }

@@ -33,11 +33,17 @@
     <ClInclude Include="..\src\loader\objloader.h" />
     <ClInclude Include="..\src\renderer\core\api.h" />
     <ClInclude Include="..\src\renderer\core\fwd.h" />
+    <ClInclude Include="..\src\renderer\core\light.h" />
+    <ClInclude Include="..\src\renderer\core\material.h" />
+    <ClInclude Include="..\src\renderer\core\medium.h" />
     <ClInclude Include="..\src\renderer\core\parameterset.h" />
+    <ClInclude Include="..\src\renderer\core\primitive.h" />
     <ClInclude Include="..\src\renderer\core\scene.h" />
+    <ClInclude Include="..\src\renderer\core\shape.h" />
     <ClInclude Include="..\src\renderer\core\spectrum.h" />
     <ClInclude Include="..\src\renderer\core\transform.h" />
     <ClInclude Include="..\src\renderer\core\geometry.h" />
+    <ClInclude Include="..\src\renderer\light\arealight.h" />
     <ClInclude Include="..\src\renderer\loader\pbrtloader.h" />
     <ClInclude Include="..\src\renderer\loader\sceneloader.h" />
     <ClInclude Include="..\src\renderer\loader\mitsubaloader.h" />
