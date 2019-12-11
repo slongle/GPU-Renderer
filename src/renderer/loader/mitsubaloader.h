@@ -9,7 +9,7 @@ public:
     MitsubaLoader(std::string filepath) :SceneLoader(filepath) {}
 
     // Inherited via SceneLoader
-    void Load() override;
+    std::shared_ptr<Renderer> Load() override;
 
 private:
     std::string getOffset(ptrdiff_t pos) const;

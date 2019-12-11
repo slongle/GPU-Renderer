@@ -12,7 +12,7 @@ public:
     PBRTLoader(std::string filepath) :SceneLoader(filepath) {}
 
     // Inherited via SceneLoader
-    void Load() override;
+    std::shared_ptr<Renderer> Load() override;
 };
 
 class Loc {

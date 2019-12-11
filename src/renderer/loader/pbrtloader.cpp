@@ -4,13 +4,15 @@
 #include <functional>
 #include <vector>
 
-void Parse(std::unique_ptr<Tokenizer> tokenizer);
+std::shared_ptr<Renderer> 
+Parse(std::unique_ptr<Tokenizer> tokenizer);
 
-void PBRTLoader::Load()
+std::shared_ptr<Renderer> 
+PBRTLoader::Load()
 {
     ASSERT(m_filepath.extension() == "pbrt", "The extension of scene is not .pbrt");
     std::unique_ptr<Tokenizer> tokenizer = Tokenizer::CreateFromFile(m_filepath.str());
-    Parse(std::move(tokenizer));
+    return Parse(std::move(tokenizer));
 }
 
 std::unique_ptr<Tokenizer> Tokenizer::CreateFromFile(const std::string filename)
@@ -228,7 +230,10 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
     }
 }
 
-void Parse(std::unique_ptr<Tokenizer> tokenizer) {
+std::shared_ptr<Renderer>
+Parse(std::unique_ptr<Tokenizer> tokenizer) {
+    std::shared_ptr<Renderer> renderer;
+
     bool ungetTokenSet = false;
     std::string_view ungetTokenValue;
 
@@ -378,9 +383,10 @@ void Parse(std::unique_ptr<Tokenizer> tokenizer) {
 
             }
             else if (token == "WorldEnd") {
-
+                renderer = apiWorldEnd();
             }
             break;
         }        
     }
+    return renderer;
 }

@@ -4,9 +4,11 @@
 
 #include "renderer/core/fwd.h"
 #include "renderer/core/parameterset.h"
+#include "renderer/core/renderer.h"
 
 void apiAttributeBegin();
 void apiAttributeEnd();
+std::shared_ptr<Renderer> apiWorldEnd();
 
 void apiTransform(const Float m[16]);
 

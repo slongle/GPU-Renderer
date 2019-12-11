@@ -3,6 +3,18 @@
 #include "renderer/core/transform.h"
 #include "renderer/core/primitive.h"
 
+#include "renderer/core/scene.h"
+#include "renderer/core/integrator.h"
+#include "renderer/core/renderer.h"
+
+#include "renderer/core/camera.h"
+
+#include "renderer/core/film.h"
+
+#include "renderer/core/filter.h"
+
+#include "renderer/core/sampler.h"
+
 #include "renderer/core/shape.h"
 #include "renderer/shape/trianglemesh.h"
 
@@ -44,6 +56,14 @@ public:
             const ParameterSet& params,
             const std::shared_ptr<Shape>& s);
 
+    void MakeCamera();
+    void MakeFilm();
+    void MakeFilter();
+    void MakeSampler();
+    void MakeIntegrator();
+    void MakeScene();
+    std::shared_ptr<Renderer> 
+        MakeRenderer();
 
     Transform m_currentTransform;
     std::vector<Transform> m_transformStack;
@@ -58,6 +78,13 @@ public:
     ParameterSet m_filmParameterSet;
     std::string m_cameraType;
     ParameterSet m_cameraParameterSet;
+    Transform m_cameraTransform;
+
+    std::shared_ptr<Camera> m_camera;
+    std::shared_ptr<Film> m_film;
+    std::shared_ptr<Filter> m_filter;
+    std::shared_ptr<Sampler> m_sampler;
+    std::shared_ptr<Integrator> m_integrator;
 
     bool m_hasAreaLight;
     std::string m_areaLightType;
@@ -68,9 +95,10 @@ public:
     std::shared_ptr<Medium> m_currentMedium;
     std::map<std::string, std::shared_ptr<Medium>> m_namedMedium;
 
-
     std::vector<std::shared_ptr<Light>> m_lights;
     std::vector<std::shared_ptr<Primitive>> m_primitives;
+    std::shared_ptr<Scene> m_scene;
+
 };
 
 static std::unique_ptr<Options> options(new Options);
@@ -84,6 +112,23 @@ void apiAttributeEnd()
 {
     options->m_currentTransform = options->m_transformStack.back();
     options->m_transformStack.pop_back();
+}
+
+std::shared_ptr<Renderer> 
+apiWorldEnd()
+{
+    /*
+     * Camera
+     *   -- Film
+     *        |- Filter
+     *        -- Sampler
+     */
+
+    options->MakeFilm();
+    options->MakeCamera();
+    options->MakeIntegrator();
+    options->MakeScene();
+    return options->MakeRenderer();
 }
 
 void apiTransform(const Float m[16])
@@ -119,6 +164,7 @@ void apiCamera(const std::string& type, ParameterSet params)
 {
     options->m_cameraType = type;
     options->m_cameraParameterSet = params;
+    options->m_cameraTransform = options->m_currentTransform;
 }
 
 void apiNamedMaterial(const std::string& name, ParameterSet params)
@@ -214,4 +260,45 @@ Options::MakeAreaLight(
         areaLight = CreateAreaLight(params, s);
     }
     return areaLight;
+}
+
+void Options::MakeCamera()
+{
+    Transform objToWorld = m_cameraTransform;
+    Transform worldToObj = Inverse(objToWorld);
+    m_camera = CreateCamera(m_cameraParameterSet, objToWorld, worldToObj);
+}
+
+void Options::MakeFilm(){
+    m_film = CreateFilm(m_filmParameterSet);
+}
+
+void Options::MakeFilter()
+{
+}
+
+void Options::MakeSampler()
+{
+}
+
+void Options::MakeIntegrator()
+{
+    m_integrator = std::make_shared<Integrator>();    
+}
+
+void Options::MakeScene()
+{
+    m_scene = std::make_shared<Scene>();
+    m_scene->m_lights = std::move(m_lights);
+    m_scene->m_primitives = std::move(m_primitives);
+}
+
+std::shared_ptr<Renderer> 
+Options::MakeRenderer()
+{
+    auto r = std::make_shared<Renderer>();
+    r->m_scene = m_scene;
+    r->m_camera = m_camera;
+    r->m_integrator = m_integrator;
+    return r;
 }

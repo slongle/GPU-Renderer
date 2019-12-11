@@ -10,6 +10,10 @@
 
 class Scene {
 public:
+    Scene() {}
+
+    std::vector<std::shared_ptr<Light>> m_lights;
+    std::vector<std::shared_ptr<Primitive>> m_primitives;
 };
 
 #endif // !__SCENE_H

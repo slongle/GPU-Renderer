@@ -14,17 +14,11 @@
 #include <driver_functions.h>
 
 #include "renderer/core/transform.h"
+#include "renderer/core/renderer.h"
 
-class Material {
-public:
-    __host__ __device__ virtual void evaluate() = 0;
-};
+void cudaInit(std::shared_ptr<Renderer> renderer) {
 
-class DiffuseMaterial :public::Material {
-public:
-    __host__ __device__ void evaluate() {}
-
-};
+}
 
 typedef struct
 {
@@ -96,24 +90,28 @@ __device__ uint rgbaFloatToInt(float4 rgba)
     return (uint(rgba.w * 255) << 24) | (uint(rgba.z * 255) << 16) | (uint(rgba.y * 255) << 8) | uint(rgba.x * 255);
 }
 
+
 __global__ void
 d_render(uint* d_output, uint imageW, uint imageH)
 {
-    //Transform t;
-    //t.Identity();
-    DiffuseMaterial a;
-    a.evaluate();
 
     const float3 boxMin = make_float3(-1.0f, -1.0f, -1.0f);
     const float3 boxMax = make_float3(1.0f, 1.0f, 1.0f);
 
     uint x = blockIdx.x * blockDim.x + threadIdx.x;
     uint y = blockIdx.y * blockDim.y + threadIdx.y;
+    uint index = y * imageW + x;
 
     if ((x >= imageW) || (y >= imageH)) return;
 
-    float u = (x / (float)imageW) * 2.0f - 1.0f;
-    float v = (y / (float)imageH) * 2.0f - 1.0f;
+    //RandomSampler& sampler = samplers[index];
+    //sampler.Init(x, y);
+
+    //float u = ((x + sampler.Next()) / (float)imageW) * 2.0f - 1.0f;
+    //float v = ((y + sampler.Next()) / (float)imageH) * 2.0f - 1.0f;
+
+    float u = ((x) / (float)imageW) * 2.0f - 1.0f;
+    float v = ((y) / (float)imageH) * 2.0f - 1.0f;
 
     // calculate eye ray in world space
     Ray eyeRay;
@@ -135,6 +133,7 @@ d_render(uint* d_output, uint imageW, uint imageH)
 
     // write output color
     d_output[y * imageW + x] = rgbaFloatToInt(sum);
+
 }
 
 extern "C"
@@ -145,7 +144,7 @@ void freeCudaBuffers()
 
 extern "C"
 void render_kernel(dim3 gridSize, dim3 blockSize, uint * d_output, uint imageW, uint imageH)
-{
+{   
     d_render << <gridSize, blockSize >> > (d_output, imageW, imageH);
 }
 

@@ -88,29 +88,39 @@ set(sources
     src/utility/helper_string.h
     src/utility/helper_timer.h    
     src/utility/timer.h    
-    src/renderer/core/api.h
     src/renderer/core/api.cpp
-    src/renderer/core/fwd.h    
-    src/renderer/core/geometry.h
-    src/renderer/core/geometry.cpp
-    src/renderer/core/light.h
-    src/renderer/core/light.cpp
-    src/renderer/core/material.h
-    src/renderer/core/material.cpp
-    src/renderer/core/medium.h
-    src/renderer/core/medium.cpp
-    src/renderer/core/parameterset.h
-    src/renderer/core/parameterset.cpp
-    src/renderer/core/primitive.h
-    src/renderer/core/primitive.cpp
-    src/renderer/core/shape.h
-    src/renderer/core/shape.cpp
-    src/renderer/core/scene.h
-    src/renderer/core/scene.cpp
-    src/renderer/core/spectrum.h
-    src/renderer/core/spectrum.cpp
-    src/renderer/core/transform.h
-    src/renderer/core/transform.cpp
+	src/renderer/core/api.h
+	src/renderer/core/camera.cpp
+	src/renderer/core/camera.h
+	src/renderer/core/film.cpp
+	src/renderer/core/film.h
+	src/renderer/core/filter.h
+	src/renderer/core/fwd.h
+	src/renderer/core/geometry.cpp
+	src/renderer/core/geometry.h
+	src/renderer/core/integrator.h
+	src/renderer/core/light.cpp
+	src/renderer/core/light.h
+	src/renderer/core/material.cpp
+	src/renderer/core/material.h
+	src/renderer/core/medium.cpp
+	src/renderer/core/medium.h
+	src/renderer/core/parameterset.cpp
+	src/renderer/core/parameterset.h
+	src/renderer/core/primitive.cpp
+	src/renderer/core/primitive.h
+	src/renderer/core/renderer.h
+	src/renderer/core/sampler.h
+	src/renderer/core/sampling.cpp
+	src/renderer/core/sampling.h
+	src/renderer/core/scene.cpp
+	src/renderer/core/scene.h
+	src/renderer/core/shape.cpp
+	src/renderer/core/shape.h
+	src/renderer/core/spectrum.cpp
+	src/renderer/core/spectrum.h
+	src/renderer/core/transform.cpp
+	src/renderer/core/transform.h
     src/renderer/kernel/kernel.cu
     src/renderer/light/arealight.h
     src/renderer/light/arealight.cpp
@@ -123,6 +133,8 @@ set(sources
     src/renderer/loader/objloader.h
     src/renderer/material/matte.h
     src/renderer/material/matte.cpp    
+    src/renderer/sampler/random.h
+    src/renderer/sampler/random.cpp    
     src/renderer/shape/trianglemesh.h
     src/renderer/shape/trianglemesh.cpp    
     src/main.cpp    

@@ -101,6 +101,7 @@ typedef Bounds3<Float> Bounds3f;
 typedef Bounds3<int> Bounds3i;
 
 // Ray Declarations
+/*
 class Ray {
 public:
 
@@ -110,6 +111,7 @@ public:
     mutable Float tMax;
     const Medium* medium;
 };
+*/
 
 
 #endif // !__VECTOR_H
