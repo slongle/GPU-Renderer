@@ -15,6 +15,8 @@ public:
     Matrix4x4& operator *= (const Matrix4x4& t);
 
     Float m[16];
+
+    friend Matrix4x4 Inverse(const Matrix4x4& t);
 };
 
 class Transform {
@@ -28,6 +30,8 @@ public:
     Transform& operator *= (const Transform& t);
 
     Matrix4x4 mat, invMat;
+
+    friend Transform Inverse(const Transform& t);
 };
 
 #endif // __TRANSFORM_H

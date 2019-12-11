@@ -35,3 +35,23 @@ void ParameterSet::AddRGBSpectrum(const std::string& name, std::vector<Float> va
     ASSERT(m_ints.count(name) == 0, "Add an exist attribute " + name);
     m_rgbSpectrums[name] = val;
 }
+
+std::string ParameterSet::GetString(const std::string& name) const
+{
+    if (m_strings.count(name)) {
+        return m_strings.find(name)->second[0];
+    }
+    else {
+        ASSERT(0, "No attribute " + name);
+    }
+}
+
+std::string ParameterSet::GetString(const std::string& name, const std::string d) const
+{
+    if (m_strings.count(name)) {
+        return m_strings.find(name)->second[0];        
+    }
+    else {
+        return d;
+    }
+}

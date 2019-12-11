@@ -178,7 +178,7 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
         for (const std::string& v : item.m_val) {
             attributeVal.push_back(strtol(v.c_str(), &endPtr, 10));
         }
-        params.AddInt(item.m_name, std::move(attributeVal));
+        params.AddInt(attributeName, std::move(attributeVal));
     }
     else if (attributeType == TYPE_FLOAT) {
         std::vector<Float> attributeVal;
@@ -186,10 +186,10 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
         for (const std::string& v : item.m_val) {
             attributeVal.push_back(strtof(v.c_str(), &endPtr));
         }
-        params.AddFloat(item.m_name, std::move(attributeVal));
+        params.AddFloat(attributeName, std::move(attributeVal));
     }
     else if (attributeType == TYPE_STRING) {
-        params.AddString(item.m_name, std::move(item.m_val));
+        params.AddString(attributeName, std::move(item.m_val));
     }
     else if (attributeType == TYPE_POINT) {
         std::vector<Point3f> attributeVal;
@@ -200,7 +200,7 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
             attributeVal.push_back(Point3f(strtof(val[i].c_str(), &endPtr),
                 strtof(val[i + 1].c_str(), &endPtr), strtof(val[i + 2].c_str(), &endPtr)));
         }
-        params.AddPoint(item.m_name, std::move(attributeVal));
+        params.AddPoint(attributeName, std::move(attributeVal));
     }
     else if (attributeType == TYPE_NORMAL) {
         std::vector<Normal3f> attributeVal;
@@ -211,7 +211,7 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
             attributeVal.push_back(Normal3f(strtof(val[i].c_str(), &endPtr),
                 strtof(val[i + 1].c_str(), &endPtr), strtof(val[i + 2].c_str(), &endPtr)));
         }
-        params.AddNormal(item.m_name, std::move(attributeVal));
+        params.AddNormal(attributeName, std::move(attributeVal));
     }
     else if (attributeType == TYPE_RGB) {
         std::vector<Float> attributeVal;
@@ -221,7 +221,7 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
         for (int i = 0; i < val.size(); i ++) {
             attributeVal.push_back(strtof(val[i].c_str(), &endPtr));
         }
-        params.AddRGBSpectrum(item.m_name, std::move(attributeVal));
+        params.AddRGBSpectrum(attributeName, std::move(attributeVal));
     }
     else {
         ASSERT(0, "Can't support type " + std::to_string(attributeType));

@@ -19,6 +19,9 @@ public:
     void AddNormal(const std::string& name, std::vector<Normal3f> val);
     void AddRGBSpectrum(const std::string& name, std::vector<Float> val);
 
+    std::string GetString(const std::string& name) const;
+    std::string GetString(const std::string& name, const std::string d) const;
+
 
     std::map<std::string, std::vector<int>> m_ints;
     std::map<std::string, std::vector<Float>> m_floats;

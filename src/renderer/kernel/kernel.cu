@@ -13,6 +13,8 @@
 #include <vector_functions.h>
 #include <driver_functions.h>
 
+#include "renderer/core/transform.h"
+
 class Material {
 public:
     __host__ __device__ virtual void evaluate() = 0;
@@ -97,6 +99,8 @@ __device__ uint rgbaFloatToInt(float4 rgba)
 __global__ void
 d_render(uint* d_output, uint imageW, uint imageH)
 {
+    //Transform t;
+    //t.Identity();
     DiffuseMaterial a;
     a.evaluate();
 

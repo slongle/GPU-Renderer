@@ -9,4 +9,9 @@ public:
 
 };
 
+std::shared_ptr<AreaLight>
+CreateAreaLight(
+    const ParameterSet& param,
+    const std::shared_ptr<Shape>& s);
+
 #endif // !__AREALIGHT_H

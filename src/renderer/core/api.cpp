@@ -1,8 +1,13 @@
 #include "api.h"
 
 #include "renderer/core/transform.h"
+#include "renderer/core/primitive.h"
 
 #include "renderer/core/shape.h"
+#include "renderer/shape/trianglemesh.h"
+
+#include "renderer/core/material.h"
+#include "renderer/material/matte.h"
 
 #include "renderer/light/arealight.h"
 
@@ -21,12 +26,23 @@ public:
 
     std::shared_ptr<Material> 
         GetNamedMaterial(
-        const std::string& name);
+        const std::string& name) const;
+
+    std::shared_ptr<Material>
+        MakeMaterial(
+            const std::string& type,
+            const ParameterSet& params);
 
     std::vector<std::shared_ptr<Shape>>
-        MakeShape(const std::string& type,
+        MakeShape(
+            const std::string& type,
+            const ParameterSet& params);
+
+    std::shared_ptr<AreaLight>
+        MakeAreaLight(
+            const std::string& type,
             const ParameterSet& params,
-            const Transform& objToWorld);
+            const std::shared_ptr<Shape>& s);
 
 
     Transform m_currentTransform;
@@ -51,6 +67,10 @@ public:
     std::map<std::string, std::shared_ptr<Material>> m_namedMaterials;
     std::shared_ptr<Medium> m_currentMedium;
     std::map<std::string, std::shared_ptr<Medium>> m_namedMedium;
+
+
+    std::vector<std::shared_ptr<Light>> m_lights;
+    std::vector<std::shared_ptr<Primitive>> m_primitives;
 };
 
 static std::unique_ptr<Options> options(new Options);
@@ -112,14 +132,18 @@ void apiMakeNamedMaterial(const std::string& name, ParameterSet params)
 }
 
 void apiShape(const std::string& type, ParameterSet params)
-{
-    std::vector<std::shared_ptr<Primitive>> primitives;
-    std::vector<std::shared_ptr<AreaLight>> areaLights;
+{ 
     std::vector<std::shared_ptr<Shape>> shapes = options->MakeShape(
-        type, params, options->m_currentTransform);
+        type, params);
     std::shared_ptr<Material> mtl = options->m_currentMaterial;
     for (auto s : shapes) {
-
+        std::shared_ptr<AreaLight> areaLight;
+        if (options->m_hasAreaLight) {
+            areaLight = options->MakeAreaLight(
+                options->m_areaLightType, options->m_areaLightParameterSet, s);
+            options->m_lights.push_back(areaLight);
+        }
+        options->m_primitives.push_back(std::make_shared<Primitive>(s, mtl, areaLight));
     }
 }
 
@@ -134,20 +158,60 @@ Options::MakeNamedMaterial(
     const std::string& name, 
     const ParameterSet& params)
 {
+    std::string type = params.GetString("type");
+    std::shared_ptr<Material> mtl = MakeMaterial(type, params);
+    m_namedMaterials[name] = mtl;
 }
 
 std::shared_ptr<Material> 
 Options::GetNamedMaterial(
-    const std::string& name)
+    const std::string& name) const
 {
-    return std::shared_ptr<Material>();
+    ASSERT(m_namedMaterials.count(name), "No named material " + name);
+    return m_namedMaterials.find(name)->second;
+}
+
+std::shared_ptr<Material> 
+Options::MakeMaterial(
+    const std::string& type, 
+    const ParameterSet& params)
+{
+    Material* mtl = nullptr;
+    if (type == "Diffuse" || type == "matte") {
+        mtl = CreateMatteMaterial(params);
+    }
+    else {
+        ASSERT(0, "Can't support material " + type);
+    }
+    return std::shared_ptr<Material>(mtl);
 }
 
 std::vector<std::shared_ptr<Shape>> 
 Options::MakeShape(
     const std::string& type, 
-    const ParameterSet& params, 
-    const Transform& objToWorld)
+    const ParameterSet& params)
 {
-    return std::vector<std::shared_ptr<Shape>>();
+    Transform objToWorld = m_currentTransform;
+    Transform worldToObj = Inverse(objToWorld);
+    std::vector<std::shared_ptr<Shape>> shapes;
+    if (type == "trianglemesh") {
+        shapes = CreateTriangleMeshShape(params, objToWorld, worldToObj);
+    }
+    else {
+        ASSERT(0, "Can't support shape " + type);
+    }
+    return shapes;
+}
+
+std::shared_ptr<AreaLight> 
+Options::MakeAreaLight(
+    const std::string& type, 
+    const ParameterSet& params, 
+    const std::shared_ptr<Shape>& s)
+{
+    std::shared_ptr<AreaLight> areaLight;
+    if (type == "area" || type == "diffuse"){
+        areaLight = CreateAreaLight(params, s);
+    }
+    return areaLight;
 }
