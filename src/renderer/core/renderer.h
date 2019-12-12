@@ -12,9 +12,9 @@ public:
     Renderer() {}
 
 
-    std::shared_ptr<Scene> m_scene;
-    std::shared_ptr<Integrator> m_integrator;
-    std::shared_ptr<Camera> m_camera;
+    Scene m_scene;
+    Camera m_camera;
+    Integrator m_integrator;
 };
 
 #endif // !__RENDERER_H

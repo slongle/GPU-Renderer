@@ -23,7 +23,6 @@ Transform& Transform::operator*=(const Transform& t)
     return *this;
 }
 
-
 Transform Inverse(const Transform& t)
 {
     return Transform();

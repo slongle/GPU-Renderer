@@ -16,8 +16,70 @@
 #include "renderer/core/transform.h"
 #include "renderer/core/renderer.h"
 
-void cudaInit(std::shared_ptr<Renderer> renderer) {
+#include "renderer/kernel/cudascene.h"
 
+CUDAScene* hst_scene;
+CUDAScene* dev_scene;
+
+extern "C"
+void cudaInit(std::shared_ptr<Renderer> renderer) {
+    Scene* scene = &(renderer->m_scene);
+    hst_scene = new CUDAScene(scene);
+    cudaMalloc(&dev_scene, sizeof(CUDAScene));
+    cudaMemcpy(dev_scene, hst_scene, sizeof(CUDAScene), cudaMemcpyHostToDevice);
+
+    // Move TriangleMesh Data
+    int triangleMeshNum = hst_scene->m_triangleMeshNum;
+    cudaMalloc(&dev_scene->m_triangleMeshes, sizeof(TriangleMesh) * triangleMeshNum);
+    cudaError_t a = cudaMemcpy(dev_scene->m_triangleMeshes, scene->m_triangleMeshes.data(),
+        sizeof(TriangleMesh) * triangleMeshNum, cudaMemcpyHostToDevice);
+    printf("%d\n", a);
+    for (int i = 0; i < triangleMeshNum; i++) {
+        int triangleNum = scene->m_triangleMeshes[i].m_triangleNum;
+        cudaMalloc(&dev_scene->m_triangleMeshes[i].m_indices, 3 * triangleNum * sizeof(int));
+        cudaMemcpy(dev_scene->m_triangleMeshes[i].m_indices, scene->m_triangleMeshes[i].m_indices,
+            3 * triangleNum * sizeof(int), cudaMemcpyHostToDevice);
+        int vertexNum = scene->m_triangleMeshes[i].m_vertexNum;
+        cudaMalloc(&dev_scene->m_triangleMeshes[i].m_P, vertexNum * sizeof(Point3f));
+        cudaMemcpy(dev_scene->m_triangleMeshes[i].m_P, scene->m_triangleMeshes[i].m_P,
+            vertexNum * sizeof(Point3f), cudaMemcpyHostToDevice);
+
+        if (scene->m_triangleMeshes[i].m_N) {
+            cudaMalloc(&dev_scene->m_triangleMeshes[i].m_N, vertexNum * sizeof(Normal3f));
+            cudaMemcpy(dev_scene->m_triangleMeshes[i].m_N, scene->m_triangleMeshes[i].m_N,
+                vertexNum * sizeof(Normal3f), cudaMemcpyHostToDevice);
+        }
+
+        if (scene->m_triangleMeshes[i].m_UV) {
+            cudaMalloc(&dev_scene->m_triangleMeshes[i].m_UV, vertexNum * sizeof(Point2f));
+            cudaMemcpy(dev_scene->m_triangleMeshes[i].m_UV, scene->m_triangleMeshes[i].m_UV,
+                vertexNum * sizeof(Point2f), cudaMemcpyHostToDevice);
+        }
+    }
+
+    // Move Triangle Data
+    int triangleNum = scene->m_triangles.size();
+    cudaMalloc(&hst_scene->m_triangles, sizeof(Triangle) * triangleNum);
+    cudaMemcpy(hst_scene->m_triangles, scene->m_triangles.data(),
+        sizeof(Triangle) * triangleNum, cudaMemcpyHostToDevice);
+
+    // Move Material Data
+    int materialNum = scene->m_materials.size();
+    cudaMalloc(&hst_scene->m_materials, sizeof(Material) * materialNum);
+    cudaMemcpy(hst_scene->m_materials, scene->m_materials.data(),
+        sizeof(Material) * materialNum, cudaMemcpyHostToDevice);
+
+    // Move Light Data
+    int lightNum = scene->m_lights.size();
+    cudaMalloc(&hst_scene->m_lights, sizeof(Light) * lightNum);
+    cudaMemcpy(hst_scene->m_lights, scene->m_lights.data(),
+        sizeof(Light) * lightNum, cudaMemcpyHostToDevice);
+
+    // Move Primitive Data
+    int primitiveNum = scene->m_primitives.size();
+    cudaMalloc(&hst_scene->m_primitives, sizeof(Primitive) * primitiveNum);
+    cudaMemcpy(hst_scene->m_primitives, scene->m_primitives.data(),
+        sizeof(Primitive) * primitiveNum, cudaMemcpyHostToDevice);
 }
 
 typedef struct
@@ -92,15 +154,20 @@ __device__ uint rgbaFloatToInt(float4 rgba)
 
 
 __global__ void
-d_render(uint* d_output, uint imageW, uint imageH)
-{
-
+d_render(uint* d_output, uint imageW, uint imageH, CUDAScene* dev_scene)
+{    
     const float3 boxMin = make_float3(-1.0f, -1.0f, -1.0f);
     const float3 boxMax = make_float3(1.0f, 1.0f, 1.0f);
 
     uint x = blockIdx.x * blockDim.x + threadIdx.x;
     uint y = blockIdx.y * blockDim.y + threadIdx.y;
     uint index = y * imageW + x;
+    if (index == 0) {
+        printf("%d\n", dev_scene->m_triangleMeshNum);
+        //for (int i = 0; i < a->f.size(); i++) {
+            //printf("%d\n", a->f[i]);
+        //}
+    }
 
     if ((x >= imageW) || (y >= imageH)) return;
 
@@ -145,7 +212,9 @@ void freeCudaBuffers()
 extern "C"
 void render_kernel(dim3 gridSize, dim3 blockSize, uint * d_output, uint imageW, uint imageH)
 {   
-    d_render << <gridSize, blockSize >> > (d_output, imageW, imageH);
+    d_render << <gridSize, blockSize >> > (d_output, imageW, imageH, dev_scene);
+    cudaDeviceSynchronize();
+    exit(0);
 }
 
 extern "C"

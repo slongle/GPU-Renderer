@@ -3,21 +3,21 @@
 #define __PRIMITIVE_H
 
 #include "renderer/core/fwd.h"
-#include "renderer/core/shape.h"
+#include "renderer/core/triangle.h"
 #include "renderer/core/material.h"
-#include "renderer/light/arealight.h"
+#include "renderer/core/light.h"
 
 class Primitive {
 public:
     Primitive(
-        const std::shared_ptr<Shape>& shape,
-        const std::shared_ptr<Material>& material,
-        const std::shared_ptr<AreaLight>& areaLight) 
-        : m_shape(shape), m_material(material), m_areaLight(areaLight) {}
+        int shapeID,
+        int materialID,
+        int lightID) 
+        : m_shapeID(shapeID), m_materialID(materialID), m_lightID(lightID) {}
 
-    std::shared_ptr<Shape> m_shape;
-    std::shared_ptr<Material> m_material;
-    std::shared_ptr<AreaLight> m_areaLight;
+    int m_shapeID;
+    int m_materialID;
+    int m_lightID;
 };
 
 #endif // !__PRIMITIVE_H

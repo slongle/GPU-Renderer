@@ -36,6 +36,86 @@ void ParameterSet::AddRGBSpectrum(const std::string& name, std::vector<Float> va
     m_rgbSpectrums[name] = val;
 }
 
+std::vector<int> ParameterSet::GetInt(const std::string& name) const
+{
+    if (m_ints.count(name)) {
+        return m_ints.find(name)->second;
+    }
+    else {
+        ASSERT(0, "No attribute " + name);
+    }
+}
+
+std::vector<int> ParameterSet::GetInt(const std::string& name, const std::vector<int> d) const
+{
+    if (m_ints.count(name)) {
+        return m_ints.find(name)->second;
+    }
+    else {
+        return d;
+    }
+}
+
+std::vector<Float> ParameterSet::GetFloat(const std::string& name) const
+{
+    if (m_floats.count(name)) {
+        return m_floats.find(name)->second;
+    }
+    else {
+        ASSERT(0, "No attribute " + name);
+    }
+}
+
+std::vector<Float> ParameterSet::GetFloat(const std::string& name, const std::vector<Float> d) const
+{
+    if (m_floats.count(name)) {
+        return m_floats.find(name)->second;
+    }
+    else {
+        return d;
+    }
+}
+
+std::vector<Point3f> ParameterSet::GetPoint(const std::string& name) const
+{
+    if (m_points.count(name)) {
+        return m_points.find(name)->second;
+    }
+    else {
+        ASSERT(0, "No attribute " + name);
+    }
+}
+
+std::vector<Point3f> ParameterSet::GetPoint(const std::string& name, const std::vector<Point3f> d) const
+{
+    if (m_points.count(name)) {
+        return m_points.find(name)->second;
+    }
+    else {
+        return d;
+    }
+}
+
+std::vector<Normal3f> ParameterSet::GetNormal(const std::string& name) const
+{
+    if (m_normals.count(name)) {
+        return m_normals.find(name)->second;
+    }
+    else {
+        ASSERT(0, "No attribute " + name);
+    }
+}
+
+std::vector<Normal3f> ParameterSet::GetNormal(const std::string& name, const std::vector<Normal3f> d) const
+{
+    if (m_normals.count(name)) {
+        return m_normals.find(name)->second;
+    }
+    else {
+        return d;
+    }
+}
+
 std::string ParameterSet::GetString(const std::string& name) const
 {
     if (m_strings.count(name)) {

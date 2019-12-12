@@ -10,4 +10,7 @@ public:
 
 };
 
+std::shared_ptr<Material>
+CreateMatteMaterial(const ParameterSet& param);
+
 #endif // !__MATERIAL_H

@@ -9,6 +9,27 @@ using std::endl;
 
 #include "utility/helper_logger.h"
 
+class F {
+public:
+    F() {
+        x = new int[10];
+        for (int i = 0; i < 10; i++) {
+            x[i] = i;
+        }
+    }
+
+    ~F() {
+        puts("!");
+        delete[] x;
+    }
+
+    int* x;
+};
+
+F* foo() {
+    F* nf = new F();
+    return nf;
+}
 
 int main() {
 
@@ -19,7 +40,7 @@ int main() {
     sceneLoader = new  PBRTLoader(filepath);
     std::shared_ptr<Renderer> renderer = sceneLoader->Load();
 
-    Gui::init();
+    Gui::init(renderer);
     Gui::mainLoop();
     return 0;
 }

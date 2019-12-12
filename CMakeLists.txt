@@ -94,7 +94,6 @@ set(sources
 	src/renderer/core/camera.h
 	src/renderer/core/film.cpp
 	src/renderer/core/film.h
-	src/renderer/core/filter.h
 	src/renderer/core/fwd.h
 	src/renderer/core/geometry.cpp
 	src/renderer/core/geometry.h
@@ -110,33 +109,26 @@ set(sources
 	src/renderer/core/primitive.cpp
 	src/renderer/core/primitive.h
 	src/renderer/core/renderer.h
-	src/renderer/core/sampler.h
 	src/renderer/core/sampling.cpp
 	src/renderer/core/sampling.h
 	src/renderer/core/scene.cpp
 	src/renderer/core/scene.h
-	src/renderer/core/shape.cpp
-	src/renderer/core/shape.h
 	src/renderer/core/spectrum.cpp
 	src/renderer/core/spectrum.h
 	src/renderer/core/transform.cpp
 	src/renderer/core/transform.h
+    src/renderer/core/triangle.cpp
+	src/renderer/core/triangle.h
+	src/renderer/kernel/cudascene.cpp
+	src/renderer/kernel/cudascene.h
     src/renderer/kernel/kernel.cu
-    src/renderer/light/arealight.h
-    src/renderer/light/arealight.cpp
     src/renderer/loader/sceneloader.h
     src/renderer/loader/sceneloader.cpp
     src/renderer/loader/mitsubaloader.h
     src/renderer/loader/mitsubaloader.cpp
     src/renderer/loader/pbrtloader.h
     src/renderer/loader/pbrtloader.cpp
-    src/renderer/loader/objloader.h
-    src/renderer/material/matte.h
-    src/renderer/material/matte.cpp    
-    src/renderer/sampler/random.h
-    src/renderer/sampler/random.cpp    
-    src/renderer/shape/trianglemesh.h
-    src/renderer/shape/trianglemesh.cpp    
+    src/renderer/loader/objloader.h     
     src/main.cpp    
     )
 

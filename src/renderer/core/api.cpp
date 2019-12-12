@@ -2,26 +2,13 @@
 
 #include "renderer/core/transform.h"
 #include "renderer/core/primitive.h"
-
 #include "renderer/core/scene.h"
 #include "renderer/core/integrator.h"
 #include "renderer/core/renderer.h"
-
 #include "renderer/core/camera.h"
-
 #include "renderer/core/film.h"
-
-#include "renderer/core/filter.h"
-
-#include "renderer/core/sampler.h"
-
-#include "renderer/core/shape.h"
-#include "renderer/shape/trianglemesh.h"
-
+#include "renderer/core/triangle.h"
 #include "renderer/core/material.h"
-#include "renderer/material/matte.h"
-
-#include "renderer/light/arealight.h"
 
 
 class Options {
@@ -36,34 +23,26 @@ public:
         const std::string& name, 
         const ParameterSet& params);
 
-    std::shared_ptr<Material> 
-        GetNamedMaterial(
+    int GetNamedMaterial(
         const std::string& name) const;
 
-    std::shared_ptr<Material>
-        MakeMaterial(
-            const std::string& type,
-            const ParameterSet& params);
+    int MakeMaterial(
+        const std::string& type,
+        const ParameterSet& params);
 
-    std::vector<std::shared_ptr<Shape>>
-        MakeShape(
-            const std::string& type,
-            const ParameterSet& params);
+    std::pair<int, int> MakeShape(
+        const std::string& type,
+        const ParameterSet& params);
 
-    std::shared_ptr<AreaLight>
-        MakeAreaLight(
-            const std::string& type,
-            const ParameterSet& params,
-            const std::shared_ptr<Shape>& s);
+    int MakeLight(
+        const std::string& type,
+        const ParameterSet& params,
+        int triangleID);
 
     void MakeCamera();
     void MakeFilm();
-    void MakeFilter();
-    void MakeSampler();
     void MakeIntegrator();
-    void MakeScene();
-    std::shared_ptr<Renderer> 
-        MakeRenderer();
+    void MakeRenderer();
 
     Transform m_currentTransform;
     std::vector<Transform> m_transformStack;
@@ -80,24 +59,21 @@ public:
     ParameterSet m_cameraParameterSet;
     Transform m_cameraTransform;
 
-    std::shared_ptr<Camera> m_camera;
-    std::shared_ptr<Film> m_film;
-    std::shared_ptr<Filter> m_filter;
-    std::shared_ptr<Sampler> m_sampler;
-    std::shared_ptr<Integrator> m_integrator;
+    Camera m_camera;
+    Film m_film;
+    Integrator m_integrator;
+    std::shared_ptr<Renderer> m_renderer;
 
     bool m_hasAreaLight;
     std::string m_areaLightType;
     ParameterSet m_areaLightParameterSet;
 
-    std::shared_ptr<Material> m_currentMaterial;
-    std::map<std::string, std::shared_ptr<Material>> m_namedMaterials;
-    std::shared_ptr<Medium> m_currentMedium;
-    std::map<std::string, std::shared_ptr<Medium>> m_namedMedium;
+    int m_currentMaterial;
+    std::map<std::string, int> m_namedMaterials;
+    int m_currentMedium;
+    std::map<std::string, int> m_namedMedium;
 
-    std::vector<std::shared_ptr<Light>> m_lights;
-    std::vector<std::shared_ptr<Primitive>> m_primitives;
-    std::shared_ptr<Scene> m_scene;
+    Scene m_scene;
 
 };
 
@@ -126,9 +102,9 @@ apiWorldEnd()
 
     options->MakeFilm();
     options->MakeCamera();
-    options->MakeIntegrator();
-    options->MakeScene();
-    return options->MakeRenderer();
+    options->MakeIntegrator();    
+    options->MakeRenderer();
+    return options->m_renderer;
 }
 
 void apiTransform(const Float m[16])
@@ -179,17 +155,15 @@ void apiMakeNamedMaterial(const std::string& name, ParameterSet params)
 
 void apiShape(const std::string& type, ParameterSet params)
 { 
-    std::vector<std::shared_ptr<Shape>> shapes = options->MakeShape(
-        type, params);
-    std::shared_ptr<Material> mtl = options->m_currentMaterial;
-    for (auto s : shapes) {
-        std::shared_ptr<AreaLight> areaLight;
+    std::pair<int,int> shapes = options->MakeShape(type, params);
+    int mtlID = options->m_currentMaterial;
+    for (int shapeID = shapes.first; shapeID < shapes.second; shapeID++) {        
+        int areaLightID = -1;
         if (options->m_hasAreaLight) {
-            areaLight = options->MakeAreaLight(
-                options->m_areaLightType, options->m_areaLightParameterSet, s);
-            options->m_lights.push_back(areaLight);
+            areaLightID = options->MakeLight(options->m_areaLightType, 
+                options->m_areaLightParameterSet, shapeID);
         }
-        options->m_primitives.push_back(std::make_shared<Primitive>(s, mtl, areaLight));
+        options->m_scene.AddPrimitive(Primitive(shapeID, mtlID, areaLightID));
     }
 }
 
@@ -205,11 +179,11 @@ Options::MakeNamedMaterial(
     const ParameterSet& params)
 {
     std::string type = params.GetString("type");
-    std::shared_ptr<Material> mtl = MakeMaterial(type, params);
+    int mtl = MakeMaterial(type, params);
     m_namedMaterials[name] = mtl;
 }
 
-std::shared_ptr<Material> 
+int 
 Options::GetNamedMaterial(
     const std::string& name) const
 {
@@ -217,88 +191,71 @@ Options::GetNamedMaterial(
     return m_namedMaterials.find(name)->second;
 }
 
-std::shared_ptr<Material> 
-Options::MakeMaterial(
+int Options::MakeMaterial(
     const std::string& type, 
     const ParameterSet& params)
 {
-    Material* mtl = nullptr;
+    std::shared_ptr<Material> mtl;
     if (type == "Diffuse" || type == "matte") {
         mtl = CreateMatteMaterial(params);
     }
     else {
         ASSERT(0, "Can't support material " + type);
     }
-    return std::shared_ptr<Material>(mtl);
+    int mtlID = m_scene.AddMaterial(mtl);
+    return mtlID;
 }
 
-std::vector<std::shared_ptr<Shape>> 
-Options::MakeShape(
+std::pair<int, int> Options::MakeShape(
     const std::string& type, 
     const ParameterSet& params)
 {
     Transform objToWorld = m_currentTransform;
     Transform worldToObj = Inverse(objToWorld);
-    std::vector<std::shared_ptr<Shape>> shapes;
+    std::vector<std::shared_ptr<Triangle>> triangles;
     if (type == "trianglemesh") {
-        shapes = CreateTriangleMeshShape(params, objToWorld, worldToObj);
+         triangles = CreateTriangleMeshShape(params, objToWorld, worldToObj);
     }
     else {
         ASSERT(0, "Can't support shape " + type);
     }
-    return shapes;
+    std::pair<int, int> interval = m_scene.AddTriangles(triangles);
+    return interval;
 }
 
-std::shared_ptr<AreaLight> 
-Options::MakeAreaLight(
+int Options::MakeLight(
     const std::string& type, 
     const ParameterSet& params, 
-    const std::shared_ptr<Shape>& s)
+    int shapeID)
 {
-    std::shared_ptr<AreaLight> areaLight;
+    std::shared_ptr<Light> light;
     if (type == "area" || type == "diffuse"){
-        areaLight = CreateAreaLight(params, s);
+        light = CreateAreaLight(params, shapeID);
     }
-    return areaLight;
+    int lightID = m_scene.AddLight(light);
+    return lightID;
 }
 
 void Options::MakeCamera()
 {
     Transform objToWorld = m_cameraTransform;
     Transform worldToObj = Inverse(objToWorld);
-    m_camera = CreateCamera(m_cameraParameterSet, objToWorld, worldToObj);
+    m_camera = *CreateCamera(m_cameraParameterSet, objToWorld, worldToObj);
 }
 
-void Options::MakeFilm(){
-    m_film = CreateFilm(m_filmParameterSet);
-}
-
-void Options::MakeFilter()
-{
-}
-
-void Options::MakeSampler()
-{
+void Options::MakeFilm() {
+    m_film = *CreateFilm(m_filmParameterSet);
 }
 
 void Options::MakeIntegrator()
 {
-    m_integrator = std::make_shared<Integrator>();    
+    m_integrator = *std::make_shared<Integrator>();    
 }
 
-void Options::MakeScene()
-{
-    m_scene = std::make_shared<Scene>();
-    m_scene->m_lights = std::move(m_lights);
-    m_scene->m_primitives = std::move(m_primitives);
-}
-
-std::shared_ptr<Renderer> 
-Options::MakeRenderer()
-{
-    auto r = std::make_shared<Renderer>();
-    r->m_scene = m_scene;
-    r->m_camera = m_camera;
-    r->m_integrator = m_integrator;
-    return r;
+void Options::MakeRenderer()
+{    
+    m_renderer = std::make_shared<Renderer>();
+    m_renderer->m_scene = m_scene;
+    m_renderer->m_camera = m_camera;
+    m_renderer->m_integrator = m_integrator;    
 }

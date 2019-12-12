@@ -19,6 +19,14 @@ public:
     void AddNormal(const std::string& name, std::vector<Normal3f> val);
     void AddRGBSpectrum(const std::string& name, std::vector<Float> val);
 
+    std::vector<int> GetInt(const std::string& name) const;
+    std::vector<int> GetInt(const std::string& name, const std::vector<int> d) const;
+    std::vector<Float> GetFloat(const std::string& name) const;
+    std::vector<Float> GetFloat(const std::string& name, const std::vector<Float> d) const;
+    std::vector<Point3f> GetPoint(const std::string& name) const;
+    std::vector<Point3f> GetPoint(const std::string& name, const std::vector<Point3f> d) const;
+    std::vector<Normal3f> GetNormal(const std::string& name) const;
+    std::vector<Normal3f> GetNormal(const std::string& name, const std::vector<Normal3f> d) const;
     std::string GetString(const std::string& name) const;
     std::string GetString(const std::string& name, const std::string d) const;
 

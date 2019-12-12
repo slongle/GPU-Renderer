@@ -61,8 +61,9 @@ namespace Gui {
     int buttonState = 0;
 }
 
-void Gui::init()
+void Gui::init(std::shared_ptr<Renderer> renderer)
 {
+    cudaInit(renderer);
 #if defined(__linux__)
     setenv("DISPLAY", ":0", 0);
 #endif
@@ -96,6 +97,7 @@ void Gui::init()
 #else
     glutCloseFunc(cleanup);
 #endif
+
 }
 
 void Gui::mainLoop()

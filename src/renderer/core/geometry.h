@@ -54,6 +54,8 @@ class Point3 {
 public:
     Point3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
 
+    Point3<T> operator / (T v);
+
     // Point3 Public Data
     T x, y, z;
 };
@@ -113,5 +115,13 @@ public:
 };
 */
 
+
+
+template<typename T>
+inline Point3<T> Point3<T>::operator/(T v)
+{
+    ASSERT(v != 0, "Divide zero");
+    return Point3(x / v, y / v, z / v);
+}
 
 #endif // !__VECTOR_H

@@ -10,8 +10,10 @@ typedef unsigned char uchar;
 #define MAX(a,b) ((a > b) ? a : b)
 #endif
 
+#include "renderer/core/renderer.h"
 
 // CUDA functions in kernel.cu
+extern "C" void cudaInit(std::shared_ptr<Renderer> renderer);
 extern "C" void freeCudaBuffers();
 extern "C" void render_kernel(dim3 gridSize, dim3 blockSize, uint * d_output, uint imageW, uint imageH);
 extern "C" void copyInvViewMatrix(float* invViewMatrix, size_t sizeofMatrix);
@@ -22,7 +24,7 @@ namespace Gui {
      * \brief Initialize GUI
      *
      */
-    void init();
+    void init(std::shared_ptr<Renderer> renderer);
 
     /**
      * \brief Main loop of GUI
