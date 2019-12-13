@@ -1,5 +1,19 @@
 #include "cudascene.h"
 
+CUDAScene::CUDAScene()
+{
+    m_triangleMeshes = nullptr;
+    m_triangleMeshNum = 0;
+    m_triangles = nullptr;
+    m_triangleNum = 0;
+    m_materials = nullptr;
+    m_materialNum = 0;
+    m_primitives = nullptr;
+    m_primitiveNum = 0;
+    m_lights = nullptr;
+    m_lightNum = 0;
+}
+
 CUDAScene::CUDAScene(Scene* scene) {
     // Move TriangleMesh Data
     m_triangleMeshNum = scene->m_triangleMeshes.size();

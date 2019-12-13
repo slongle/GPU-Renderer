@@ -24,7 +24,7 @@ CUDAScene* dev_scene;
 extern "C"
 void cudaInit(std::shared_ptr<Renderer> renderer) {
     Scene* scene = &(renderer->m_scene);
-    hst_scene = new CUDAScene(scene);    
+    hst_scene = new CUDAScene(scene);  
 
     // Move TriangleMesh Data
     int triangleMeshNum = hst_scene->m_triangleMeshNum;
@@ -50,6 +50,10 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
                 vertexNum * sizeof(Point2f), cudaMemcpyHostToDevice);
         }
     }
+    TriangleMesh* triangleMeshGPUPtr;
+    cudaMalloc(&triangleMeshGPUPtr, triangleMeshNum * sizeof(TriangleMesh));
+    cudaMemcpy(triangleMeshGPUPtr, hst_scene->m_triangleMeshes, triangleMeshNum * sizeof(TriangleMesh), cudaMemcpyHostToDevice);
+    hst_scene->m_triangleMeshes = triangleMeshGPUPtr;
 
     // Move Triangle Data
     int triangleNum = scene->m_triangles.size();
@@ -162,6 +166,11 @@ d_render(uint* d_output, uint imageW, uint imageH, CUDAScene* dev_scene)
     uint index = y * imageW + x;
     if (index == 0) {
         printf("%d\n", dev_scene->m_triangleMeshNum);
+        printf("%d\n", dev_scene->m_triangleMeshes[0].m_triangleNum);
+        for (int i = 0; i < dev_scene->m_triangleMeshes[0].m_triangleNum * 3; i++) {
+            printf("%d ", dev_scene->m_triangleMeshes[0].m_indices[i]);
+        }
+        printf("\n");
         //for (int i = 0; i < a->f.size(); i++) {
             //printf("%d\n", a->f[i]);
         //}

@@ -5,6 +5,7 @@
 
 class CUDAScene {    
 public:
+    CUDAScene();
     CUDAScene(Scene* scene);
 
     TriangleMesh* m_triangleMeshes;
