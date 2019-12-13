@@ -5,9 +5,21 @@
 #include "renderer/core/fwd.h"
 #include "renderer/core/transform.h"
 #include "renderer/core/parameterset.h"
+#include "renderer/core/film.h"
 
 class Camera {
+public:
+    Camera() {}
+    Camera(
+        Float fov,
+        Transform objToWorld,
+        Transform worldToObj);
 
+
+    Float m_fov;
+    Transform m_objToWorld, m_worldToObj;
+
+    Film m_film;
 };
 
 std::shared_ptr<Camera>

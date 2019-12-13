@@ -40,10 +40,10 @@ CreateTriangleMeshShape(
     Transform objToWorld, 
     Transform worldToObj)
 {
-    std::vector<int> indices = params.GetInt("indices");
-    std::vector<Point3f> p = params.GetPoint("P");
-    std::vector<Normal3f> n = params.GetNormal("N");
-    std::vector<Float> uv = params.GetFloat("uv", std::vector<Float>());
+    std::vector<int> indices = params.GetInts("indices");
+    std::vector<Point3f> p = params.GetPoints("P");
+    std::vector<Normal3f> n = params.GetNormals("N");
+    std::vector<Float> uv = params.GetFloats("uv", std::vector<Float>());
 
     TriangleMesh* triangleMesh = new TriangleMesh(objToWorld, indices, p, n, uv);
     std::vector<std::shared_ptr<Triangle>> triangles;

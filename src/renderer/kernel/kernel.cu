@@ -20,9 +20,14 @@
 
 CUDAScene* hst_scene;
 CUDAScene* dev_scene;
+Camera* hst_camera;
+Camera* dev_camera;
+Integrator* hst_integrator;
+Integrator* dev_integrator;
 
 extern "C"
 void cudaInit(std::shared_ptr<Renderer> renderer) {
+    // Move Scene Data
     Scene* scene = &(renderer->m_scene);
     hst_scene = new CUDAScene(scene);  
 
@@ -82,6 +87,19 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
     // Move cudaScene Data
     cudaMalloc(&dev_scene, sizeof(CUDAScene));
     cudaMemcpy(dev_scene, hst_scene, sizeof(CUDAScene), cudaMemcpyHostToDevice);
+
+    // Move Camera Data
+    hst_camera = &(renderer->m_camera);
+    Film& film = hst_camera->m_film;
+    cudaMalloc(&film.m_bitmap, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned char));
+    cudaMemset(film.m_bitmap, 0, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned char));
+    cudaMalloc(&dev_camera, sizeof(Camera));
+    cudaMemcpy(dev_camera, hst_camera, sizeof(Camera), cudaMemcpyHostToDevice);
+
+    // Move Integrator
+    hst_integrator = &(renderer->m_integrator);
+    cudaMalloc(&dev_integrator, sizeof(Integrator));
+    cudaMemcpy(dev_integrator, hst_integrator, sizeof(Integrator), cudaMemcpyHostToDevice);
 }
 
 typedef struct

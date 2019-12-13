@@ -7,7 +7,13 @@
 #include "renderer/core/parameterset.h"
 
 class Film {
+public:
+    Film() {}
+    Film(Point2i resolution, std::string filename);
 
+    std::string m_filename; 
+    Point2i m_resolution;
+    unsigned char* m_bitmap = nullptr;
 };
 
 std::shared_ptr<Film>

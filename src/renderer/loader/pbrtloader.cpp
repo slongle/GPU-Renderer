@@ -223,7 +223,7 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
         for (int i = 0; i < val.size(); i ++) {
             attributeVal.push_back(strtof(val[i].c_str(), &endPtr));
         }
-        params.AddRGBSpectrum(attributeName, std::move(attributeVal));
+        params.AddSpectrum(attributeName, std::move(attributeVal));
     }
     else {
         ASSERT(0, "Can't support type " + std::to_string(attributeType));

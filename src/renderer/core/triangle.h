@@ -6,8 +6,6 @@
 #include "renderer/core/transform.h"
 #include "renderer/core/parameterset.h"
 
-#include <thrust/device_vector.h>
-
 class TriangleMesh{
 public:
     TriangleMesh() {}
