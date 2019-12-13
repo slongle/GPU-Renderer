@@ -10,6 +10,7 @@
 
 class TriangleMesh{
 public:
+    TriangleMesh() {}
     TriangleMesh(
         Transform objToWorld,
         std::vector<int>& indices,

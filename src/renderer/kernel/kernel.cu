@@ -24,35 +24,29 @@ CUDAScene* dev_scene;
 extern "C"
 void cudaInit(std::shared_ptr<Renderer> renderer) {
     Scene* scene = &(renderer->m_scene);
-    hst_scene = new CUDAScene(scene);
-    cudaMalloc(&dev_scene, sizeof(CUDAScene));
-    cudaMemcpy(dev_scene, hst_scene, sizeof(CUDAScene), cudaMemcpyHostToDevice);
+    hst_scene = new CUDAScene(scene);    
 
     // Move TriangleMesh Data
     int triangleMeshNum = hst_scene->m_triangleMeshNum;
-    cudaMalloc(&dev_scene->m_triangleMeshes, sizeof(TriangleMesh) * triangleMeshNum);
-    cudaError_t a = cudaMemcpy(dev_scene->m_triangleMeshes, scene->m_triangleMeshes.data(),
-        sizeof(TriangleMesh) * triangleMeshNum, cudaMemcpyHostToDevice);
-    printf("%d\n", a);
     for (int i = 0; i < triangleMeshNum; i++) {
         int triangleNum = scene->m_triangleMeshes[i].m_triangleNum;
-        cudaMalloc(&dev_scene->m_triangleMeshes[i].m_indices, 3 * triangleNum * sizeof(int));
-        cudaMemcpy(dev_scene->m_triangleMeshes[i].m_indices, scene->m_triangleMeshes[i].m_indices,
+        cudaMalloc(&hst_scene->m_triangleMeshes[i].m_indices, 3 * triangleNum * sizeof(int));
+        cudaMemcpy(hst_scene->m_triangleMeshes[i].m_indices, scene->m_triangleMeshes[i].m_indices,
             3 * triangleNum * sizeof(int), cudaMemcpyHostToDevice);
         int vertexNum = scene->m_triangleMeshes[i].m_vertexNum;
-        cudaMalloc(&dev_scene->m_triangleMeshes[i].m_P, vertexNum * sizeof(Point3f));
-        cudaMemcpy(dev_scene->m_triangleMeshes[i].m_P, scene->m_triangleMeshes[i].m_P,
+        cudaMalloc(&hst_scene->m_triangleMeshes[i].m_P, vertexNum * sizeof(Point3f));
+        cudaMemcpy(hst_scene->m_triangleMeshes[i].m_P, scene->m_triangleMeshes[i].m_P,
             vertexNum * sizeof(Point3f), cudaMemcpyHostToDevice);
 
         if (scene->m_triangleMeshes[i].m_N) {
-            cudaMalloc(&dev_scene->m_triangleMeshes[i].m_N, vertexNum * sizeof(Normal3f));
-            cudaMemcpy(dev_scene->m_triangleMeshes[i].m_N, scene->m_triangleMeshes[i].m_N,
+            cudaMalloc(&hst_scene->m_triangleMeshes[i].m_N, vertexNum * sizeof(Normal3f));
+            cudaMemcpy(hst_scene->m_triangleMeshes[i].m_N, scene->m_triangleMeshes[i].m_N,
                 vertexNum * sizeof(Normal3f), cudaMemcpyHostToDevice);
         }
 
         if (scene->m_triangleMeshes[i].m_UV) {
-            cudaMalloc(&dev_scene->m_triangleMeshes[i].m_UV, vertexNum * sizeof(Point2f));
-            cudaMemcpy(dev_scene->m_triangleMeshes[i].m_UV, scene->m_triangleMeshes[i].m_UV,
+            cudaMalloc(&hst_scene->m_triangleMeshes[i].m_UV, vertexNum * sizeof(Point2f));
+            cudaMemcpy(hst_scene->m_triangleMeshes[i].m_UV, scene->m_triangleMeshes[i].m_UV,
                 vertexNum * sizeof(Point2f), cudaMemcpyHostToDevice);
         }
     }
@@ -80,6 +74,10 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
     cudaMalloc(&hst_scene->m_primitives, sizeof(Primitive) * primitiveNum);
     cudaMemcpy(hst_scene->m_primitives, scene->m_primitives.data(),
         sizeof(Primitive) * primitiveNum, cudaMemcpyHostToDevice);
+
+    // Move cudaScene Data
+    cudaMalloc(&dev_scene, sizeof(CUDAScene));
+    cudaMemcpy(dev_scene, hst_scene, sizeof(CUDAScene), cudaMemcpyHostToDevice);
 }
 
 typedef struct
