@@ -54,7 +54,7 @@ else(UNIX)
 
     add_definitions(${GLEW_DEFINITIONS})
     include_directories(${GLEW_INCLUDE_DIR} ${GLFW_INCLUDE_DIR})
-    set(LIBRARIES ${GLEW_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARY})
+    set(LIBRARIES ${GLEW_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARY})   
 endif(UNIX)
 
 set(GLM_ROOT_DIR "external")
@@ -145,5 +145,4 @@ endforeach()
 # Add Executable
 cuda_add_executable(${CMAKE_PROJECT_NAME} ${sources})
 target_link_libraries(${CMAKE_PROJECT_NAME}
-    ${LIBRARIES}
-    )
+        ${LIBRARIES})
