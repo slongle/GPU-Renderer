@@ -240,8 +240,7 @@ void Options::MakeCamera()
 {
     Transform objToWorld = m_cameraTransform;
     Transform worldToObj = Inverse(objToWorld);
-    m_camera = *CreateCamera(m_cameraParameterSet, objToWorld, worldToObj);
-    m_camera.m_film = m_film;
+    m_camera = *CreateCamera(m_cameraParameterSet, m_film, objToWorld, worldToObj);
 }
 
 void Options::MakeFilm() {

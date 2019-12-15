@@ -109,7 +109,7 @@ typedef struct
 
 __constant__ float3x4 c_invViewMatrix;  // inverse view matrix
 
-struct Ray
+/*struct Ray
 {
     float3 o;   // origin
     float3 d;   // direction
@@ -138,7 +138,7 @@ int intersectBox(Ray r, float3 boxmin, float3 boxmax, float* tnear, float* tfar)
     *tfar = smallest_tmax;
 
     return smallest_tmax > largest_tmin;
-}
+}*/
 
 // transform vector by matrix (no translation)
 __device__
@@ -192,6 +192,10 @@ d_render(uint* d_output, uint imageW, uint imageH, CUDAScene* dev_scene)
         //for (int i = 0; i < a->f.size(); i++) {
             //printf("%d\n", a->f[i]);
         //}
+        Vector3f v(1, 2, 3);
+        printf("%f %f %f\n", v.x, v.y, v.z);
+        Float len = v.Length();
+        printf("%f\n", len);
     }
 
     if ((x >= imageW) || (y >= imageH)) return;
@@ -206,14 +210,16 @@ d_render(uint* d_output, uint imageW, uint imageH, CUDAScene* dev_scene)
     float v = ((y) / (float)imageH) * 2.0f - 1.0f;
 
     // calculate eye ray in world space
-    Ray eyeRay;
+    /*Ray eyeRay;
     eyeRay.o = make_float3(mul(c_invViewMatrix, make_float4(0.0f, 0.0f, 0.0f, 1.0f)));
     eyeRay.d = normalize(make_float3(u, v, -2.0f));
     eyeRay.d = mul(c_invViewMatrix, eyeRay.d);
 
     // find intersection with box
     float tnear, tfar;
-    int hit = intersectBox(eyeRay, boxMin, boxMax, &tnear, &tfar);
+    int hit = intersectBox(eyeRay, boxMin, boxMax, &tnear, &tfar);*/
+    float tnear = 1;
+    int hit = 0;
 
     if (!hit) return;
 

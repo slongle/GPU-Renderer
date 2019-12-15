@@ -23,7 +23,27 @@ Transform& Transform::operator*=(const Transform& t)
     return *this;
 }
 
+Ray Transform::operator()(const Ray& r) const
+{
+    return Ray((*this)(r.o), (*this)(r.d), r.tMax);
+}
+
 Transform Inverse(const Transform& t)
+{
+    return Transform();
+}
+
+Transform Scale(Float x, Float y, Float z)
+{
+    return Transform();
+}
+
+Transform Translate(Float x, Float y, Float z)
+{
+    return Transform();
+}
+
+Transform Perspective(Float fov, Float near, Float far)
 {
     return Transform();
 }

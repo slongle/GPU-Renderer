@@ -37,11 +37,16 @@ public:
     template<typename T>
     Normal3<T> operator ()(const Normal3<T>& p) const;
 
+    Ray operator() (const Ray& r) const;
+
     Matrix4x4 mat, invMat;
 
     friend Transform Inverse(const Transform& t);
 };
 
+Transform Scale(Float x, Float y, Float z);
+Transform Translate(Float x, Float y, Float z);
+Transform Perspective(Float fov, Float near, Float far);
 
 template<typename T>
 inline Vector3<T> Transform::operator()(const Vector3<T>& v) const

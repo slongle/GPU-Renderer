@@ -12,12 +12,15 @@ public:
     Camera() {}
     Camera(
         Float fov,
+        Film film,
         Transform objToWorld,
         Transform worldToObj);
 
+    Ray GenerateRay(const Point2f& p) const;
 
     Float m_fov;
-    Transform m_objToWorld, m_worldToObj;
+    Transform m_cameraToWorld, m_worldToCamera;
+    Transform m_rasterToCamera;
 
     Film m_film;
 };
@@ -25,6 +28,7 @@ public:
 std::shared_ptr<Camera>
 CreateCamera(
     const ParameterSet& param,
+    const Film& film, 
     const Transform objToWorld,
     const Transform worldToObj);
 

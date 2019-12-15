@@ -27,7 +27,12 @@ public:
 template <typename T>
 class Vector3 {
 public:
-    Vector3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
+    __host__ __device__ Vector3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
+    __host__ __device__ explicit Vector3<T>(Point3<T> p) : x(p.x), y(p.y), z(p.z) {}
+
+    __host__ __device__ Vector3<T> operator  / (const Float f)const;
+
+    __host__ __device__ Float Length() const;
 
     // Vector3 Public Data
     T x, y, z;
@@ -103,17 +108,16 @@ typedef Bounds3<Float> Bounds3f;
 typedef Bounds3<int> Bounds3i;
 
 // Ray Declarations
-/*
 class Ray {
 public:
+    Ray(Point3f o, Vector3f d, Float tMax = INFINITE) :o(o), d(d), tMax(tMax) {}
 
     // Ray Public Data
     Point3f o;
     Vector3f d;
     mutable Float tMax;
-    const Medium* medium;
 };
-*/
+
 
 
 
@@ -121,7 +125,26 @@ template<typename T>
 inline Point3<T> Point3<T>::operator/(T v)
 {
     ASSERT(v != 0, "Divide zero");
-    return Point3(x / v, y / v, z / v);
+    return Point3<T>(x / v, y / v, z / v);
+}
+
+template<typename T>
+inline Vector3<T> Normalize(Vector3<T> v) {
+    Float len = v.Length();
+    return v / len;
 }
 
 #endif // !__VECTOR_H
+
+template<typename T>
+inline __host__ __device__ Vector3<T> Vector3<T>::operator/(const Float f) const
+{
+    ASSERT(f != 0, "Divide zero");
+    return Vector3<T>(x / f, y / f, z / f);
+}
+
+template<typename T>
+inline Float Vector3<T>::Length() const
+{
+    return std::sqrt(x * x + y * y + z * z);
+}
