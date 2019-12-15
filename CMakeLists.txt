@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required(VERSION 3.1)
 
-project(GPU-Renderer)
+project(GPU-Renderer LANGUAGES CXX CUDA)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -89,36 +89,36 @@ set(sources
     src/utility/helper_timer.h    
     src/utility/timer.h    
     src/renderer/core/api.cpp
-	src/renderer/core/api.h
-	src/renderer/core/camera.cpp
-	src/renderer/core/camera.h
-	src/renderer/core/film.cpp
-	src/renderer/core/film.h
-	src/renderer/core/fwd.h
-	src/renderer/core/geometry.cpp
-	src/renderer/core/geometry.h
-	src/renderer/core/integrator.h
-	src/renderer/core/light.cpp
-	src/renderer/core/light.h
-	src/renderer/core/material.cpp
-	src/renderer/core/material.h
-	src/renderer/core/medium.cpp
-	src/renderer/core/medium.h
-	src/renderer/core/parameterset.cpp
-	src/renderer/core/parameterset.h
-	src/renderer/core/primitive.cpp
-	src/renderer/core/primitive.h
-	src/renderer/core/renderer.h
-	src/renderer/core/sampling.cpp
-	src/renderer/core/sampling.h
-	src/renderer/core/scene.cpp
-	src/renderer/core/scene.h
-	src/renderer/core/spectrum.cpp
-	src/renderer/core/spectrum.h
-	src/renderer/core/transform.cpp
-	src/renderer/core/transform.h
+    src/renderer/core/api.h
+    src/renderer/core/camera.cpp
+    src/renderer/core/camera.h
+    src/renderer/core/film.cpp
+    src/renderer/core/film.h
+    src/renderer/core/fwd.h
+    src/renderer/core/geometry.h
+    src/renderer/core/integrator.h
+    src/renderer/core/interaction.h
+    src/renderer/core/light.cpp
+    src/renderer/core/light.h
+    src/renderer/core/material.cpp
+    src/renderer/core/material.h
+    src/renderer/core/medium.cpp
+    src/renderer/core/medium.h
+    src/renderer/core/parameterset.cpp
+    src/renderer/core/parameterset.h
+    src/renderer/core/primitive.h
+    src/renderer/core/renderer.h
+    src/renderer/core/sampler.h
+    src/renderer/core/sampling.h
+    src/renderer/core/scene.cpp
+    src/renderer/core/scene.h
+    src/renderer/core/spectrum.cpp
+    src/renderer/core/spectrum.h
+    src/renderer/core/transform.cpp
+    src/renderer/core/transform.h
     src/renderer/core/triangle.cpp
-	src/renderer/core/triangle.h
+    src/renderer/core/triangle.h
+	src/renderer/kernel/cudarenderer.h
 	src/renderer/kernel/cudascene.cpp
 	src/renderer/kernel/cudascene.h
     src/renderer/kernel/kernel.cu
@@ -143,6 +143,9 @@ endforeach()
 
 ########################################
 # Add Executable
-cuda_add_executable(${CMAKE_PROJECT_NAME} ${sources})
-target_link_libraries(${CMAKE_PROJECT_NAME}
+
+ 
+cuda_add_executable(renderer ${sources})
+set_target_properties(renderer PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+target_link_libraries(renderer
         ${LIBRARIES})

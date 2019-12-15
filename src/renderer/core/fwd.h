@@ -16,11 +16,14 @@ inline filesystem::resolver* getFileResolver() {
 
 
 #define INFINITY   ((float)(_HUGE_ENUF * _HUGE_ENUF))
+#define EPSILON 1e-2f
+#define PI 3.14159265358979323846f
+
 typedef float Float;
 
 template<typename T> class Vector2;
 template<typename T> class Vector3;
-template<typename T> class Point2;
+//template<typename T> class Point2;
 template<typename T> class Point3;
 template<typename T> class Normal3;
 template<typename T> class Bounds2;
@@ -30,8 +33,8 @@ typedef Vector2<Float> Vector2f;
 typedef Vector2<int> Vector2i;
 typedef Vector3<Float> Vector3f;
 typedef Vector3<int> Vector3i;
-typedef Point2<Float> Point2f;
-typedef Point2<int> Point2i;
+//typedef Point2<Float> Point2f;
+//typedef Point2<int> Point2i;
 typedef Point3<Float> Point3f;
 typedef Point3<int> Point3i;
 typedef Normal3<Float> Normal3f;
@@ -45,5 +48,11 @@ class Shape;
 class Primitive;
 class Material;
 class Medium;
+
+inline __device__ __host__
+Float Radians(Float ang) {
+    return ang * PI / 180;
+}
+
 
 #endif // !__FWD_H

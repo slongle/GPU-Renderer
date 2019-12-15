@@ -81,6 +81,7 @@ static std::unique_ptr<Options> options(new Options);
 
 void apiAttributeBegin()
 {
+    options->m_currentTransform.Identity();
     options->m_transformStack.push_back(options->m_currentTransform);
 }
 
@@ -259,3 +260,12 @@ void Options::MakeRenderer()
     m_renderer->m_camera = m_camera;
     m_renderer->m_integrator = m_integrator;    
 }
+
+
+
+
+
+
+
+
+

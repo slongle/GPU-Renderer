@@ -13,7 +13,26 @@ public:
     Spectrum m_Kd;
 };
 
+inline
 std::shared_ptr<Material>
-CreateMatteMaterial(const ParameterSet& param);
+CreateMatteMaterial(
+    const ParameterSet& param);
+
+inline
+Material::Material(Spectrum Kd) :m_Kd(Kd)
+{
+}
+
+inline
+std::shared_ptr<Material>
+CreateMatteMaterial(
+    const ParameterSet& param)
+{
+    std::vector<Float> rgbs = param.GetSpectrum("Kd");
+    Spectrum Kd(rgbs[0], rgbs[1], rgbs[2]);
+    return std::make_shared<Material>(Kd);
+}
+
+
 
 #endif // !__MATERIAL_H

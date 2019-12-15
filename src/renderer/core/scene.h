@@ -5,6 +5,7 @@
 #include "renderer/core/fwd.h"
 #include "renderer/core/geometry.h"
 #include "renderer/core/primitive.h"
+#include "renderer/core/interaction.h"
 
 #include <vector>
 
@@ -26,5 +27,49 @@ public:
     std::vector<Light> m_lights;
     std::vector<Primitive> m_primitives;
 };
+
+inline
+int Scene::AddTriangleMesh(TriangleMesh triangleMesh)
+{
+    int ID = m_triangleMeshes.size();
+    m_triangleMeshes.push_back(triangleMesh);
+    return ID;
+}
+
+inline
+std::pair<int, int>
+Scene::AddTriangles(std::vector<std::shared_ptr<Triangle>> triangles)
+{
+    int meshID = AddTriangleMesh(*triangles[0]->m_triangleMeshPtr);
+    std::pair<int, int> interval(m_triangles.size(), m_triangles.size() + triangles.size());
+    for (int i = 0; i < triangles.size(); i++) {
+        triangles[i]->m_triangleMeshID = meshID;
+        m_triangles.push_back(*triangles[i]);
+    }
+    return interval;
+}
+
+inline
+int Scene::AddMaterial(std::shared_ptr<Material> material)
+{
+    int ID = m_materials.size();
+    m_materials.push_back(*material);
+    return ID;
+}
+
+inline
+int Scene::AddLight(std::shared_ptr<Light> light)
+{
+    int ID = m_lights.size();
+    m_lights.push_back(*light);
+    return ID;
+}
+
+inline
+void Scene::AddPrimitive(Primitive p)
+{
+    m_primitives.push_back(p);
+}
+
 
 #endif // !__SCENE_H

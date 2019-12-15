@@ -16,9 +16,21 @@ public:
     int m_shapeID;
 };
 
+
+inline
 std::shared_ptr<Light>
 CreateAreaLight(
     const ParameterSet& params,
     int shapeID);
+
+
+inline
+std::shared_ptr<Light>
+CreateAreaLight(
+    const ParameterSet& params,
+    int shapeID)
+{
+    return std::shared_ptr<Light>();
+}
 
 #endif // !__LIGHT_H

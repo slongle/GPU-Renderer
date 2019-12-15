@@ -8,6 +8,7 @@ using std::endl;
 #include "renderer/loader/pbrtloader.h"
 
 #include "utility/helper_logger.h"
+#include "renderer/core/sampling.h"
 
 class F {
 public:
@@ -24,6 +25,7 @@ public:
     }
 
     int* x;
+    int a, b, c;
 };
 
 F* foo() {
@@ -32,13 +34,20 @@ F* foo() {
 }
 
 int main() {
-
     std::string filepath = "E:/Document/Graphics/code/GPU-Renderer/scene/cornell-box/scene.pbrt";    
     filesystem::path path(filepath);
     getFileResolver()->prepend(path.parent_path());
     SceneLoader* sceneLoader = nullptr; 
     sceneLoader = new  PBRTLoader(filepath);
     std::shared_ptr<Renderer> renderer = sceneLoader->Load();
+
+    unsigned int seed = RandomInit(0, 0);
+    for (int i = 0; i < 10; i++) {
+        Float u = NextRandom(seed);
+        cout << u << endl;
+    }
+
+    //return 0;
 
     Gui::init(renderer);
     Gui::mainLoop();
