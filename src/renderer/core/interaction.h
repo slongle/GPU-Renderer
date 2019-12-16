@@ -12,7 +12,7 @@ public:
 // Global
     int m_primitiveID;
 // Surface
-    Vector3f m_d;
+    Vector3f m_wo, m_wi;
     Point3f m_p;
     Normal3f m_shadingN, m_geometryN;
     Point2f m_uv;

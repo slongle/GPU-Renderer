@@ -11,11 +11,12 @@ public:
     CUDAScene(Scene* scene);
 
     __device__ __host__
-    bool Intersect(const Ray& ray, Interaction* interaction) const;
+    bool IntersectP(const Ray& ray, Interaction* interaction) const;
 
     __device__ __host__
-    Spectrum Shading(const Interaction& interaction) const;
-
+    Spectrum Shading(Interaction& interaction, unsigned int& seed) const;
+    __device__ __host__
+    Spectrum SampleLight(const Interaction& interaction, unsigned int& seed) const;
 
     TriangleMesh* m_triangleMeshes;
     int m_triangleMeshNum;
@@ -67,7 +68,7 @@ CUDAScene::CUDAScene(Scene* scene) {
 }
 
 inline __device__ __host__
-bool CUDAScene::Intersect(const Ray& ray, Interaction* interaction) const
+bool CUDAScene::IntersectP(const Ray& ray, Interaction* interaction) const
 {
     Float tHit;
     bool ret_hit = false;
@@ -84,11 +85,21 @@ bool CUDAScene::Intersect(const Ray& ray, Interaction* interaction) const
 }
 
 inline __device__ __host__ 
-Spectrum CUDAScene::Shading(const Interaction& interaction) const
+Spectrum CUDAScene::Shading(
+    Interaction& interaction,
+    unsigned int& seed) const
 {
     const int& primID = interaction.m_primitiveID;
     const int& mtlID = m_primitives[primID].m_materialID;
-    return m_materials[mtlID].m_Kd;
+    return m_materials[mtlID].Sample(interaction, seed);
+}
+
+inline __device__ __host__ 
+Spectrum CUDAScene::SampleLight(
+    const Interaction& interaction, 
+    unsigned int& seed) const
+{
+    return Spectrum(0);
 }
 
 

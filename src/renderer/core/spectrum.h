@@ -6,11 +6,19 @@
 
 class Spectrum {
 public:
-    __device__ __host__ Spectrum(Float r = 0, Float g = 0, Float b = 0) :r(r), g(g), b(b) {}
+    __device__ __host__ Spectrum(Float v = 0) :r(v), g(v), b(v) {}
+    __device__ __host__ Spectrum(Float r, Float g, Float b) :r(r), g(g), b(b) {}
     __device__ __host__ Spectrum(const Normal3f& n) : r(std::fabs(n.x)), g(std::fabs(n.y)), b(std::fabs(n.z)) {}
+    __device__ __host__ Spectrum(const std::vector<Float>& v);
 
-    Float operator[] (int idx) const;
-    Spectrum& operator += (const Spectrum& s);
+    __device__ __host__ Float operator[] (int idx) const;
+    __device__ __host__ Spectrum& operator += (const Spectrum& s);
+    __device__ __host__ Spectrum operator * (const Spectrum& s) const;
+    __device__ __host__ Spectrum& operator *= (const Spectrum& s);
+    __device__ __host__ Spectrum& operator /= (const Float v);
+
+    __device__ __host__ Float Max() const;
+    __device__ __host__ bool isBlack() const;
 
     Float r, g, b;
 
@@ -30,6 +38,15 @@ Float Clamp(Float a) {
 }
 
 inline __device__ __host__
+Spectrum::Spectrum(const std::vector<Float>& v)
+{
+    ASSERT(v.size() == 3, "Spectrum");
+    r = v[0];
+    g = v[1];
+    b = v[2];
+}
+
+inline __device__ __host__
 Float Spectrum::operator[](int idx) const
 {
     if (idx == 0) return r;
@@ -44,6 +61,44 @@ Spectrum& Spectrum::operator+=(const Spectrum& s)
     g += s.g;
     b += s.b;
     return *this;
+}
+
+inline __device__ __host__ 
+Spectrum Spectrum::operator*(const Spectrum& s) const
+{
+    return Spectrum(r * s.r, g * s.g, b * s.b);
+}
+
+inline __device__ __host__ 
+Spectrum& Spectrum::operator*=(const Spectrum& s)
+{
+    r *= s.r;
+    g *= s.g;
+    b *= s.b;
+    return *this;
+}
+
+inline __device__ __host__ 
+Spectrum& Spectrum::operator/=(const Float v)
+{
+    ASSERT(v != 0, "Divide zero");
+    Float invV = 1 / v;
+    r *= invV;
+    g *= invV;
+    b *= invV;
+    return *this;
+}
+
+inline __device__ __host__ 
+Float Spectrum::Max() const
+{
+    return max(max(r, g), b);
+}
+
+inline __device__ __host__ 
+bool Spectrum::isBlack() const
+{
+    return r == 0 && g == 0 && b == 0;
 }
 
 inline __device__ __host__

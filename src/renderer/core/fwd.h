@@ -17,7 +17,8 @@ inline filesystem::resolver* getFileResolver() {
 
 #define INFINITY   ((float)(_HUGE_ENUF * _HUGE_ENUF))
 #define EPSILON 1e-2f
-#define PI 3.14159265358979323846f
+#define PI      3.14159265358979323846f
+#define INV_PI  0.3183098861837907f
 
 typedef float Float;
 

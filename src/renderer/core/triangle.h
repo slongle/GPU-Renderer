@@ -167,7 +167,7 @@ bool Triangle::IntersectP(const Ray& ray, Float* tHit, Interaction* interaction)
         return false;
     }
     *tHit = t;
-    interaction->m_d = ray.d;
+    interaction->m_wo = ray.d;
     interaction->m_p = ray(t);
     interaction->m_geometryN = Normal3f(Normalize(Cross(E1, E2)));
     if (!m_triangleMeshPtr->m_N) {

@@ -165,7 +165,7 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
     uint x = blockIdx.x * blockDim.x + threadIdx.x;
     uint y = blockIdx.y * blockDim.y + threadIdx.y;
 
-    //Integrator* integrator = renderer->m_integrator;
+    Integrator* integrator = renderer->m_integrator;
     Camera* camera = renderer->m_camera;
     CUDAScene* scene = renderer->m_scene;
 
@@ -189,22 +189,43 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
 
     if ((x >= imageW) || (y >= imageH)) return;
 
-    uint seed = RandomInit(index, frame);
+    uint seed = InitRandom(index, frame);
+    Spectrum L(0);
+    Spectrum throughput(1);
 
     Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
+    for (int i = 0; i < integrator->m_maxDepth; i++) {
 
-    // find intersection with scene
-    Interaction interaction;
-    bool hit = scene->Intersect(ray, &interaction);
+        // find intersection with scene
+        Interaction interaction;
+        bool hit = scene->IntersectP(ray, &interaction);
 
-    Spectrum L;
-    if (hit) {
-        //printf("Hit\n");
-        //L += scene->Shading(interaction);
-        L = Spectrum(interaction.m_geometryN);
-        //printf("%f %f %f\n", L.r, L.g, L.b);
+        if (!hit){
+            break;
+        }
+
+        // direct light
+        L += throughput * scene->SampleLight(interaction, seed);
+        
+        // calculate BSDF
+        throughput *= scene->Shading(interaction, seed);
+        if (throughput.isBlack()) {
+            break;
+        }
+
+        // indirect light
+        if (i > 3) {
+            Float q = min(Float(0.95), throughput.Max());
+            if (NextRandom(seed) >= q) {
+                break;
+            }
+            throughput /= q;
+        }
+
+        ray.o = interaction.m_p + interaction.m_geometryN * EPSILON;
+        ray.d = -interaction.m_wi;
+        ray.tMax = INFINITY;
     }
-
 
     // write output color
     SpectrumToUnsignedChar(L, (unsigned char*)&d_output[(imageH - y - 1) * imageW + x], 4);

@@ -99,6 +99,7 @@ set(sources
     src/renderer/core/film.h
     src/renderer/core/fwd.h
     src/renderer/core/geometry.h
+	src/renderer/core/integrator.cpp
     src/renderer/core/integrator.h
     src/renderer/core/interaction.h
     src/renderer/core/light.cpp

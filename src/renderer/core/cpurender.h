@@ -13,7 +13,7 @@ inline void render(std::shared_ptr<Renderer> renderer)
     for (int x = 0; x < camera.m_film.m_resolution.x; x++) {
         for (int y = 0; y < camera.m_film.m_resolution.y; y++) {
             int index = y * camera.m_film.m_resolution.x + x;
-            unsigned int seed = RandomInit(index, 0);
+            unsigned int seed = InitRandom(index, 0);
 
 
             Ray ray = camera.GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));

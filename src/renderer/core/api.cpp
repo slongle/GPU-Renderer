@@ -179,6 +179,7 @@ void apiShape(const std::string& type, ParameterSet params)
 
 void apiAreaLightSource(const std::string& type, ParameterSet params)
 {
+    options->m_hasAreaLight = true;
     options->m_areaLightType = type;
     options->m_areaLightParameterSet = params;
 }
@@ -259,7 +260,7 @@ void Options::MakeFilm() {
 
 void Options::MakeIntegrator()
 {
-    m_integrator = *std::make_shared<Integrator>();    
+    m_integrator = *CreateIntegrator(m_integratorParameterSet);    
 }
 
 void Options::MakeRenderer()
