@@ -38,7 +38,7 @@ bool Scene::Intersect(const Ray& ray, Interaction* interaction) const
     bool ret_hit = false;
     for (int i = 0; i < m_primitives.size(); i++) {
         int triangleID = m_primitives[i].m_shapeID;
-        bool hit = m_triangles[triangleID].Intersect(ray, &tHit, interaction);
+        bool hit = m_triangles[triangleID].IntersectP(ray, &tHit, interaction);
         if (hit) {
             ret_hit = true;
             ray.tMax = tHit;

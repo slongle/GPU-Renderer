@@ -15,15 +15,21 @@ inline void render(std::shared_ptr<Renderer> renderer)
             int index = y * camera.m_film.m_resolution.x + x;
             unsigned int seed = RandomInit(index, 0);
 
-            //Point2f p(512.03, 512.04);
-            Ray ray = camera.GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));    
-            //Ray ray = camera.GenerateRay(p);
-            //cout<<ray
+
+            Ray ray = camera.GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
             Interaction inter;
+
+
             bool hit = scene.Intersect(ray, &inter);
+            if (std::fabs(inter.m_geometryN.x) <EPSILON && 
+                std::fabs(inter.m_geometryN.y) <EPSILON && 
+                std::fabs(inter.m_geometryN.z) <EPSILON) {
+                int a = 1;
+                a++;
+            }
             Spectrum L;
             if (hit) {
-                L += scene.Shading(inter);
+                printf("%d %d %d\n", inter.m_geometryN.x, inter.m_geometryN.y, inter.m_geometryN.z);
             }
 
             camera.m_film.SetVal(x, y, L);

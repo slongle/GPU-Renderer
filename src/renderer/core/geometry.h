@@ -30,6 +30,7 @@ public:
     __host__ __device__ Vector3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
     __host__ __device__ explicit Vector3<T>(Point3<T> p) : x(p.x), y(p.y), z(p.z) {}
 
+    __host__ __device__ Vector3<T> operator * (const Float f)const;
     __host__ __device__ Vector3<T> operator  / (const Float f)const;
 
     __host__ __device__ Float Length() const;
@@ -44,21 +45,16 @@ typedef Vector3<Float> Vector3f;
 typedef Vector3<int> Vector3i;
 
 // Point Declarations
-//template <typename T>
-class Point2f {
+template <typename T>
+class Point2 {
 public:
-    __host__ __device__ Point2f(Float x = 0, Float y = 0) :x(x), y(y) {}
+    __host__ __device__ Point2(T x = 0, T y = 0) :x(x), y(y) {}
+
+    __host__ __device__ Point2<T> operator + (const Point2<T>& p) const;
+    __host__ __device__ Point2<T> operator * (const Float g) const;
 
     // Point2 Public Data
-    Float x, y;
-};
-
-class Point2i {
-public:
-    __host__ __device__ Point2i(int x = 0, int y = 0) :x(x), y(y) {}
-
-    // Point2 Public Data
-    int x, y;
+    T x, y;
 };
 
 
@@ -68,6 +64,7 @@ public:
     __host__ __device__ Point3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
 
 
+    __host__ __device__ Point3<T> operator + (const Vector3<T>& v) const;
     __host__ __device__ Vector3<T> operator - (const Point3<T>& p) const;
     __host__ __device__ Point3<T> operator / (T v) const;
 
@@ -76,8 +73,8 @@ public:
 };
 
 
-//typedef Point2<Float> Point2f;
-//typedef Point2<int> Point2i;
+typedef Point2<Float> Point2f;
+typedef Point2<int> Point2i;
 typedef Point3<Float> Point3f;
 typedef Point3<int> Point3i;
 
@@ -86,6 +83,10 @@ template <typename T>
 class Normal3 {
 public:
     __host__ __device__ Normal3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
+    __host__ __device__ explicit Normal3(Vector3<T> v) : x(v.x), y(v.y), z(v.z) {}
+
+    __host__ __device__ Normal3<T> operator + (const Normal3<T>& n) const;
+    __host__ __device__ Normal3<T> operator * (Float f) const;
 
     // Normal3 Public Data
     T x, y, z;
@@ -101,8 +102,7 @@ public:
     
 
     // Bounds2 Public Data
-    //Point2<T> pMin, pMax;
-    Point2f pMin, pMax;
+    Point2<T> pMin, pMax;    
 };
 
 template <typename T>
@@ -122,6 +122,8 @@ typedef Bounds3<int> Bounds3i;
 class Ray {
 public:
     __host__ __device__ Ray(Point3f o, Vector3f d, Float tMax = INFINITE) :o(o), d(d), tMax(tMax) {}
+    
+    __host__ __device__ Point3f operator() (Float t) const;
 
     // Ray Public Data
     Point3f o;
@@ -133,50 +135,103 @@ public:
 
 
 template<typename T>
-inline Point3<T> Point3<T>::operator/(T v) const
+inline __host__ __device__
+Point3<T> Point3<T>::operator/(T v) const
 {
     ASSERT(v != 0, "Divide zero");
     return Point3<T>(x / v, y / v, z / v);
 }
 
 template<typename T>
-__host__ __device__
-inline Vector3<T> Normalize(Vector3<T> v) {
+inline __host__ __device__
+Vector3<T> Normalize(Vector3<T> v) {
     Float len = v.Length();
     return v / len;
 }
+
 template<typename T>
-inline Vector3<T> Vector3<T>::operator/(const Float f) const
+inline __host__ __device__ 
+Vector3<T> Vector3<T>::operator*(const Float f) const
 {
-    ASSERT(f != 0, "Divide zero");
-    return Vector3<T>(x / f, y / f, z / f);
+    return Vector3<T>(x * f, y * f, z * f);
 }
 
 template<typename T>
-inline Float Vector3<T>::Length() const
+inline __host__ __device__
+Vector3<T> Vector3<T>::operator/(const Float f) const
+{
+    ASSERT(f != 0, "Divide zero");
+    Float invF = 1 / f;
+    return Vector3<T>(x * invF, y * invF, z * invF);
+}
+
+template<typename T>
+inline __host__ __device__
+Float Vector3<T>::Length() const
 {
     return std::sqrt(x * x + y * y + z * z);
 }
 
 template<typename T>
-inline Vector3<T> Point3<T>::operator-(const Point3<T>& p) const
+inline __host__ __device__ 
+Point3<T> Point3<T>::operator+(const Vector3<T>& v) const
+{
+    return Point3<T>(x + v.x, y + v.y, z + v.z);
+}
+
+template<typename T>
+inline __host__ __device__
+Vector3<T> Point3<T>::operator-(const Point3<T>& p) const
 {
     return Vector3<T>(x - p.x, y - p.y, z - p.z);
 }
 
+inline __host__ __device__
+Point3f Ray::operator() (Float t) const {
+    return o + d * t;
+}
+
 
 template<typename T>
-__host__ __device__
-inline Vector3<T> Cross(const Vector3<T>& v1, const Vector3<T>& v2) {
+inline __host__ __device__
+Vector3<T> Cross(const Vector3<T>& v1, const Vector3<T>& v2) {
     return Vector3<T>(v1.y * v2.z - v1.z * v2.y,
         v1.z * v2.x - v1.x * v2.z,
         v1.x * v2.y - v1.y * v2.x);
 }
 
 template<typename T>
-__host__ __device__
-inline T Dot(const Vector3<T>& v1, const Vector3<T>& v2) {
+inline __host__ __device__
+T Dot(const Vector3<T>& v1, const Vector3<T>& v2) {
     return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
+
+
 #endif // !__VECTOR_H
+
+template<typename T>
+inline __host__ __device__ 
+Normal3<T> Normal3<T>::operator+(const Normal3<T>& n) const
+{
+    return Normal3<T>(x + n.x, y + n.y, z + n.z);
+}
+
+template<typename T>
+inline __host__ __device__ 
+Normal3<T> Normal3<T>::operator*(Float f) const
+{
+    return Normal3<T>(x * f, y * f, z * f);
+}
+
+template<typename T>
+inline __host__ __device__ Point2<T> Point2<T>::operator+(const Point2<T>& p) const
+{
+    return Point2<T>(x + p.x, y + p.y);
+}
+
+template<typename T>
+inline __host__ __device__ Point2<T> Point2<T>::operator*(const Float g) const
+{
+    return Point2<T>(x * g, y * g);
+}

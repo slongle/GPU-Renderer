@@ -41,8 +41,11 @@ public:
         int index);
 
     bool Intersect(
-        const Ray& ray, 
-        Float* tHit, 
+        const Ray& ray) const;
+
+    bool IntersectP(
+        const Ray& ray,
+        Float* tHit,
         Interaction* interaction) const;
 
     TriangleMesh* m_triangleMeshPtr;
@@ -50,7 +53,6 @@ public:
     int m_triangleMeshID;
 };
 
-inline
 std::vector<std::shared_ptr<Triangle>>
 CreateTriangleMeshShape(
     const ParameterSet& params,
@@ -97,7 +99,7 @@ Triangle::Triangle(
  * Moller-Trumbore algorithm
  */
 inline __device__ __host__
-bool Triangle::Intersect(const Ray& ray, Float* tHit, Interaction* interaction) const
+bool Triangle::Intersect(const Ray& ray) const
 {
     int* indices = &m_triangleMeshPtr->m_indices[m_index * 3];
     Point3f p0 = m_triangleMeshPtr->m_P[indices[0]];
@@ -127,31 +129,64 @@ bool Triangle::Intersect(const Ray& ray, Float* tHit, Interaction* interaction) 
     if (t > ray.tMax) {
         return false;
     }
-    *tHit = t;
-
     return true;
 }
 
-inline
-std::vector<std::shared_ptr<Triangle>>
-CreateTriangleMeshShape(
-    const ParameterSet& params,
-    Transform objToWorld,
-    Transform worldToObj)
+/*
+ * Moller-Trumbore algorithm
+ */
+inline __device__ __host__
+bool Triangle::IntersectP(const Ray& ray, Float* tHit, Interaction* interaction) const
 {
-    std::vector<int> indices = params.GetInts("indices");
-    std::vector<Point3f> p = params.GetPoints("P");
-    std::vector<Normal3f> n = params.GetNormals("N");
-    std::vector<Float> uv = params.GetFloats("uv", std::vector<Float>());
+    int* indices = &m_triangleMeshPtr->m_indices[m_index * 3];
+    const Point3f &p0 = m_triangleMeshPtr->m_P[indices[0]];
+    const Point3f &p1 = m_triangleMeshPtr->m_P[indices[1]];
+    const Point3f &p2 = m_triangleMeshPtr->m_P[indices[2]];
 
-    TriangleMesh* triangleMesh = new TriangleMesh(objToWorld, indices, p, n, uv);
-    std::vector<std::shared_ptr<Triangle>> triangles;
-    int triangleNum = indices.size() / 3;
-    for (int i = 0; i < triangleNum; i++) {
-        triangles.push_back(std::make_shared<Triangle>(triangleMesh, i));
+    const Vector3f& D = ray.d;
+    Vector3f E1 = p1 - p0;
+    Vector3f E2 = p2 - p0;
+    Vector3f P = Cross(D, E2);
+    Float det = Dot(P, E1);
+    if (std::fabs(det) < EPSILON) {
+        return false;
+    }
+    Float invDet = 1 / det;
+    Vector3f T = ray.o - p0;
+    Float u = Dot(P, T) * invDet;
+    if (u < 0 || u > 1) {
+        return false;
+    }
+    Vector3f Q = Cross(T, E1);
+    Float v = Dot(Q, D) * invDet;
+    if (v < 0 || u + v > 1) {
+        return false;
+    }
+    Float t = Dot(Q, E2) * invDet;
+    if (t > ray.tMax) {
+        return false;
+    }
+    *tHit = t;
+    interaction->m_d = ray.d;
+    interaction->m_p = ray(t);
+    interaction->m_geometryN = Normal3f(Normalize(Cross(E1, E2)));
+    if (!m_triangleMeshPtr->m_N) {
+        interaction->m_shadingN = interaction->m_geometryN;
+    }
+    else {
+        const Normal3f& n0 = m_triangleMeshPtr->m_N[indices[0]];
+        const Normal3f& n1 = m_triangleMeshPtr->m_N[indices[1]];
+        const Normal3f& n2 = m_triangleMeshPtr->m_N[indices[2]];
+        interaction->m_shadingN = n0 * (1 - u - v) + n1 * u + n2 * v;
     }
 
-    return triangles;
+    if (m_triangleMeshPtr->m_UV) {
+        const Point2f& uv0 = m_triangleMeshPtr->m_UV[indices[0]];
+        const Point2f& uv1 = m_triangleMeshPtr->m_UV[indices[1]];
+        const Point2f& uv2 = m_triangleMeshPtr->m_UV[indices[2]];
+        interaction->m_uv = uv0 * (1 - u - v) + uv1 * u + uv2 * v;
+    }
+    return true;
 }
 
 

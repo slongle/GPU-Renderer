@@ -9,7 +9,14 @@ public:
     __host__ __device__
     Interaction() {}
 
+// Global
     int m_primitiveID;
+// Surface
+    Vector3f m_d;
+    Point3f m_p;
+    Normal3f m_shadingN, m_geometryN;
+    Point2f m_uv;
+// Medium
 };
 
 #endif // !__INTERACTION_H

@@ -6,8 +6,8 @@
 
 class Spectrum {
 public:
-    __device__ __host__
-    Spectrum(Float r = 0, Float g = 0, Float b = 0) :r(r), g(g), b(b) {}
+    __device__ __host__ Spectrum(Float r = 0, Float g = 0, Float b = 0) :r(r), g(g), b(b) {}
+    __device__ __host__ Spectrum(const Normal3f& n) : r(std::fabs(n.x)), g(std::fabs(n.y)), b(std::fabs(n.z)) {}
 
     Float operator[] (int idx) const;
     Spectrum& operator += (const Spectrum& s);

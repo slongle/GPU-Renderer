@@ -94,6 +94,7 @@ set(sources
     src/renderer/core/api.h
     src/renderer/core/camera.cpp
     src/renderer/core/camera.h
+	src/renderer/core/cpurender.h
     src/renderer/core/film.cpp
     src/renderer/core/film.h
     src/renderer/core/fwd.h

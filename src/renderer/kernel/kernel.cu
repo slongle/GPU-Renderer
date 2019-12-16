@@ -156,39 +156,6 @@ int intersectBox(Ray r, float3 boxmin, float3 boxmax, float* tnear, float* tfar)
     return smallest_tmax > largest_tmin;
 }*/
 
-// transform vector by matrix (no translation)
-__device__
-float3 mul(const float3x4& M, const float3& v)
-{
-    float3 r;
-    r.x = dot(v, make_float3(M.m[0]));
-    r.y = dot(v, make_float3(M.m[1]));
-    r.z = dot(v, make_float3(M.m[2]));
-    return r;
-}
-
-// transform vector by matrix with translation
-__device__
-float4 mul(const float3x4& M, const float4& v)
-{
-    float4 r;
-    r.x = dot(v, M.m[0]);
-    r.y = dot(v, M.m[1]);
-    r.z = dot(v, M.m[2]);
-    r.w = 1.0f;
-    return r;
-}
-
-__device__ uint rgbaFloatToInt(float4 rgba)
-{
-    rgba.x = __saturatef(rgba.x);   // clamp to [0.0, 1.0]
-    rgba.y = __saturatef(rgba.y);
-    rgba.z = __saturatef(rgba.z);
-    rgba.w = __saturatef(rgba.w);
-    return (uint(rgba.w * 255) << 24) | (uint(rgba.z * 255) << 16) | (uint(rgba.y * 255) << 8) | uint(rgba.x * 255);
-}
-
-
 __global__ void
 d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* renderer)
 {
@@ -224,16 +191,7 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
 
     uint seed = RandomInit(index, frame);
 
-    
-    // calculate eye ray in world space
-    Float a = NextRandom(seed);
-    Float b = NextRandom(seed);
-    Point2f p;
-    p.x = x + a;
-    p.y = y + b;
-
-    //Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
-    Ray ray = camera->GenerateRay(p);
+    Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
 
     // find intersection with scene
     Interaction interaction;
@@ -242,12 +200,11 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
     Spectrum L;
     if (hit) {
         //printf("Hit\n");
-        L += scene->Shading(interaction);
+        //L += scene->Shading(interaction);
+        L = Spectrum(interaction.m_geometryN);
         //printf("%f %f %f\n", L.r, L.g, L.b);
     }
 
-
-    //d_output[(imageH - y - 1) * imageW + x] = rgbaFloatToInt(make_float4(L.r, L.g, L.b, 1));
 
     // write output color
     SpectrumToUnsignedChar(L, (unsigned char*)&d_output[(imageH - y - 1) * imageW + x], 4);
