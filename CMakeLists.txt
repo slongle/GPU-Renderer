@@ -73,6 +73,8 @@ set(sources
     src/ext/pugixml/pugiconfig.hpp
     src/ext/pugixml/pugixml.hpp
     src/ext/pugixml/pugixml.cpp
+	src/ext/stb_image/stb_image.h
+	src/ext/stb_image/stb_image_write.h
     src/ext/tinyformat/tinyformat.h
     src/ext/tinyobjloader/tiny_obj_loader.h
     src/ext/tinyobjloader/tiny_obj_loader.cc    

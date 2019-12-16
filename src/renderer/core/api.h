@@ -8,6 +8,7 @@
 
 void apiAttributeBegin();
 void apiAttributeEnd();
+void apiWorldBegin();
 std::shared_ptr<Renderer> apiWorldEnd();
 
 void apiTransform(const Float m[16]);

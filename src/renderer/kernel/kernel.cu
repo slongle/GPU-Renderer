@@ -241,13 +241,16 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
 
     Spectrum L;
     if (hit) {
+        //printf("Hit\n");
         L += scene->Shading(interaction);
+        //printf("%f %f %f\n", L.r, L.g, L.b);
     }
 
-    d_output[y * imageW + x] = rgbaFloatToInt(make_float4(L.r, L.g, L.b, 1));
+
+    //d_output[(imageH - y - 1) * imageW + x] = rgbaFloatToInt(make_float4(L.r, L.g, L.b, 1));
 
     // write output color
-    //SpectrumToUnsignedChar(L, (unsigned char*)&d_output[y * imageW + x]);
+    SpectrumToUnsignedChar(L, (unsigned char*)&d_output[(imageH - y - 1) * imageW + x], 4);
 
 }
 
@@ -261,9 +264,9 @@ extern "C"
 void render_kernel(dim3 gridSize, dim3 blockSize, uint * d_output, uint imageW, uint imageH)
 {
     d_render << <gridSize, blockSize >> > (d_output, imageW, imageH, 0, dev_renderer);
-    cudaDeviceSynchronize();
+    //cudaDeviceSynchronize();
     //frame++;
-    exit(0);
+    //exit(0);
 }
 
 extern "C"

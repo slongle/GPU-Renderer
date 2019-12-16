@@ -1,6 +1,9 @@
 Integrator "path" " integer maxdepth" [65] 
-Transform [ 1 -0 -0 
--0 -0 1 -0 -0 -0 -0 -1 -0 -0 -1 6.8 1]
+Transform [ 
+1 -0 -0 -0
+-0 1 -0 -0 
+-0 -0 -1 -0 
+-0 -1 6.8 1]
 Sampler "sobol" "integer pixelsamples" [1 ] 
 PixelFilter "triangle" "float xwidth" [ 1.000000 ] "float ywidth" [ 1.000000 ] 
 Film "image" "integer xresolution" [ 1024 ] "integer yresolution" [ 1024 ] "string filename" [ "cornell-box.png" ] 

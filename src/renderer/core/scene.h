@@ -14,6 +14,9 @@ class Scene {
 public:
     Scene() {}
 
+    bool Intersect(const Ray& ray, Interaction* interaction) const;
+
+    Spectrum Shading(const Interaction& interaction) const;
 
     int AddTriangleMesh(TriangleMesh triangleMesh);
     std::pair<int, int> AddTriangles(std::vector<std::shared_ptr<Triangle>> triangles);
@@ -27,6 +30,31 @@ public:
     std::vector<Light> m_lights;
     std::vector<Primitive> m_primitives;
 };
+
+inline 
+bool Scene::Intersect(const Ray& ray, Interaction* interaction) const
+{
+    Float tHit;
+    bool ret_hit = false;
+    for (int i = 0; i < m_primitives.size(); i++) {
+        int triangleID = m_primitives[i].m_shapeID;
+        bool hit = m_triangles[triangleID].Intersect(ray, &tHit, interaction);
+        if (hit) {
+            ret_hit = true;
+            ray.tMax = tHit;
+            interaction->m_primitiveID = i;
+        }
+    }
+    return ret_hit;
+}
+
+inline 
+Spectrum Scene::Shading(const Interaction& interaction) const
+{
+    const int& primID = interaction.m_primitiveID;
+    const int& mtlID = m_primitives[primID].m_materialID;
+    return m_materials[mtlID].m_Kd;
+}
 
 inline
 int Scene::AddTriangleMesh(TriangleMesh triangleMesh)

@@ -380,7 +380,7 @@ Parse(std::unique_ptr<Tokenizer> tokenizer) {
             break;
         case 'W':
             if (token == "WorldBegin") {
-
+                apiWorldBegin();
             }
             else if (token == "WorldEnd") {
                 renderer = apiWorldEnd();

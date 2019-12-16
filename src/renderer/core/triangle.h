@@ -114,17 +114,17 @@ bool Triangle::Intersect(const Ray& ray, Float* tHit, Interaction* interaction) 
     }
     Float invDet = 1 / det;
     Vector3f T = ray.o - p0;
-    Vector3f Q = Cross(T, E1);
     Float u = Dot(P, T) * invDet;
-    if (u < 0 || u>1) {
+    if (u < 0 || u > 1) {
         return false;
     }
+    Vector3f Q = Cross(T, E1);
     Float v = Dot(Q, D) * invDet;
     if (v < 0 || u + v > 1) {
         return false;
     }
     Float t = Dot(Q, E2) * invDet;
-    if (t < ray.tMax) {
+    if (t > ray.tMax) {
         return false;
     }
     *tHit = t;

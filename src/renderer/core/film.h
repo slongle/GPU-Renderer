@@ -5,14 +5,19 @@
 #include "renderer/core/fwd.h"
 #include "renderer/core/transform.h"
 #include "renderer/core/parameterset.h"
+#include "renderer/core/spectrum.h"
 
 class Film {
 public:
     Film() {}
     Film(Point2i resolution, std::string filename);
 
+    void SetVal(int x, int y, Spectrum v);
+    void Output() const;
+
     std::string m_filename; 
     Point2i m_resolution;
+    int m_channels;
     unsigned char* m_bitmap = nullptr;
 };
 
@@ -25,9 +30,15 @@ inline
 Film::Film(
     Point2i resolution,
     std::string filename)
-    : m_resolution(resolution), m_filename(filename)
+    : m_resolution(resolution), m_filename(filename), m_channels(4)
 {
-    //m_bitmap = new unsigned char[m_resolution.x * m_resolution.y];
+    m_bitmap = new unsigned char[m_resolution.x * m_resolution.y * 4];
+}
+
+inline void Film::SetVal(int x, int y, Spectrum v)
+{
+    int index = y * m_resolution.x + x;
+    SpectrumToUnsignedChar(v, &m_bitmap[index * m_channels], m_channels);
 }
 
 inline

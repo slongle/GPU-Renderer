@@ -81,14 +81,20 @@ static std::unique_ptr<Options> options(new Options);
 
 void apiAttributeBegin()
 {
-    options->m_currentTransform.Identity();
     options->m_transformStack.push_back(options->m_currentTransform);
+    options->m_currentTransform.Identity();
 }
 
 void apiAttributeEnd()
 {
     options->m_currentTransform = options->m_transformStack.back();
     options->m_transformStack.pop_back();
+}
+
+void apiWorldBegin() 
+{
+    options->m_transformStack.push_back(options->m_currentTransform);
+    options->m_currentTransform.Identity();
 }
 
 std::shared_ptr<Renderer> 
@@ -110,7 +116,10 @@ apiWorldEnd()
 
 void apiTransform(const Float m[16])
 {
-    Transform t(m);
+    //Transform t(m);
+    Transform t(Matrix4x4(
+        m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2],
+        m[6], m[10], m[14], m[3], m[7], m[11], m[15]));
     options->m_currentTransform *= t;
 }
 
@@ -239,8 +248,8 @@ int Options::MakeLight(
 
 void Options::MakeCamera()
 {
-    Transform objToWorld = m_cameraTransform;
-    Transform worldToObj = Inverse(objToWorld);
+    Transform worldToObj = m_cameraTransform; 
+    Transform objToWorld = Inverse(worldToObj);
     m_camera = *CreateCamera(m_cameraParameterSet, m_film, objToWorld, worldToObj);
 }
 

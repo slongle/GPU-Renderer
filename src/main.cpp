@@ -9,6 +9,7 @@ using std::endl;
 
 #include "utility/helper_logger.h"
 #include "renderer/core/sampling.h"
+#include "renderer/core/cpurender.h"
 
 class F {
 public:
@@ -41,12 +42,9 @@ int main() {
     sceneLoader = new  PBRTLoader(filepath);
     std::shared_ptr<Renderer> renderer = sceneLoader->Load();
 
-    unsigned int seed = RandomInit(0, 0);
-    for (int i = 0; i < 10; i++) {
-        Float u = NextRandom(seed);
-        cout << u << endl;
-    }
 
+
+    //render(renderer);
     //return 0;
 
     Gui::init(renderer);
