@@ -7,9 +7,12 @@
 #define ASSERT(CONDITION, DESCRIPTION) \
     do { \
         if (!(CONDITION)) { \
-            std::cerr<<"\nAssertion : " << (DESCRIPTION) << "\nFile : "<<__FILE__<<"\nFunction : " \
-                     <<__FUNCTION__<<"\nLine : "<<__LINE__ << std::endl, exit(-1); \
+            exit(-1); \
         } \
     } while (0)            
 
+/*
+printf("\nAssertion : %s\nFile : \nFunction : \nLine : \n",\
+                   (DESCRIPTION),__FILE__,__FUNCTION__,__LINE__);\
+*/
 #endif // !__HELPER_LOGGER_H

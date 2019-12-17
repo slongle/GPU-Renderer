@@ -1,14 +1,19 @@
 #include "material.h"
 
-Material::Material(Spectrum Kd) :m_Kd(Kd)
+Material::Material(
+    MaterialType type, 
+    Spectrum Kd) 
+    : m_type(type), m_Kd(Kd)
 {
 }
 
-std::shared_ptr<Material> 
-CreateMatteMaterial(const ParameterSet& param)
+std::shared_ptr<Material>
+CreateMatteMaterial(
+    const ParameterSet& param)
 {
     std::vector<Float> rgbs = param.GetSpectrum("Kd");
-    Spectrum Kd(rgbs[0], rgbs[1], rgbs[2]);
-    return std::make_shared<Material>(Kd);
+    Spectrum Kd(rgbs);
+    return std::make_shared<Material>(Material::DIFFUSE_MATERIAL, Kd);
 }
+
 

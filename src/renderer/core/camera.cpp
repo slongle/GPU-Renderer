@@ -18,20 +18,11 @@ Camera::Camera(
     m_rasterToCamera = Inverse(screenToRaster * cameraToScreen);
 }
 
-Ray Camera::GenerateRay(
-    const Point2f& p) const
-{
-    Point3f pCamera = m_rasterToCamera(Point3f(p.x, p.y, 0));
-    Ray r(Point3f(), Normalize(Vector3f(pCamera)));
-    Ray ray = m_cameraToWorld(r);
-    return ray;
-}
-
 std::shared_ptr<Camera>
 CreateCamera(
     const ParameterSet& param,
     const Film& film,
-    const Transform objToWorld, 
+    const Transform objToWorld,
     const Transform worldToObj)
 {
     Float fov = param.GetFloat("fov");
@@ -39,4 +30,3 @@ CreateCamera(
     //Float aspect = static_cast<Float>(resolution.x) / resolution.y;
     return std::make_shared<Camera>(fov, film, objToWorld, worldToObj);
 }
-

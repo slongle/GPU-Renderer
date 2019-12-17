@@ -7,7 +7,7 @@ int Scene::AddTriangleMesh(TriangleMesh triangleMesh)
     return ID;
 }
 
-std::pair<int, int> 
+std::pair<int, int>
 Scene::AddTriangles(std::vector<std::shared_ptr<Triangle>> triangles)
 {
     int meshID = AddTriangleMesh(*triangles[0]->m_triangleMeshPtr);
@@ -25,6 +25,7 @@ int Scene::AddMaterial(std::shared_ptr<Material> material)
     m_materials.push_back(*material);
     return ID;
 }
+
 
 int Scene::AddLight(std::shared_ptr<Light> light)
 {

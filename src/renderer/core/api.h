@@ -8,6 +8,7 @@
 
 void apiAttributeBegin();
 void apiAttributeEnd();
+void apiWorldBegin();
 std::shared_ptr<Renderer> apiWorldEnd();
 
 void apiTransform(const Float m[16]);
@@ -21,5 +22,16 @@ void apiNamedMaterial(const std::string& name, ParameterSet params);
 void apiMakeNamedMaterial(const std::string& name, ParameterSet params);
 void apiShape(const std::string& type, ParameterSet params);
 void apiAreaLightSource(const std::string& type, ParameterSet params);
+
+
+
+
+
+
+
+
+
+
+
 
 #endif // !__API_H

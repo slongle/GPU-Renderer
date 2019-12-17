@@ -63,6 +63,9 @@ namespace Gui {
 
 void Gui::init(std::shared_ptr<Renderer> renderer)
 {
+    width = renderer->m_camera.m_film.m_resolution.x;
+    height = renderer->m_camera.m_film.m_resolution.y;
+
     cudaInit(renderer);
 #if defined(__linux__)
     setenv("DISPLAY", ":0", 0);
