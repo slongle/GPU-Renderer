@@ -40,12 +40,10 @@ int main() {
     getFileResolver()->prepend(path.parent_path());
     SceneLoader* sceneLoader = nullptr; 
     sceneLoader = new  PBRTLoader(filepath);
-    std::shared_ptr<Renderer> renderer = sceneLoader->Load();
+    std::shared_ptr<Renderer> renderer = sceneLoader->Load();  
 
-
-
-    //render(renderer);
-    //return 0;
+    render(renderer);
+    return 0;
 
     Gui::init(renderer);
     Gui::mainLoop();

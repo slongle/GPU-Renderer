@@ -23,6 +23,24 @@ void Film::Output() const
     stbi_write_png(m_filename.c_str(), m_resolution.x, m_resolution.y, m_channels, m_bitmap, 0);
 }
 
+void Film::DrawLine(
+    const Point2f& s, 
+    const Point2f& t,
+    const Spectrum& col)
+{
+    int x0 = s.x, y0 = s.y;
+    int x1 = t.x, y1 = t.y;
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int err = (dx > dy ? dx : -dy) / 2;
+
+    while (SetVal(x0, y0, col), x0 != x1 || y0 != y1) {
+        int e2 = err;
+        if (e2 > -dx) { err -= dy; x0 += sx; }
+        if (e2 < dy) { err += dx; y0 += sy; }
+    }
+}
+
 std::shared_ptr<Film>
 CreateFilm(
     const ParameterSet& param)

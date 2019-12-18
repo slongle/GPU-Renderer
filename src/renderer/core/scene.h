@@ -14,7 +14,8 @@ class Scene {
 public:
     Scene() {}
 
-    bool Intersect(const Ray& ray, Interaction* interaction) const;
+    bool Intersect(const Ray& ray) const;
+    bool IntersectP(const Ray& ray, Interaction* interaction) const;
     Spectrum Shading(const Interaction& interaction) const;
 
     int AddTriangleMesh(TriangleMesh triangleMesh);
@@ -31,7 +32,20 @@ public:
 };
 
 inline 
-bool Scene::Intersect(const Ray& ray, Interaction* interaction) const
+bool Scene::Intersect(const Ray& ray) const
+{
+    for (int i = 0; i < m_primitives.size(); i++) {
+        int triangleID = m_primitives[i].m_shapeID;
+        bool hit = m_triangles[triangleID].Intersect(ray);
+        if (hit) {
+            return true;
+        }
+    }
+    return false;
+}
+
+inline
+bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
 {
     Float tHit;
     bool ret_hit = false;

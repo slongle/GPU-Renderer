@@ -6,6 +6,7 @@
 #include "renderer/core/transform.h"
 #include "renderer/core/parameterset.h"
 #include "renderer/core/interaction.h"
+#include "renderer/core/sampling.h"
 
 class TriangleMesh{
 public:
@@ -48,6 +49,12 @@ public:
         Float* tHit,
         Interaction* interaction) const;
 
+    Interaction Sample(
+        Float* pdf, 
+        unsigned int& seed) const;
+
+    Float Area() const;
+
     TriangleMesh* m_triangleMeshPtr;
     int m_index;
     int m_triangleMeshID;
@@ -58,42 +65,6 @@ CreateTriangleMeshShape(
     const ParameterSet& params,
     Transform objToWorld,
     Transform worldToObj);
-
-inline
-TriangleMesh::TriangleMesh(
-    Transform objToWorld,
-    std::vector<int>& indices,
-    std::vector<Point3f>& p,
-    std::vector<Normal3f>& n,
-    std::vector<float>& uv)
-    : m_triangleNum(indices.size() / 3), m_vertexNum(p.size())
-{
-    m_indices = new int[m_triangleNum * 3];
-    for (int i = 0; i < m_triangleNum * 3; i++) {
-        m_indices[i] = indices[i];
-    }
-    m_P = new Point3f[m_vertexNum];
-    for (int i = 0; i < m_vertexNum; i++) {
-        m_P[i] = objToWorld(p[i]);
-    }
-    if (n.size() != 0) {
-        m_N = new Normal3f[m_vertexNum];
-        for (int i = 0; i < m_vertexNum; i++) {
-            m_N[i] = objToWorld(n[i]);
-        }
-    }
-    if (uv.size() != 0) {
-        m_UV = new Point2f[m_vertexNum];
-        for (int i = 0; i < m_vertexNum; i += 2) {
-            m_UV[i] = Point2f(uv[i], uv[i + 1]);
-        }
-    }
-}
-
-inline
-Triangle::Triangle(
-    TriangleMesh* triangleMeshPtr, int index)
-    : m_triangleMeshPtr(triangleMeshPtr), m_index(index), m_triangleMeshID(-1) {}
 
 /*
  * Moller-Trumbore algorithm
@@ -111,7 +82,7 @@ bool Triangle::Intersect(const Ray& ray) const
     Vector3f E2 = p2 - p0;
     Vector3f P = Cross(D, E2);
     Float det = Dot(P, E1);
-    if (std::fabs(det) < EPSILON) {
+    if (std::fabs(det) < Epsilon) {
         return false;
     }
     Float invDet = 1 / det;
@@ -126,7 +97,7 @@ bool Triangle::Intersect(const Ray& ray) const
         return false;
     }
     Float t = Dot(Q, E2) * invDet;
-    if (t > ray.tMax) {
+    if (t<0 || t > ray.tMax) {
         return false;
     }
     return true;
@@ -148,7 +119,7 @@ bool Triangle::IntersectP(const Ray& ray, Float* tHit, Interaction* interaction)
     Vector3f E2 = p2 - p0;
     Vector3f P = Cross(D, E2);
     Float det = Dot(P, E1);
-    if (std::fabs(det) < EPSILON) {
+    if (std::fabs(det) < Epsilon) {
         return false;
     }
     Float invDet = 1 / det;
@@ -163,11 +134,11 @@ bool Triangle::IntersectP(const Ray& ray, Float* tHit, Interaction* interaction)
         return false;
     }
     Float t = Dot(Q, E2) * invDet;
-    if (t > ray.tMax) {
+    if (t<0 || t > ray.tMax) {
         return false;
     }
     *tHit = t;
-    interaction->m_wo = ray.d;
+    interaction->m_wo = -ray.d;
     interaction->m_p = ray(t);
     interaction->m_geometryN = Normal3f(Normalize(Cross(E1, E2)));
     if (!m_triangleMeshPtr->m_N) {
@@ -177,8 +148,11 @@ bool Triangle::IntersectP(const Ray& ray, Float* tHit, Interaction* interaction)
         const Normal3f& n0 = m_triangleMeshPtr->m_N[indices[0]];
         const Normal3f& n1 = m_triangleMeshPtr->m_N[indices[1]];
         const Normal3f& n2 = m_triangleMeshPtr->m_N[indices[2]];
-        interaction->m_shadingN = n0 * (1 - u - v) + n1 * u + n2 * v;
+        interaction->m_shadingN = Normalize(n0 * (1 - u - v) + n1 * u + n2 * v);
     }
+
+    //interaction->m_geometryN.z *= -1;
+    //interaction->m_shadingN.z *= -1;
 
     if (m_triangleMeshPtr->m_UV) {
         const Point2f& uv0 = m_triangleMeshPtr->m_UV[indices[0]];
@@ -187,6 +161,42 @@ bool Triangle::IntersectP(const Ray& ray, Float* tHit, Interaction* interaction)
         interaction->m_uv = uv0 * (1 - u - v) + uv1 * u + uv2 * v;
     }
     return true;
+}
+
+inline __device__ __host__
+Interaction Triangle::Sample(Float* pdf, unsigned int& seed) const
+{
+    Point2f u = UniformSampleTriangle(seed);
+    int* indices = &m_triangleMeshPtr->m_indices[m_index * 3];
+    const Point3f& p0 = m_triangleMeshPtr->m_P[indices[0]];
+    const Point3f& p1 = m_triangleMeshPtr->m_P[indices[1]];
+    const Point3f& p2 = m_triangleMeshPtr->m_P[indices[2]];
+    Interaction inter;
+    inter.m_p = p0 * (1 - u.x - u.y) + p1 * u.x + p2 * u.y;
+    inter.m_geometryN = Normal3f(Normalize(Cross(p1 - p0, p2 - p0)));
+    if (!m_triangleMeshPtr->m_N) {
+        inter.m_shadingN = inter.m_geometryN;
+    }
+    else {
+        const Normal3f& n0 = m_triangleMeshPtr->m_N[indices[0]];
+        const Normal3f& n1 = m_triangleMeshPtr->m_N[indices[1]];
+        const Normal3f& n2 = m_triangleMeshPtr->m_N[indices[2]];
+        inter.m_shadingN = Normalize(n0 * (1 - u.x - u.y) + n1 * u.x + n2 * u.y);
+    }
+    //inter.m_geometryN.z *= -1;
+    //inter.m_shadingN.z *= -1;
+    *pdf = 1 / Area();
+    return inter;
+}
+
+inline __device__ __host__
+Float Triangle::Area() const
+{
+    int* indices = &m_triangleMeshPtr->m_indices[m_index * 3];
+    const Point3f& p0 = m_triangleMeshPtr->m_P[indices[0]];
+    const Point3f& p1 = m_triangleMeshPtr->m_P[indices[1]];
+    const Point3f& p2 = m_triangleMeshPtr->m_P[indices[2]];
+    return 0.5 * Cross(p1 - p0, p2 - p0).Length();
 }
 
 

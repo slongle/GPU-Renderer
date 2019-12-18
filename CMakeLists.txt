@@ -92,6 +92,7 @@ set(sources
     src/utility/timer.h    
     src/renderer/core/api.cpp
     src/renderer/core/api.h
+	src/renderer/core/bsdf.h
     src/renderer/core/camera.cpp
     src/renderer/core/camera.h
 	src/renderer/core/cpurender.h

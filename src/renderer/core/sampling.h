@@ -21,7 +21,7 @@ unsigned int InitRandom(
     return v0;
 }
 
-__device__ __host__ inline
+inline __device__ __host__
 Float NextRandom(
     unsigned int& seed)
 {
@@ -29,11 +29,42 @@ Float NextRandom(
     return float(seed & 0x00FFFFFF) / float(0x01000000);
 }
 
-__device__ __host__ inline
-Vector3f SampleCosineHemisphere(unsigned int& seed) 
+inline __device__ __host__
+Vector3f UniformSampleHemisphere(unsigned int& seed)
 {
-    return Vector3f();
+    Float u = NextRandom(seed), v = NextRandom(seed);    
+    Float a = sqrt(max((Float)0, 1 - u * u));
+    Float b = Pi * 2 * v;
+    return Vector3f(a * cos(b), a * sin(b), u);
 }
 
+inline __device__ __host__
+Float UniformSampleHemispherePdf()
+{
+    return Inv2Pi;
+}
+
+inline __device__ __host__
+Vector3f CosineSampleHemisphere(unsigned int& seed)
+{
+    Float u = NextRandom(seed), v = NextRandom(seed);
+    Float a = sqrt(u);
+    Float b = Pi * 2 * v;
+    Float z = sqrt(max(Float(0), 1 - u));
+    return Vector3f(a * cos(b), a * sin(b), z);
+}
+
+inline __device__ __host__
+Float CosineSampleHemispherePdf(Float cosTheta)
+{
+    return InvPi * cosTheta;
+}
+
+inline __device__ __host__
+Point2f UniformSampleTriangle(unsigned int& seed) {
+    Float u = NextRandom(seed), v = NextRandom(seed);
+    Float a = sqrt(u);
+    return Point2f(1 - a, v * a);
+}
 
 #endif // __SAMPLING_H
