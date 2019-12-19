@@ -76,17 +76,13 @@ inline void render(std::shared_ptr<Renderer> renderer)
     Camera* camera = &renderer->m_camera;
     Scene* scene = &renderer->m_scene;    
 
-    int num = 0;
-    int sum = 0;
-    int mx = 0;
+    int num = 2;
     for (int x = 0; x < camera->m_film.m_resolution.x; x++) {
         for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
             int index = y * camera->m_film.m_resolution.x + x;
             unsigned int seed = InitRandom(index, 0);
-            int num = 1;
-            Spectrum L(0); 
-            int len = 0;
             for (int k = 0; k < num; k++) {                
+                Spectrum L(0);
                 Spectrum throughput(1);
                 Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
                 for (int i = 0; i < integrator->m_maxDepth; i++) {
@@ -140,8 +136,8 @@ inline void render(std::shared_ptr<Renderer> renderer)
                     ray.d = interaction.m_wi;
                     ray.tMax = Infinity;
                 }                
+                camera->m_film.AddSample(x, y, L);
             }
-            camera->m_film.SetVal(x, y, L / num);
         }
     }
     DrawTransportLine(Point2i(234, 234), *renderer);
@@ -202,22 +198,13 @@ void DrawTransportLine(Point2i p, Renderer& renderer) {
         // calculate BSDF
         throughput *= SampleMaterial(*scene, interaction, seed);
 
-
-        // indirect light
-        /*if (i > 5) {
-            Float q = min(Float(0.95), throughput.Max());
-            if (NextRandom(seed) >= q) {
-                break;
-            }
-            throughput /= q;
-        }*/
         if (throughput.Max() < 1 && i > 3) {
             Float q = max((Float).05, 1 - throughput.Max());
             if (NextRandom(seed) < q) break;
             throughput /= 1 - q;
         }
 
-        ray.o = interaction.m_p + interaction.m_shadingN * Epsilon;
+        ray.o = interaction.m_p + interaction.m_wi * Epsilon;
         ray.d = interaction.m_wi;
         ray.tMax = Infinity;
     }

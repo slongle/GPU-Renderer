@@ -364,5 +364,18 @@ T AbsDot(const Vector3<T>& v, const Normal3<T>& n) {
     return abs(n.x * v.x + n.y * v.y + n.z * v.z);
 }
 
+template<typename T>
+inline __host__ __device__
+Normal3<T> Faceforward(const Normal3<T>& n, const Vector3<T>& v) {
+    if (Dot(v, n) < 0.f) {
+        return -n;
+    }
+    else {
+        return n;
+    }
+}
+
+
+
 
 #endif // !__VECTOR_H

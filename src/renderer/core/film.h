@@ -13,14 +13,19 @@ public:
     Film(Point2i resolution, std::string filename);
 
     __host__ __device__ void SetVal(int x, int y, Spectrum v);
+    __host__ __device__ void AddSample(int x, int y, Spectrum v);
+    __host__ __device__ Spectrum GetPixelSpectrum(int x, int y)const;
+    __host__ __device__ Spectrum GetPixelSpectrum(int index)const;
     void DrawLine(const Point2f& s, const Point2f& t, const Spectrum& col);
-    void Output() const;
+    void ExportToUnsignedChar();
+    void Output();
 
     std::string m_filename; 
     Point2i m_resolution;
     int m_channels;
-    unsigned char* m_bitmap = nullptr;
-    //Float* m_bitmap = nullptr;
+    Float* m_bitmap = nullptr;
+    unsigned char* m_bitmapOutput = nullptr;
+    unsigned int* m_sampleNum = nullptr;
 };
 
 std::shared_ptr<Film>
@@ -31,11 +36,34 @@ inline __host__ __device__
 void Film::SetVal(int x, int y, Spectrum v)
 {
     int index = y * m_resolution.x + x;    
-    SpectrumToUnsignedChar(v, &m_bitmap[index * m_channels], m_channels);
+    for (int i = 0; i < 3; i++) {
+        m_bitmap[index * 3 + i] = v[i];
+    }    
 }
 
+inline __host__ __device__ 
+void Film::AddSample(int x, int y, Spectrum v)
+{
+    int index = y * m_resolution.x + x;
+    for (int i = 0; i < 3; i++) {
+        m_bitmap[index * 3 + i] += v[i];
+    }
+    m_sampleNum[index]++;
+}
 
+inline __host__ __device__
+Spectrum Film::GetPixelSpectrum(int index) const
+{
+    Spectrum v(m_bitmap[index * 3], m_bitmap[index * 3 + 1], m_bitmap[index * 3 + 2]);
+    v /= m_sampleNum[index];
+    return v;
+}
 
-
+inline __host__ __device__ 
+Spectrum Film::GetPixelSpectrum(int x, int y) const
+{
+    int index = y * m_resolution.x + x;
+    return GetPixelSpectrum(index);   
+}
 
 #endif // !__FILM_H

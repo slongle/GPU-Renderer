@@ -13,15 +13,19 @@
 Film::Film(
     Point2i resolution,
     std::string filename)
-    : m_resolution(resolution), m_filename(filename), m_channels(4)
+    : m_resolution(resolution), m_filename(filename), m_channels(3)
 {
-    m_bitmap = new unsigned char[m_resolution.x * m_resolution.y * 4];
-    //m_bitmap = new  Float[m_resolution.x * m_resolution.y * 3];
+    //m_bitmapOutput = new unsigned char[m_resolution.x * m_resolution.y * m_channels];
+    m_bitmap = new  Float[m_resolution.x * m_resolution.y * 3];
+    m_sampleNum = new unsigned int[m_resolution.x * m_resolution.y];
+    memset(m_bitmap, 0, sizeof(Float) * m_resolution.x * m_resolution.y * 3);
+    memset(m_sampleNum, 0, sizeof(unsigned int) * m_resolution.x * m_resolution.y);    
 }
 
-void Film::Output() const
+void Film::Output()
 {
-    stbi_write_png(m_filename.c_str(), m_resolution.x, m_resolution.y, m_channels, m_bitmap, 0);
+    ExportToUnsignedChar();
+    stbi_write_png(m_filename.c_str(), m_resolution.x, m_resolution.y, m_channels, m_bitmapOutput, 0);
 }
 
 void Film::DrawLine(
@@ -39,6 +43,21 @@ void Film::DrawLine(
         int e2 = err;
         if (e2 > -dx) { err -= dy; x0 += sx; }
         if (e2 < dy) { err += dx; y0 += sy; }
+    }
+}
+
+void Film::ExportToUnsignedChar() 
+{
+    m_bitmapOutput = new unsigned char[m_resolution.x * m_resolution.y * m_channels];
+    for (int x = 0; x < m_resolution.x; x++) {
+        for (int y = 0; y < m_resolution.y; y++) {
+            int index = y * m_resolution.x + x;
+            Spectrum v(m_bitmap[index * 3], m_bitmap[index * 3 + 1], m_bitmap[index * 3 + 2]);
+            if (m_sampleNum[index] != 0) {
+                v /= m_sampleNum[index];
+            }
+            SpectrumToUnsignedChar(v, &m_bitmapOutput[index * m_channels], m_channels);
+        }
     }
 }
 
