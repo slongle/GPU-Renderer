@@ -13,6 +13,7 @@ public:
     Film(Point2i resolution, std::string filename);
 
     __host__ __device__ void SetVal(int x, int y, Spectrum v);
+    void DrawLine(const Point2f& s, const Point2f& t, const Spectrum& col);
     void Output() const;
 
     std::string m_filename; 

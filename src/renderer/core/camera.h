@@ -21,7 +21,7 @@ public:
 
     Float m_fov;
     Transform m_cameraToWorld, m_worldToCamera;
-    Transform m_rasterToCamera;
+    Transform m_rasterToCamera, m_cameraToRaster;
 
     Film m_film;
 };

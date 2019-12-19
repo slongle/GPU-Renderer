@@ -15,7 +15,8 @@ Camera::Camera(
         Scale(resolution.x, resolution.y, 1) *
         Scale(1 / (2 * frame.x), -1 / (2 * frame.y), 1) *
         Translate(frame.x, -frame.y, 0);
-    m_rasterToCamera = Inverse(screenToRaster * cameraToScreen);
+    m_cameraToRaster = screenToRaster * cameraToScreen;
+    m_rasterToCamera = Inverse(m_cameraToRaster);
 }
 
 std::shared_ptr<Camera>

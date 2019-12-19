@@ -14,13 +14,17 @@ inline filesystem::resolver* getFileResolver() {
     return resolver;
 }
 
-
-#define INFINITY   ((float)(_HUGE_ENUF * _HUGE_ENUF))
-#define EPSILON 1e-2f
-#define PI      3.14159265358979323846f
-#define INV_PI  0.3183098861837907f
-
 typedef float Float;
+
+#define Infinity ((float)(_HUGE_ENUF * _HUGE_ENUF))
+#define Epsilon  1e-5f
+#define Pi       3.14159265358979323846
+#define InvPi    0.31830988618379067154
+#define Inv2Pi   0.15915494309189533577
+#define Inv4Pi   0.07957747154594766788
+#define PiOver2  1.57079632679489661923
+#define PiOver4  0.78539816339744830961
+#define Sqrt2    1.41421356237309504880
 
 template<typename T> class Vector2;
 template<typename T> class Vector3;
@@ -52,7 +56,7 @@ class Medium;
 
 inline __device__ __host__
 Float Radians(Float ang) {
-    return ang * PI / 180;
+    return ang * Pi / 180;
 }
 
 

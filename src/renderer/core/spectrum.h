@@ -15,6 +15,7 @@ public:
     __device__ __host__ Spectrum& operator += (const Spectrum& s);
     __device__ __host__ Spectrum operator * (const Spectrum& s) const;
     __device__ __host__ Spectrum& operator *= (const Spectrum& s);
+    __device__ __host__ Spectrum operator / (const Float v) const;
     __device__ __host__ Spectrum& operator /= (const Float v);
 
     __device__ __host__ Float Max() const;
@@ -76,6 +77,14 @@ Spectrum& Spectrum::operator*=(const Spectrum& s)
     g *= s.g;
     b *= s.b;
     return *this;
+}
+
+inline __device__ __host__ 
+Spectrum Spectrum::operator/(const Float v) const
+{
+    ASSERT(v != 0, "Divide zero");
+    Float invV = 1 / v;
+    return Spectrum(r * invV, g * invV, b * invV);
 }
 
 inline __device__ __host__ 
