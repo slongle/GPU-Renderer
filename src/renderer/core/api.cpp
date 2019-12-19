@@ -114,6 +114,18 @@ apiWorldEnd()
     return options->m_renderer;
 }
 
+void apiTransformBegin()
+{
+    options->m_transformStack.push_back(options->m_currentTransform);
+    options->m_currentTransform.Identity();
+}
+
+void apiTransformEnd()
+{
+    options->m_currentTransform = options->m_transformStack.back();
+    options->m_transformStack.pop_back();
+}
+
 void apiTransform(const Float m[16])
 {
     //Transform t(m);
@@ -175,6 +187,9 @@ void apiShape(const std::string& type, ParameterSet params)
         }
         options->m_scene.AddPrimitive(Primitive(shapeID, mtlID, areaLightID));
     }
+    if (options->m_hasAreaLight) {
+        options->m_hasAreaLight = false;
+    }
 }
 
 void apiAreaLightSource(const std::string& type, ParameterSet params)
@@ -226,6 +241,9 @@ std::pair<int, int> Options::MakeShape(
     std::vector<std::shared_ptr<Triangle>> triangles;
     if (type == "trianglemesh") {
          triangles = CreateTriangleMeshShape(params, objToWorld, worldToObj);
+    }
+    else if (type == "sphere") {
+        triangles = CreateSphereShape(params, objToWorld, worldToObj);
     }
     else {
         ASSERT(0, "Can't support shape " + type);

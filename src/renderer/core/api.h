@@ -11,6 +11,8 @@ void apiAttributeEnd();
 void apiWorldBegin();
 std::shared_ptr<Renderer> apiWorldEnd();
 
+void apiTransformBegin();
+void apiTransformEnd();
 void apiTransform(const Float m[16]);
 
 void apiIntegrator(const std::string& type, ParameterSet params);

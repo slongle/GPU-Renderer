@@ -8,6 +8,10 @@
 #include "renderer/core/interaction.h"
 #include "renderer/core/sampling.h"
 
+
+/**
+ * counter clock-wise is the normal direction
+ */
 class TriangleMesh{
 public:
     TriangleMesh() {}
@@ -53,7 +57,11 @@ public:
         Float* pdf, 
         unsigned int& seed) const;
 
+    Point3f Centroid() const;
+
     Float Area() const;
+
+
 
     TriangleMesh* m_triangleMeshPtr;
     int m_index;
@@ -62,6 +70,12 @@ public:
 
 std::vector<std::shared_ptr<Triangle>>
 CreateTriangleMeshShape(
+    const ParameterSet& params,
+    Transform objToWorld,
+    Transform worldToObj);
+
+std::vector<std::shared_ptr<Triangle>>
+CreateSphereShape(
     const ParameterSet& params,
     Transform objToWorld,
     Transform worldToObj);
@@ -151,9 +165,6 @@ bool Triangle::IntersectP(const Ray& ray, Float* tHit, Interaction* interaction)
         interaction->m_shadingN = Normalize(n0 * (1 - u - v) + n1 * u + n2 * v);
     }
 
-    //interaction->m_geometryN.z *= -1;
-    //interaction->m_shadingN.z *= -1;
-
     if (m_triangleMeshPtr->m_UV) {
         const Point2f& uv0 = m_triangleMeshPtr->m_UV[indices[0]];
         const Point2f& uv1 = m_triangleMeshPtr->m_UV[indices[1]];
@@ -182,13 +193,19 @@ Interaction Triangle::Sample(Float* pdf, unsigned int& seed) const
         const Normal3f& n1 = m_triangleMeshPtr->m_N[indices[1]];
         const Normal3f& n2 = m_triangleMeshPtr->m_N[indices[2]];
         inter.m_shadingN = Normalize(n0 * (1 - u.x - u.y) + n1 * u.x + n2 * u.y);
-    }
-    
-    //inter.m_geometryN.z *= -1;
-    //inter.m_shadingN.z *= -1;
-    
+    }    
     *pdf = 1 / Area();
     return inter;
+}
+
+inline __device__ __host__
+Point3f Triangle::Centroid() const
+{
+    int* indices = &m_triangleMeshPtr->m_indices[m_index * 3];
+    const Point3f& p0 = m_triangleMeshPtr->m_P[indices[0]];
+    const Point3f& p1 = m_triangleMeshPtr->m_P[indices[1]];
+    const Point3f& p2 = m_triangleMeshPtr->m_P[indices[2]];
+    return (p0 + p1 + p2) / 3;
 }
 
 inline __device__ __host__
