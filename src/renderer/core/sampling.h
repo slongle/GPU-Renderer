@@ -30,6 +30,29 @@ Float NextRandom(
 }
 
 inline __device__ __host__
+void CoordinateSystem(const Normal3f& n, Vector3f* s, Vector3f* t) {
+    if (abs(n.x) > abs(n.y)) {
+        Float invLen = Float(1) / sqrt(n.x * n.x + n.z * n.z);
+        *s = Vector3f(n.z * invLen, 0, -n.x * invLen);
+    }
+    else {
+        Float invLen = Float(1) / sqrt(n.y * n.y + n.z * n.z);
+        *s = Vector3f(0, n.z * invLen, -n.y * invLen);
+    }
+    *t = Cross(*s, n);
+}
+
+inline __device__ __host__
+Vector3f LocalToWorld(const Vector3f& v, const Normal3f& n, const Vector3f& s, const Vector3f t) {
+    return Normalize(s * v.x + t * v.y + n * v.z);
+}
+
+inline __device__ __host__
+Vector3f WorldToLocal(const Vector3f& v, const Normal3f& n, const Vector3f& s, const Vector3f t) {
+    return Normalize(Vector3f(Dot(v, s), Dot(v, t), Dot(v, n)));
+}
+
+inline __device__ __host__
 Vector3f UniformSampleHemisphere(unsigned int& seed)
 {
     Float u = NextRandom(seed), v = NextRandom(seed);    

@@ -48,9 +48,9 @@ Spectrum NextEventEstimate(const Scene& scene, const Interaction& inter, unsigne
             Le = light.m_L;
         }
         Float G = AbsDot(d, inter.m_shadingN) * AbsDot(-d, lightSample.m_shadingN) / (lightSample.m_p - inter.m_p).SqrLength();
-        est = Le * material.m_Kd * InvPi * G / (lightSamplePdf * lightChoosePdf);
+        est = Le * material.m_Kd * InvPi * G / lightSamplePdf;
     }
-    return est;
+    return est / lightChoosePdf;
 }
 
 Spectrum SampleMaterial(const Scene& scene, Interaction& inter, unsigned int& seed) {
@@ -59,17 +59,15 @@ Spectrum SampleMaterial(const Scene& scene, Interaction& inter, unsigned int& se
     Spectrum cosBsdf(1.);
 
     Vector3f wi = CosineSampleHemisphere(seed);
-    ASSERT(wi.z > 0, "!!!!");
     cosBsdf = material.m_Kd * InvPi * wi.z;
-    Float pdf = wi.z * InvPi;// CosineSampleHemispherePdf(wi.z);
+    Float pdf = CosineSampleHemispherePdf(wi.z);
 
     Normal3f n = inter.m_shadingN;
-    Vector3f w = fabs(n.x) < 0.2 ? Vector3f(1, 0, 0) : fabs(n.y) < 0.5 ? Vector3f(0, 1, 0) : Vector3f(0, 0, 1);
-    Vector3f u = Normalize(Cross(Vector3f(n), w));
-    Vector3f v = Cross(Vector3f(n), u);
-    inter.m_wi = Normalize(Vector3f(n) * wi.z + u * wi.x + v * wi.y);
+    Vector3f s, t;
+    CoordinateSystem(n, &s, &t);
+    inter.m_wi = LocalToWorld(wi, n, s, t);
 
-    return cosBsdf * 2 / pdf;
+    return cosBsdf / pdf;    
 }
 
 inline void render(std::shared_ptr<Renderer> renderer)
@@ -79,14 +77,16 @@ inline void render(std::shared_ptr<Renderer> renderer)
     Scene* scene = &renderer->m_scene;    
 
     int num = 0;
-    
-    for (int x = 234; x < camera->m_film.m_resolution.x; x++) {
-        for (int y = 234; y < camera->m_film.m_resolution.y; y++) {
+    int sum = 0;
+    int mx = 0;
+    for (int x = 0; x < camera->m_film.m_resolution.x; x++) {
+        for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
             int index = y * camera->m_film.m_resolution.x + x;
             unsigned int seed = InitRandom(index, 0);
             int num = 1;
             Spectrum L(0); 
-            for (int k = 0; k < num; k++) {
+            int len = 0;
+            for (int k = 0; k < num; k++) {                
                 Spectrum throughput(1);
                 Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
                 for (int i = 0; i < integrator->m_maxDepth; i++) {
@@ -117,20 +117,13 @@ inline void render(std::shared_ptr<Renderer> renderer)
                         }
                     }
 
-                    //printf("%f %f %f\n", interaction.m_geometryN.x, interaction.m_geometryN.y, interaction.m_geometryN.z);
-                    //printf("%f %f %f\n", interaction.m_shadingN.x, interaction.m_shadingN.y, interaction.m_shadingN.z);
-                    //exit(0);
-
                     // render normal
                     //L = Spectrum(interaction.m_geometryN);
                     //break;
 
                     // direct light
                     Point3f pLight;
-                    Spectrum a = throughput * NextEventEstimate(*scene, interaction, seed, pLight);
-                    //printf("%f %f %f\n", a.r, a.g, a.b);
-                    L += a;
-                    //L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
+                    L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
 
 
                     // calculate BSDF
@@ -146,13 +139,11 @@ inline void render(std::shared_ptr<Renderer> renderer)
                     ray.o = interaction.m_p + interaction.m_wi * Epsilon;
                     ray.d = interaction.m_wi;
                     ray.tMax = Infinity;
-                }
+                }                
             }
-            //printf("%f %f %f\n", L.r, L.g, L.b);
             camera->m_film.SetVal(x, y, L / num);
         }
     }
-
     DrawTransportLine(Point2i(234, 234), *renderer);
 
     camera->m_film.Output();

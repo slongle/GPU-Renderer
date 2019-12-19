@@ -32,9 +32,9 @@ public:
 };
 
 inline __device__ __host__
-Float Clamp(Float a) {
-    if (a > 1) return 1;
-    else if (a < 0) return 0;
+Float Clamp(Float a,Float l,Float r) {
+    if (a > r) return r;
+    else if (a < l) return l;
     else return a;
 }
 
@@ -116,12 +116,16 @@ void SpectrumToUnsignedChar(
     unsigned char* const uc,
     int len)
 {
+#define TO_BYTE(v) (uint8_t) Clamp(255.f * GammaCorrect(v) + 0.5f, 0.f, 255.f)
     for (int i = 0; i < 3; i++) {
-        uc[i] = (unsigned char)(Clamp(s[i]) * 255);
+        uc[i] = TO_BYTE(s[i]);
+        //uc[i] = (unsigned char)(Clamp(s[i]) * 255);
     }
     if (len == 4) {
-        uc[3] = 255;
+        //uc[3] = 255;
+        uc[3] = TO_BYTE(1);
     }
+#undef TO_BYTE
 }
 
 

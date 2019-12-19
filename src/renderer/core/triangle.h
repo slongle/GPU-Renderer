@@ -183,8 +183,10 @@ Interaction Triangle::Sample(Float* pdf, unsigned int& seed) const
         const Normal3f& n2 = m_triangleMeshPtr->m_N[indices[2]];
         inter.m_shadingN = Normalize(n0 * (1 - u.x - u.y) + n1 * u.x + n2 * u.y);
     }
+    
     //inter.m_geometryN.z *= -1;
     //inter.m_shadingN.z *= -1;
+    
     *pdf = 1 / Area();
     return inter;
 }

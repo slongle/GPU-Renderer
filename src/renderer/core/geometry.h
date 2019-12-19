@@ -33,6 +33,7 @@ public:
 
     __host__ __device__ Vector3<T> operator - ()const;
     __host__ __device__ Vector3<T> operator + (const Vector3<T>& v)const;
+    __host__ __device__ Vector3<T> operator + (const Normal3<T>& v)const;
     __host__ __device__ Vector3<T> operator * (const Float f)const;
     __host__ __device__ Vector3<T> operator / (const Float f)const;
 
@@ -181,6 +182,13 @@ Vector3<T> Vector3<T>::operator+(const Vector3<T>& v) const
 
 template<typename T>
 inline __host__ __device__ 
+Vector3<T> Vector3<T>::operator+(const Normal3<T>& v) const
+{
+    return Vector3<T>(x + v.x, y + v.y, z + v.z);
+}
+
+template<typename T>
+inline __host__ __device__ 
 Vector3<T> Vector3<T>::operator*(const Float f) const
 {
     return Vector3<T>(x * f, y * f, z * f);
@@ -299,6 +307,22 @@ Point3<T> operator + (const Point3<T>& p, const Normal3<T>& n) {
 template<typename T>
 inline __host__ __device__
 Vector3<T> Cross(const Vector3<T>& v1, const Vector3<T>& v2) {
+    return Vector3<T>(v1.y * v2.z - v1.z * v2.y,
+        v1.z * v2.x - v1.x * v2.z,
+        v1.x * v2.y - v1.y * v2.x);
+}
+
+template<typename T>
+inline __host__ __device__
+Vector3<T> Cross(const Vector3<T>& v1, const Normal3<T>& v2) {
+    return Vector3<T>(v1.y * v2.z - v1.z * v2.y,
+        v1.z * v2.x - v1.x * v2.z,
+        v1.x * v2.y - v1.y * v2.x);
+}
+
+template<typename T>
+inline __host__ __device__
+Vector3<T> Cross(const Normal3<T>& v1, const Vector3<T>& v2) {
     return Vector3<T>(v1.y * v2.z - v1.z * v2.y,
         v1.z * v2.x - v1.x * v2.z,
         v1.x * v2.y - v1.y * v2.x);
