@@ -20,6 +20,7 @@ public:
     Point2i m_resolution;
     int m_channels;
     unsigned char* m_bitmap = nullptr;
+    //Float* m_bitmap = nullptr;
 };
 
 std::shared_ptr<Film>
@@ -29,7 +30,7 @@ CreateFilm(
 inline __host__ __device__
 void Film::SetVal(int x, int y, Spectrum v)
 {
-    int index = y * m_resolution.x + x;
+    int index = y * m_resolution.x + x;    
     SpectrumToUnsignedChar(v, &m_bitmap[index * m_channels], m_channels);
 }
 

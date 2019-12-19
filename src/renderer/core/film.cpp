@@ -16,6 +16,7 @@ Film::Film(
     : m_resolution(resolution), m_filename(filename), m_channels(4)
 {
     m_bitmap = new unsigned char[m_resolution.x * m_resolution.y * 4];
+    //m_bitmap = new  Float[m_resolution.x * m_resolution.y * 3];
 }
 
 void Film::Output() const
