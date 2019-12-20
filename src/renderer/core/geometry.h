@@ -31,6 +31,7 @@ public:
     __host__ __device__ explicit Vector3<T>(Point3<T> p) : x(p.x), y(p.y), z(p.z) {}
     __host__ __device__ explicit Vector3<T>(Normal3<T> n) : x(n.x), y(n.y), z(n.z) {}
 
+    __host__ __device__ T operator [] (int idx) const;
     __host__ __device__ Vector3<T> operator - ()const;
     __host__ __device__ Vector3<T> operator + (const Vector3<T>& v)const;
     __host__ __device__ Vector3<T> operator + (const Normal3<T>& v)const;
@@ -69,7 +70,7 @@ class Point3 {
 public:
     __host__ __device__ Point3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
 
-
+    __host__ __device__ T operator [] (int idx) const;
     __host__ __device__ Point3<T> operator + (const Vector3<T>& v) const;
     __host__ __device__ Point3<T> operator + (const Point3<T>& v) const;
     __host__ __device__ Vector3<T> operator - (const Point3<T>& p) const;
@@ -120,7 +121,17 @@ public:
 template <typename T>
 class Bounds3 {
 public:
+
+    Bounds3(const Point3<T>& p) :pMin(p), pMax(p) {}
+    Bounds3(const Point3<T>& p1, const Point3<T>& p2)
+        : pMin(min(p1.x, p2.x), min(p1.y, p2.y), min(p1.z, p2.z)),
+          pMax(max(p1.x, p2.x), max(p1.y, p2.y), max(p1.z, p2.z))
+    {
+    }
     
+    Point3<T> operator [] (int idx) const;
+    bool Intersect(const Ray& ray, Float* hitt0 = nullptr, Float* hitt1 = nullptr) const;
+    bool Intersect(const Ray& ray, const Vector3f& invDir, const int dirIsNeg[3]) const;
     // Bounds3 Public Data
     Point3<T> pMin, pMax;
 };
@@ -165,6 +176,15 @@ Normal3<T> Normalize(Normal3<T> v) {
     return v / len;
 }
 
+
+template<typename T>
+inline __host__ __device__ 
+T Vector3<T>::operator[](int idx) const
+{
+    if (idx == 0) return x;
+    else if (idx == 1) return y;
+    else return z;
+}
 
 template<typename T>
 inline __host__ __device__ 
@@ -215,6 +235,15 @@ inline __host__ __device__
 Float Vector3<T>::SqrLength() const
 {
     return x * x + y * y + z * z;
+}
+
+template<typename T>
+inline __host__ __device__ 
+T Point3<T>::operator[](int idx) const
+{
+    if (idx == 0) return x;
+    else if (idx == 1) return y;
+    else return z;
 }
 
 template<typename T>
@@ -375,7 +404,79 @@ Normal3<T> Faceforward(const Normal3<T>& n, const Vector3<T>& v) {
     }
 }
 
+template<typename T>
+inline __device__ __host__
+Point3<T> Bounds3<T>::operator[](int idx) const
+{
+    if (idx == 0) return pMin;
+    else return pMax;
+}
 
+template<typename T>
+inline __device__ __host__
+Bounds3<T> Union(const Bounds3<T>& b1, const Bounds3<T>& b2) 
+{
+    Bounds3<T> bounds;
+    bounds.pMin = Point3<T>(min(b1.pMin.x, b2.pMin.x), min(b1.pMin.y, b2.pMin.y), min(b1.pMin.z, b2.pMin.z));
+    bounds.pMax = Point3<T>(max(b1.pMax.x, b2.pMax.x), max(b1.pMax.y, b2.pMax.y), max(b1.pMax.z, b2.pMax.z));
+    return bounds;
+}
 
+template <typename T>
+inline __device__ __host__
+bool Bounds3<T>::Intersect(
+    const Ray& ray, 
+    Float* hitt0,
+    Float* hitt1) const 
+{
+    Float t0 = 0, t1 = ray.tMax;
+    for (int i = 0; i < 3; ++i) {
+        // Update interval for _i_th bounding box slab
+        Float invRayDir = 1 / ray.d[i];
+        Float tNear = (pMin[i] - ray.o[i]) * invRayDir;
+        Float tFar = (pMax[i] - ray.o[i]) * invRayDir;
+
+        // Update parametric interval from slab intersection $t$ values
+        if (tNear > tFar) std::swap(tNear, tFar);
+
+        // ray--bounds intersection
+        t0 = tNear > t0 ? tNear : t0;
+        t1 = tFar < t1 ? tFar : t1;
+        if (t0 > t1) return false;
+    }
+    if (hitt0) *hitt0 = t0;
+    if (hitt1) *hitt1 = t1;
+    return true;
+}
+
+template <typename T>
+inline __device__ __host__
+bool Bounds3<T>::Intersect(
+    const Ray& ray, 
+    const Vector3f& invDir,
+    const int dirIsNeg[3]) const 
+{
+    const Bounds3f& bounds = *this;
+    // Check for ray intersection against $x$ and $y$ slabs
+    Float tMin = (bounds[dirIsNeg[0]].x - ray.o.x) * invDir.x;
+    Float tMax = (bounds[1 - dirIsNeg[0]].x - ray.o.x) * invDir.x;
+    Float tyMin = (bounds[dirIsNeg[1]].y - ray.o.y) * invDir.y;
+    Float tyMax = (bounds[1 - dirIsNeg[1]].y - ray.o.y) * invDir.y;
+
+    // bounds intersection    
+    if (tMin > tyMax || tyMin > tMax) return false;
+    if (tyMin > tMin) tMin = tyMin;
+    if (tyMax < tMax) tMax = tyMax;
+
+    // Check for ray intersection against $z$ slab
+    Float tzMin = (bounds[dirIsNeg[2]].z - ray.o.z) * invDir.z;
+    Float tzMax = (bounds[1 - dirIsNeg[2]].z - ray.o.z) * invDir.z;
+
+    // bounds intersection
+    if (tMin > tzMax || tzMin > tMax) return false;
+    if (tzMin > tMin) tMin = tzMin;
+    if (tzMax < tMax) tMax = tzMax;
+    return (tMin < ray.tMax) && (tMax > 0);
+}
 
 #endif // !__VECTOR_H

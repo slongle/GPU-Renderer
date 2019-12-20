@@ -165,7 +165,8 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
     const Material& material = scene.m_materials[primitive.m_materialID];
 
     Spectrum est(0.);
-
+    
+    // Sample one of lights
     int lightID = min(scene.m_lightNum - 1, int(NextRandom(seed) * scene.m_lightNum));
     Float lightChoosePdf = Float(1) / scene.m_lightNum;
     const Light& light = scene.m_lights[lightID];
@@ -178,21 +179,27 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
     lightSamplePdf *= (lightSample.m_p - inter.m_p).SqrLength() / 
         AbsDot(-Normalize(lightSample.m_p - inter.m_p), lightSample.m_shadingN);
 
+    // Visibility test
     Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
     Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
     Vector3f d = target - origin;
     Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
-
     bool hit = scene.Intersect(testRay);
+
 
     if (!hit) {
         Vector3f d = Normalize(lightSample.m_p - inter.m_p);
+        // Get Le
         Spectrum Le(0.);
         if (Dot(-d, lightSample.m_shadingN) > 0) {
             Le = light.m_L;
         }
-        Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+        Normal3f n = Faceforward(inter.m_shadingN, d);
+
+        // BSDF
         Spectrum cosineBSDF = material.m_Kd * InvPi * AbsDot(d, n);
+
+        // Contribution
         est = Le * cosineBSDF / lightSamplePdf;
     }
     return est / lightChoosePdf;
@@ -202,18 +209,19 @@ __device__
 Spectrum SampleMaterial(const CUDAScene& scene, Interaction& inter, unsigned int& seed) {
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
+    
     Spectrum cosBsdf(1.);
 
     Vector3f wi = CosineSampleHemisphere(seed);
     cosBsdf = material.m_Kd * InvPi * wi.z;
-    Float pdf = CosineSampleHemispherePdf(wi.z);
+    Float bsdfPdf = CosineSampleHemispherePdf(wi.z);
 
     Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
     Vector3f s, t;
     CoordinateSystem(n, &s, &t);
     inter.m_wi = LocalToWorld(wi, n, s, t);
 
-    return cosBsdf / pdf;
+    return cosBsdf / bsdfPdf;
 }
 
 __global__ void
@@ -259,6 +267,9 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
         //L = Spectrum(interaction.m_geometryN);
         //break;
 
+        // get material's bsdf
+        const Material& material = scene->m_materials[primitive.m_materialID];        
+
         // direct light
         Point3f pLight;
         L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
@@ -302,7 +313,7 @@ void render_kernel(dim3 gridSize, dim3 blockSize, uint * d_output, uint imageW, 
 extern "C"
 void copyInvViewMatrix(float* invViewMatrix, size_t sizeofMatrix)
 {
-    checkCudaErrors(cudaMemcpyToSymbol(c_invViewMatrix, invViewMatrix, sizeofMatrix));
+    //checkCudaErrors(cudaMemcpyToSymbol(c_invViewMatrix, invViewMatrix, sizeofMatrix));
 }
 
 
