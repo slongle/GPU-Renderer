@@ -10,40 +10,21 @@ using std::endl;
 #include "utility/helper_logger.h"
 #include "renderer/core/sampling.h"
 #include "renderer/core/cpurender.h"
+#include "renderer/core/triangle.h"
 
-class F {
-public:
-    F() {
-        x = new int[10];
-        for (int i = 0; i < 10; i++) {
-            x[i] = i;
-        }
-    }
-
-    ~F() {
-        puts("!");
-        delete[] x;
-    }
-
-    int* x;
-    int a, b, c;
-};
-
-F* foo() {
-    F* nf = new F();
-    return nf;
-}
-
-int main() {
-    std::string filepath = "E:/Document/Graphics/code/GPU-Renderer/scene/cornell-box/scene.pbrt";    
+int main() {   
+    std::vector<std::string> scenes(100);
+    scenes[0] = "E:/Document/Graphics/code/GPU-Renderer/scene/cornell-box/scene.pbrt";
+    scenes[1] = "E:/Document/Graphics/code/GPU-Renderer/scene/veach-mis/scene.pbrt";
+    std::string filepath = scenes[1];    
     filesystem::path path(filepath);
     getFileResolver()->prepend(path.parent_path());
     SceneLoader* sceneLoader = nullptr; 
     sceneLoader = new  PBRTLoader(filepath);
     std::shared_ptr<Renderer> renderer = sceneLoader->Load();  
 
-    render(renderer);
-    return 0;
+    //render(renderer);
+    //return 0;
 
     Gui::init(renderer);
     Gui::mainLoop();

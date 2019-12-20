@@ -31,7 +31,7 @@ Integrator* dev_integrator;
 CUDARenderer* hst_renderer;
 CUDARenderer* dev_renderer;
 
-//int frame = 0;
+int frame = 0;
 
 extern "C"
 void cudaInit(std::shared_ptr<Renderer> renderer) {
@@ -104,8 +104,10 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
     // Move Camera Data
     hst_camera = &(renderer->m_camera);
     Film& film = hst_camera->m_film;
-    cudaMalloc(&film.m_bitmap, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned char));
-    cudaMemset(film.m_bitmap, 0, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned char));
+    cudaMalloc(&film.m_bitmap, film.m_resolution.x * film.m_resolution.y * 3 * sizeof(Float));
+    cudaMemset(film.m_bitmap, 0, film.m_resolution.x * film.m_resolution.y * 3 * sizeof(Float));
+    cudaMalloc(&film.m_sampleNum, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned int));
+    cudaMemset(film.m_sampleNum, 0, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned int));
     cudaMalloc(&dev_camera, sizeof(Camera));
     cudaMemcpy(dev_camera, hst_camera, sizeof(Camera), cudaMemcpyHostToDevice);
 
@@ -157,6 +159,63 @@ int intersectBox(Ray r, float3 boxmin, float3 boxmax, float* tnear, float* tfar)
     return smallest_tmax > largest_tmin;
 }*/
 
+__device__
+Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, unsigned int& seed, Point3f& pLight) {
+    const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
+    const Material& material = scene.m_materials[primitive.m_materialID];
+
+    Spectrum est(0.);
+
+    int lightID = min(scene.m_lightNum - 1, int(NextRandom(seed) * scene.m_lightNum));
+    Float lightChoosePdf = Float(1) / scene.m_lightNum;
+    const Light& light = scene.m_lights[lightID];
+
+    // Light Sample Li
+    const Triangle& triangle = scene.m_triangles[light.m_shapeID];
+    Float lightSamplePdf;
+    Interaction lightSample = triangle.Sample(&lightSamplePdf, seed);
+    pLight = lightSample.m_p;
+    lightSamplePdf *= (lightSample.m_p - inter.m_p).SqrLength() / 
+        AbsDot(-Normalize(lightSample.m_p - inter.m_p), lightSample.m_shadingN);
+
+    Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
+    Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
+    Vector3f d = target - origin;
+    Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
+
+    bool hit = scene.Intersect(testRay);
+
+    if (!hit) {
+        Vector3f d = Normalize(lightSample.m_p - inter.m_p);
+        Spectrum Le(0.);
+        if (Dot(-d, lightSample.m_shadingN) > 0) {
+            Le = light.m_L;
+        }
+        Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+        Spectrum cosineBSDF = material.m_Kd * InvPi * AbsDot(d, n);
+        est = Le * cosineBSDF / lightSamplePdf;
+    }
+    return est / lightChoosePdf;
+}
+
+__device__
+Spectrum SampleMaterial(const CUDAScene& scene, Interaction& inter, unsigned int& seed) {
+    const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
+    const Material& material = scene.m_materials[primitive.m_materialID];
+    Spectrum cosBsdf(1.);
+
+    Vector3f wi = CosineSampleHemisphere(seed);
+    cosBsdf = material.m_Kd * InvPi * wi.z;
+    Float pdf = CosineSampleHemispherePdf(wi.z);
+
+    Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+    Vector3f s, t;
+    CoordinateSystem(n, &s, &t);
+    inter.m_wi = LocalToWorld(wi, n, s, t);
+
+    return cosBsdf / pdf;
+}
+
 __global__ void
 d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* renderer)
 {
@@ -171,120 +230,56 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
     CUDAScene* scene = renderer->m_scene;
 
     uint index = y * imageW + x;
-    //if (x != 123 || y != 234) return;
-    /*
-    if (index == 0) {
-        printf("%d\n", scene->m_triangleMeshNum);
-        printf("%d\n", scene->m_triangleMeshes[0].m_triangleNum);
-        for (int i = 0; i < scene->m_triangleMeshes[0].m_triangleNum * 3; i++) {
-            printf("%d ", scene->m_triangleMeshes[0].m_indices[i]);
-        }
-        printf("\n");
-        //for (int i = 0; i < a->f.size(); i++) {
-            //printf("%d\n", a->f[i]);
-        //}
-        Vector3f v(1, 2, 3);
-        printf("%f %f %f\n", v.x, v.y, v.z);
-        Float len = v.Length();
-        printf("%f\n", len);
-    }*/
-    Float znear = 1e-2;
-
     if ((x >= imageW) || (y >= imageH)) return;
 
     uint seed = InitRandom(index, frame);
     Spectrum L(0);
     Spectrum throughput(1);
-
     Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
-    /*
-    Interaction interaction;
-    bool hit = scene->IntersectP(ray, &interaction);
-    L = Spectrum(interaction.m_geometryN);        
-    */
-
-    
-
-    /*Point3f pHit1 = interaction.m_p;
-    Point3f pCamera1 = camera->m_worldToCamera(pHit1);
-    Point3f pCameraFilm1(pCamera1.x / pCamera1.z * znear, pCamera1.y / pCamera1.z * znear, znear);
-    Point3f pFilm1 = camera->m_cameraToRaster(pCameraFilm1);
-    
-    printf("%f %f %f\n", pFilm1.x, pFilm1.y, pFilm1.z);
-
-    Material& material = scene->m_materials[interaction.m_primitiveID];
-    Vector3f wi = CosineSampleHemisphere(seed);
-    Normal3f n = interaction.m_geometryN;
-    Vector3f w = fabs(n.x) < 0.5 ? Vector3f(1, 0, 0) : fabs(n.y) < 0.5 ? Vector3f(0, 1, 0) : Vector3f(0, 0, 1);
-    Vector3f u = Normalize(Cross(Vector3f(n), w));
-    Vector3f v = Cross(Vector3f(n), u);
-    interaction.m_wi = Normalize(Vector3f(n) * wi.z + u * wi.x + v * wi.y);
-
-    Point3f pHit2 = pHit1 + interaction.m_wi * 0.1;
-    Point3f pCamera2 = camera->m_worldToCamera(pHit2);
-    Point3f pCameraFilm2(pCamera2.x / pCamera2.z * znear, pCamera2.y / pCamera2.z * znear, znear);
-    Point3f pFilm2 = camera->m_cameraToRaster(pCameraFilm2);
-
-    printf("%f %f %f\n", pFilm2.x, pFilm2.y, pFilm2.z);
-    */
-    
-    //camera->m_worldToCamera()
-
     for (int i = 0; i < integrator->m_maxDepth; i++) {
 
         // find intersection with scene
         Interaction interaction;
         bool hit = scene->IntersectP(ray, &interaction);
 
-        if (!hit){
+        if (!hit) {
             break;
+        }        
+
+        const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
+        if (i == 0 && primitive.m_lightID != -1) {
+            int lightID = primitive.m_lightID;
+            const Light& light = scene->m_lights[lightID];
+            if (Dot(interaction.m_shadingN, interaction.m_wo) > 0) {
+                L += throughput * light.m_L;
+            }
         }
 
-        Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
-        Material& material = scene->m_materials[primitive.m_materialID];
+        // render normal
+        //L = Spectrum(interaction.m_geometryN);
+        //break;
+
         // direct light
-        if (primitive.m_lightID != -1) {
-            int lightID = scene->m_primitives[interaction.m_primitiveID].m_lightID;
-            if (throughput.r != 1 || throughput.g != 1 || throughput.b != 1) {
-                int a = 0;
-                a++;
-            }
-            L += throughput * scene->m_lights[lightID].m_L;
-        }
-        int lightID = min(scene->m_lightNum - 1, int(NextRandom(seed) * scene->m_lightNum));
-        Light& light = scene->m_lights[lightID];
-        Triangle& triangle = scene->m_triangles[light.m_shapeID];
-        Float pdf;
-        Interaction inter = triangle.Sample(&pdf, seed);
-        Ray testRay(interaction.m_p + interaction.m_geometryN * Epsilon, inter.m_p - interaction.m_p, 1 - 2 * Epsilon);
-        hit = scene->Intersect(testRay);
-        if (!hit) {
-            L += throughput * material.m_Kd * light.m_L / pdf;
-        }
+        Point3f pLight;
+        L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
 
 
         // calculate BSDF
-        Vector3f wi = CosineSampleHemisphere(seed);
-        Normal3f n = interaction.m_geometryN;
-        Vector3f w = fabs(n.x) < 0.5 ? Vector3f(1, 0, 0) : fabs(n.y) < 0.5 ? Vector3f(0, 1, 0) : Vector3f(0, 0, 1);
-        Vector3f u = Normalize(Cross(Vector3f(n), w));
-        Vector3f v = Cross(Vector3f(n), u);
-        interaction.m_wi = Normalize(Vector3f(n)* wi.z + u * wi.x + v * wi.y);
+        throughput *= SampleMaterial(*scene, interaction, seed);
 
-        // indirect light
-        if (i > 3) {
-            Float q = min(Float(0.95), throughput.Max());
-            if (NextRandom(seed) >= q) {
-                break;
-            }
-            throughput /= q;
+        // indirect light                    
+        if (throughput.Max() < 1 && i > 3) {
+            Float q = max((Float).05, 1 - throughput.Max());
+            if (NextRandom(seed) < q) break;
+            throughput /= 1 - q;
         }
 
-        ray.o = interaction.m_p + interaction.m_geometryN * Epsilon;
+        ray.o = interaction.m_p + interaction.m_wi * Epsilon;
         ray.d = interaction.m_wi;
         ray.tMax = Infinity;
     }
-    
+    camera->m_film.AddSample(x, y, L);
+    L = camera->m_film.GetPixelSpectrum(index);
 
     // write output color
     SpectrumToUnsignedChar(L, (unsigned char*)&d_output[(imageH - y - 1) * imageW + x], 4);
@@ -300,10 +295,8 @@ void freeCudaBuffers()
 extern "C"
 void render_kernel(dim3 gridSize, dim3 blockSize, uint * d_output, uint imageW, uint imageH)
 {
-    d_render << <gridSize, blockSize >> > (d_output, imageW, imageH, 0, dev_renderer);
-    //cudaDeviceSynchronize();
-    //frame++;
-    //exit(0);
+    d_render << <gridSize, blockSize >> > (d_output, imageW, imageH, frame, dev_renderer);
+    frame++;
 }
 
 extern "C"

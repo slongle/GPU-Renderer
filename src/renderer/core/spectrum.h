@@ -10,6 +10,7 @@ public:
     __device__ __host__ Spectrum(Float r, Float g, Float b) :r(r), g(g), b(b) {}
     __device__ __host__ Spectrum(const Normal3f& n) : r(std::fabs(n.x)), g(std::fabs(n.y)), b(std::fabs(n.z)) {}
     __device__ __host__ Spectrum(const std::vector<Float>& v);
+    //__device__ __host__ Spectrum(const Float* const v) : r(v[0]), g(v[1]), b(v[2]) {}
 
     __device__ __host__ Float operator[] (int idx) const;
     __device__ __host__ Spectrum& operator += (const Spectrum& s);

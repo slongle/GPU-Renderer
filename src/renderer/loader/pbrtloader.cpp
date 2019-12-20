@@ -377,6 +377,12 @@ Parse(std::unique_ptr<Tokenizer> tokenizer) {
                 }
                 apiTransform(m);
             }
+            else if (token == "TransformBegin") {
+                apiTransformBegin();
+            } 
+            else if (token == "TransformEnd") {
+                apiTransformEnd();
+            }
             break;
         case 'W':
             if (token == "WorldBegin") {
