@@ -46,7 +46,7 @@ ConvertSphereToTriangleMesh(
     std::vector<Normal3f> n;
     std::vector<Float> uv;
 
-    int subdiv = 10;
+    int subdiv = 8;
     int nLatitude = subdiv;
     int nLongitude = 2 * subdiv;
     Float latitudeDeltaAngle = Pi / nLatitude;

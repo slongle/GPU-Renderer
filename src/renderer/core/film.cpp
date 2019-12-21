@@ -24,6 +24,7 @@ Film::Film(
 
 void Film::Output()
 {
+    printf("@!@@@@");
     ExportToUnsignedChar();
     stbi_write_png(m_filename.c_str(), m_resolution.x, m_resolution.y, m_channels, m_bitmapOutput, 0);
 }

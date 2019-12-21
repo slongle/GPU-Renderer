@@ -16,7 +16,6 @@ public:
 
     bool Intersect(const Ray& ray) const;
     bool IntersectP(const Ray& ray, Interaction* interaction) const;
-    Spectrum Shading(const Interaction& interaction) const;
 
     int AddTriangleMesh(TriangleMesh triangleMesh);
     std::pair<int, int> AddTriangles(std::vector<std::shared_ptr<Triangle>> triangles);
@@ -61,13 +60,6 @@ bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
     return ret_hit;
 }
 
-inline 
-Spectrum Scene::Shading(const Interaction& interaction) const
-{
-    const int& primID = interaction.m_primitiveID;
-    const int& mtlID = m_primitives[primID].m_materialID;
-    return m_materials[mtlID].m_Kd;
-}
 
 
 #endif // !__SCENE_H

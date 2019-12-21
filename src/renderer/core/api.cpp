@@ -222,8 +222,11 @@ int Options::MakeMaterial(
     const ParameterSet& params)
 {
     std::shared_ptr<Material> mtl;
-    if (type == "Diffuse" || type == "matte") {
+    if (type == "diffuse" || type == "matte") {
         mtl = CreateMatteMaterial(params);
+    }
+    else if (type == "metal") {
+        mtl = CreateMetalMaterial(params);
     }
     else {
         ASSERT(0, "Can't support material " + type);

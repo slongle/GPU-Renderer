@@ -48,6 +48,8 @@ typedef Bounds2<int> Bounds2i;
 typedef Bounds3<Float> Bounds3f;
 typedef Bounds3<int> Bounds3i;
 
+class Ray;
+class BSDF;
 class Light;
 class Shape;
 class Primitive;
@@ -57,6 +59,21 @@ class Medium;
 inline __device__ __host__
 Float Radians(Float ang) {
     return ang * Pi / 180;
+}
+
+template<typename T>
+inline __device__ __host__
+void Swap(T& a, T& b) {
+    T c(a);
+    a = b;
+    b = c;
+}
+
+inline __device__ __host__
+Float Clamp(Float a, Float l, Float r) {
+    if (a > r) return r;
+    else if (a < l) return l;
+    else return a;
 }
 
 inline __device__ __host__

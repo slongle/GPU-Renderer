@@ -13,9 +13,12 @@ public:
     //__device__ __host__ Spectrum(const Float* const v) : r(v[0]), g(v[1]), b(v[2]) {}
 
     __device__ __host__ Float operator[] (int idx) const;
+    __device__ __host__ Spectrum operator + (const Spectrum& s) const;
     __device__ __host__ Spectrum& operator += (const Spectrum& s);
+    __device__ __host__ Spectrum operator - (const Spectrum& s) const;
     __device__ __host__ Spectrum operator * (const Spectrum& s) const;
     __device__ __host__ Spectrum& operator *= (const Spectrum& s);
+    __device__ __host__ Spectrum operator / (const Spectrum& v) const;
     __device__ __host__ Spectrum operator / (const Float v) const;
     __device__ __host__ Spectrum& operator /= (const Float v);
 
@@ -31,13 +34,6 @@ public:
         unsigned char* const uc, 
         int len = 3);
 };
-
-inline __device__ __host__
-Float Clamp(Float a,Float l,Float r) {
-    if (a > r) return r;
-    else if (a < l) return l;
-    else return a;
-}
 
 inline __device__ __host__
 Spectrum::Spectrum(const std::vector<Float>& v)
@@ -56,6 +52,12 @@ Float Spectrum::operator[](int idx) const
     else return b;
 }
 
+inline __device__ __host__ 
+Spectrum Spectrum::operator+(const Spectrum& s) const
+{
+    return Spectrum(r + s.r, g + s.g, b + s.b);
+}
+
 inline __device__ __host__
 Spectrum& Spectrum::operator+=(const Spectrum& s)
 {
@@ -63,6 +65,12 @@ Spectrum& Spectrum::operator+=(const Spectrum& s)
     g += s.g;
     b += s.b;
     return *this;
+}
+
+inline __device__ __host__ 
+Spectrum Spectrum::operator-(const Spectrum& s) const
+{
+    return Spectrum(r - s.r, g - s.g, b - s.b);
 }
 
 inline __device__ __host__ 
@@ -78,6 +86,11 @@ Spectrum& Spectrum::operator*=(const Spectrum& s)
     g *= s.g;
     b *= s.b;
     return *this;
+}
+
+inline __device__ __host__ Spectrum Spectrum::operator/(const Spectrum& v) const
+{
+    return Spectrum(r / v.r, g / v.g, b / v.b);
 }
 
 inline __device__ __host__ 
@@ -129,5 +142,9 @@ void SpectrumToUnsignedChar(
 #undef TO_BYTE
 }
 
+inline __device__ __host__
+Spectrum Sqrt(const Spectrum& s) {
+    return Spectrum(sqrt(s.r), sqrt(s.g), sqrt(s.b));
+}
 
 #endif // !__SPECTRUM_H

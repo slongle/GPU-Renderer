@@ -119,6 +119,8 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
     hst_renderer = new CUDARenderer(dev_integrator, dev_camera, dev_scene);
     cudaMalloc(&dev_renderer, sizeof(CUDARenderer));
     cudaMemcpy(dev_renderer, hst_renderer, sizeof(CUDARenderer), cudaMemcpyHostToDevice);
+
+
 }
 
 typedef struct
@@ -127,37 +129,6 @@ typedef struct
 } float3x4;
 
 __constant__ float3x4 c_invViewMatrix;  // inverse view matrix
-
-/*struct Ray
-{
-    float3 o;   // origin
-    float3 d;   // direction
-};
-
-// intersect ray with a box
-// http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
-
-__device__
-int intersectBox(Ray r, float3 boxmin, float3 boxmax, float* tnear, float* tfar)
-{
-    // compute intersection of ray with all six bbox planes
-    float3 invR = make_float3(1.0f) / r.d;
-    float3 tbot = invR * (boxmin - r.o);
-    float3 ttop = invR * (boxmax - r.o);
-
-    // re-order intersections to find smallest and largest on each axis
-    float3 tmin = fminf(ttop, tbot);
-    float3 tmax = fmaxf(ttop, tbot);
-
-    // find the largest tmin and the smallest tmax
-    float largest_tmin = fmaxf(fmaxf(tmin.x, tmin.y), fmaxf(tmin.x, tmin.z));
-    float smallest_tmax = fminf(fminf(tmax.x, tmax.y), fminf(tmax.x, tmax.z));
-
-    *tnear = largest_tmin;
-    *tfar = smallest_tmax;
-
-    return smallest_tmax > largest_tmin;
-}*/
 
 __device__
 Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, unsigned int& seed, Point3f& pLight) {
@@ -194,13 +165,14 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
         if (Dot(-d, lightSample.m_shadingN) > 0) {
             Le = light.m_L;
         }
-        Normal3f n = Faceforward(inter.m_shadingN, d);
+        Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
 
         // BSDF
-        Spectrum cosineBSDF = material.m_Kd * InvPi * AbsDot(d, n);
+        Float bsdfPdf;
+        Spectrum cosBSDF = material.F(n, inter.m_wo, d, &bsdfPdf);
 
         // Contribution
-        est = Le * cosineBSDF / lightSamplePdf;
+        est = Le * cosBSDF / lightSamplePdf;
     }
     return est / lightChoosePdf;
 }
@@ -210,18 +182,12 @@ Spectrum SampleMaterial(const CUDAScene& scene, Interaction& inter, unsigned int
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
     
-    Spectrum cosBsdf(1.);
-
-    Vector3f wi = CosineSampleHemisphere(seed);
-    cosBsdf = material.m_Kd * InvPi * wi.z;
-    Float bsdfPdf = CosineSampleHemispherePdf(wi.z);
-
     Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
-    Vector3f s, t;
-    CoordinateSystem(n, &s, &t);
-    inter.m_wi = LocalToWorld(wi, n, s, t);
 
-    return cosBsdf / bsdfPdf;
+    Float bsdfPdf;
+    Spectrum cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
+
+    return cosBSDF / bsdfPdf;
 }
 
 __global__ void
@@ -268,7 +234,7 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
         //break;
 
         // get material's bsdf
-        const Material& material = scene->m_materials[primitive.m_materialID];        
+        //const Material& material = scene->m_materials[primitive.m_materialID];        
 
         // direct light
         Point3f pLight;

@@ -16,6 +16,7 @@ public:
     Point3f m_p;
     Normal3f m_shadingN, m_geometryN;
     Point2f m_uv;
+    BSDF* m_bsdf;
 // Medium
 };
 

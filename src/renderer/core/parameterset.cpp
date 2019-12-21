@@ -1,5 +1,11 @@
 #include "renderer/core/parameterset.h"
 
+void ParameterSet::AddBool(const std::string& name, bool val)
+{
+    ASSERT(m_ints.count(name) == 0, "Add an exist attribute " + name);
+    m_bools[name] = val;
+}
+
 void ParameterSet::AddInt(const std::string& name, std::vector<int> val)
 {
     ASSERT(m_ints.count(name) == 0, "Add an exist attribute " + name);
@@ -34,6 +40,26 @@ void ParameterSet::AddSpectrum(const std::string& name, std::vector<Float> val)
 {
     ASSERT(m_ints.count(name) == 0, "Add an exist attribute " + name);
     m_spectrums[name] = val;
+}
+
+bool ParameterSet::GetBool(const std::string& name) const
+{
+    if (m_bools.count(name)) {
+        return m_bools.find(name)->second;
+    }
+    else {
+        ASSERT(0, "No attribute " + name);
+    }
+}
+
+bool ParameterSet::GetBool(const std::string& name, const bool d) const
+{
+    if (m_bools.count(name)) {
+        return m_bools.find(name)->second;
+    }
+    else {
+        return d;
+    }
 }
 
 int ParameterSet::GetInt(const std::string& name) const

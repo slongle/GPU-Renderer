@@ -174,7 +174,15 @@ void AddParameters(ParameterSet& params, const ParameterItem& item) {
     std::string attributeName;
     int attributeType;
     lookUpTypeAndName(item.m_name, attributeName, attributeType);
-    if (attributeType == TYPE_INTEGER) {
+    if (attributeType == TYPE_BOOL) {
+        if (item.m_val[0] == "false") {
+            params.AddBool(attributeName, false);
+        }
+        else {
+            params.AddBool(attributeName, true);
+        }
+    }
+    else if (attributeType == TYPE_INTEGER) {
         std::vector<int> attributeVal;
         char* endPtr;
         for (const std::string& v : item.m_val) {

@@ -22,8 +22,9 @@ Spectrum NextEventEstimate(const Scene& scene, const Interaction& inter, unsigne
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
 
-    Spectrum est(0.);    
+    Spectrum est(0.);
 
+    // Sample one of lights
     int lightID = min(scene.m_lights.size() - 1, int(NextRandom(seed) * scene.m_lights.size()));
     Float lightChoosePdf = Float(1) / scene.m_lights.size();
     const Light& light = scene.m_lights[lightID];
@@ -31,24 +32,34 @@ Spectrum NextEventEstimate(const Scene& scene, const Interaction& inter, unsigne
     // Light Sample Li
     const Triangle& triangle = scene.m_triangles[light.m_shapeID];
     Float lightSamplePdf;
-    Interaction lightSample = triangle.Sample(&lightSamplePdf, seed);    
+    Interaction lightSample = triangle.Sample(&lightSamplePdf, seed);
     pLight = lightSample.m_p;
-    
+    lightSamplePdf *= (lightSample.m_p - inter.m_p).SqrLength() /
+        AbsDot(-Normalize(lightSample.m_p - inter.m_p), lightSample.m_shadingN);
+
+    // Visibility test
     Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
     Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
     Vector3f d = target - origin;
-    Ray testRay(origin, Normalize(d), d.Length() - 2 * Epsilon);
-
+    Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
     bool hit = scene.Intersect(testRay);
-    
+
+
     if (!hit) {
         Vector3f d = Normalize(lightSample.m_p - inter.m_p);
+        // Get Le
         Spectrum Le(0.);
         if (Dot(-d, lightSample.m_shadingN) > 0) {
             Le = light.m_L;
         }
-        Float G = AbsDot(d, inter.m_shadingN) * AbsDot(-d, lightSample.m_shadingN) / (lightSample.m_p - inter.m_p).SqrLength();
-        est = Le * material.m_Kd * InvPi * G / lightSamplePdf;
+        Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+
+        // BSDF
+        Float bsdfPdf;
+        Spectrum cosBSDF = material.F(n, inter.m_wo, d, &bsdfPdf);
+
+        // Contribution
+        est = Le * cosBSDF / lightSamplePdf;
     }
     return est / lightChoosePdf;
 }
@@ -56,18 +67,13 @@ Spectrum NextEventEstimate(const Scene& scene, const Interaction& inter, unsigne
 Spectrum SampleMaterial(const Scene& scene, Interaction& inter, unsigned int& seed) {
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
-    Spectrum cosBsdf(1.);
 
-    Vector3f wi = CosineSampleHemisphere(seed);
-    cosBsdf = material.m_Kd * InvPi * wi.z;
-    Float pdf = CosineSampleHemispherePdf(wi.z);
+    Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
 
-    Normal3f n = inter.m_shadingN;
-    Vector3f s, t;
-    CoordinateSystem(n, &s, &t);
-    inter.m_wi = LocalToWorld(wi, n, s, t);
+    Float bsdfPdf;
+    Spectrum cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
 
-    return cosBsdf / pdf;    
+    return cosBSDF / bsdfPdf;
 }
 
 inline void render(std::shared_ptr<Renderer> renderer)
@@ -76,7 +82,7 @@ inline void render(std::shared_ptr<Renderer> renderer)
     Camera* camera = &renderer->m_camera;
     Scene* scene = &renderer->m_scene;    
 
-    int num = 2;
+    int num = 16;
     for (int x = 0; x < camera->m_film.m_resolution.x; x++) {
         for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
             int index = y * camera->m_film.m_resolution.x + x;
@@ -95,15 +101,6 @@ inline void render(std::shared_ptr<Renderer> renderer)
                         break;
                     }
 
-                    // fix normal direction
-                    if (Dot(ray.d, interaction.m_geometryN) > 0)
-                    {
-                        interaction.m_geometryN = -interaction.m_geometryN;
-                    }
-                    if (Dot(ray.d, interaction.m_shadingN) > 0) {
-                        interaction.m_shadingN = -interaction.m_shadingN;
-                    }
-
                     const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
                     if (i == 0 && primitive.m_lightID != -1) {
                         int lightID = primitive.m_lightID;
@@ -117,6 +114,9 @@ inline void render(std::shared_ptr<Renderer> renderer)
                     //L = Spectrum(interaction.m_geometryN);
                     //break;
 
+                    // get material's bsdf
+                    //const Material& material = scene->m_materials[primitive.m_materialID];
+
                     // direct light
                     Point3f pLight;
                     L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
@@ -125,22 +125,26 @@ inline void render(std::shared_ptr<Renderer> renderer)
                     // calculate BSDF
                     throughput *= SampleMaterial(*scene, interaction, seed);
 
+                    // delete BSDF
+                    delete interaction.m_bsdf;
+
                     // indirect light                    
-                    if (throughput.Max()<1 &&  i > 3) {
+                    if (throughput.Max() < 1 && i > 3) {
                         Float q = max((Float).05, 1 - throughput.Max());
                         if (NextRandom(seed) < q) break;
                         throughput /= 1 - q;
                     }
-                    
+
                     ray.o = interaction.m_p + interaction.m_wi * Epsilon;
                     ray.d = interaction.m_wi;
                     ray.tMax = Infinity;
-                }                
+                }
                 camera->m_film.AddSample(x, y, L);
             }
         }
     }
-    DrawTransportLine(Point2i(234, 234), *renderer);
+
+    //DrawTransportLine(Point2i(234, 234), *renderer);
 
     camera->m_film.Output();
 }
