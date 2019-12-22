@@ -73,6 +73,8 @@ void Gui::init(std::shared_ptr<Renderer> renderer)
 
     gridSize = dim3(iDivUp(width, blockSize.x), iDivUp(height, blockSize.y));
 
+    renderer->m_integrator.m_nSample = 1;
+
     cudaInit(renderer);
 #if defined(__linux__)
     setenv("DISPLAY", ":0", 0);

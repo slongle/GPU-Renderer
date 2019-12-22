@@ -282,6 +282,8 @@ void Options::MakeFilm() {
 void Options::MakeIntegrator()
 {
     m_integrator = *CreateIntegrator(m_integratorParameterSet);    
+    int nSample = m_samplerParameterSet.GetInt("pixelsamples");
+    m_integrator.m_nSample = nSample;
 }
 
 void Options::MakeRenderer()

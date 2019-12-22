@@ -31,7 +31,7 @@ Integrator* dev_integrator;
 CUDARenderer* hst_renderer;
 CUDARenderer* dev_renderer;
 
-int frame = 0;
+unsigned int frame = 0;
 
 extern "C"
 void cudaInit(std::shared_ptr<Renderer> renderer) {
@@ -195,7 +195,7 @@ Spectrum SampleMaterial(const CUDAScene& scene, Interaction& inter, unsigned int
 }
 
 __global__ void
-d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* renderer)
+d_render(uint* d_output, uint imageW, uint imageH, unsigned int frame, CUDARenderer* renderer)
 {
     const float3 boxMin = make_float3(-1.0f, -1.0f, -1.0f);
     const float3 boxMax = make_float3(1.0f, 1.0f, 1.0f);
@@ -210,11 +210,12 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
     uint index = y * imageW + x;
     if ((x >= imageW) || (y >= imageH)) return;
 
+    Spectrum L(0);    
     uint seed = InitRandom(index, frame);
-    Spectrum L(0);
     Spectrum throughput(1);
     Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
-    for (int i = 0; i < integrator->m_maxDepth; i++) {
+    int bounce;
+    for (bounce = 0; bounce < integrator->m_maxDepth; bounce++) {
 
         // find intersection with scene
         Interaction interaction;
@@ -222,10 +223,10 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
 
         if (!hit) {
             break;
-        }        
+        }
 
         const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
-        if (i == 0 && primitive.m_lightID != -1) {
+        if (bounce == 0 && primitive.m_lightID != -1) {
             int lightID = primitive.m_lightID;
             const Light& light = scene->m_lights[lightID];
             if (Dot(interaction.m_shadingN, interaction.m_wo) > 0) {
@@ -251,7 +252,7 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
         throughput *= SampleMaterial(*scene, interaction, seed);
 
         // indirect light                    
-        if (throughput.Max() < 1 && i > 3) {
+        if (throughput.Max() < 1 && bounce > 3) {
             Float q = max((Float).05, 1 - throughput.Max());
             if (NextRandom(seed) < q) break;
             throughput /= 1 - q;
@@ -307,12 +308,11 @@ void gpu_render(std::shared_ptr<Renderer> renderer) {
     int height = renderer->m_camera.m_film.m_resolution.y;
     Camera* camera = &renderer->m_camera;
     Film film = camera->m_film;
-
-    int num = 64;
+    
     dim3 blockSize{ 16, 16 };
     dim3 gridSize{ iDivUp(width, blockSize.x), iDivUp(height, blockSize.y) };
-    for (int i = 0; i < num; i++) {        
-        d_render << <gridSize, blockSize >> > (NULL, width, height, 0, dev_renderer);
+    for (unsigned int i = 0; i < renderer->m_integrator.m_nSample; i++) {
+        d_render << <gridSize, blockSize >> > (NULL, width, height, i, dev_renderer);
     }
     checkCudaErrors(cudaDeviceSynchronize());
 
@@ -323,8 +323,7 @@ void gpu_render(std::shared_ptr<Renderer> renderer) {
     checkCudaErrors(cudaMemcpy(film.m_bitmap, hst_camera->m_film.m_bitmap, sizeof(Float) * film.m_resolution.x * film.m_resolution.y * 3, cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(film.m_sampleNum, hst_camera->m_film.m_sampleNum, sizeof(unsigned int) * film.m_resolution.x * film.m_resolution.y, cudaMemcpyDeviceToHost));
     //cudaDeviceSynchronize();
-    film.Output();
-     
+    film.Output();     
 }
 
 #endif // #ifndef _VOLUMERENDER_KERNEL_CU_
