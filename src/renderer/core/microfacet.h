@@ -52,7 +52,7 @@ inline __host__ __device__
 Float GGXDistribution::D(const Vector3f& wh) const
 {
     Float tan2Theta = Tan2Theta(wh);
-    if (isinf(tan2Theta)) return 0.;
+    if (isinf(tan2Theta)) return 0.f;
     const Float cos4Theta = Cos2Theta(wh) * Cos2Theta(wh);
     Float e =
         (Cos2Phi(wh) / (m_alphax * m_alphax) + Sin2Phi(wh) / (m_alphay * m_alphay)) *
@@ -90,13 +90,13 @@ Float GGXDistribution::G1(const Vector3f& w) const
 inline __host__ __device__
 Float GGXDistribution::Lambda(const Vector3f& w) const
 {
-    Float absTanTheta = std::abs(TanTheta(w));
-    if (std::isinf(absTanTheta)) return 0.;
+    Float absTanTheta = abs(TanTheta(w));
+    if (isinf(absTanTheta)) return 0.f;
     // Compute _alpha_ for direction _w_
     Float alpha =
-        std::sqrt(Cos2Phi(w) * m_alphax * m_alphax + Sin2Phi(w) * m_alphay * m_alphay);
+        sqrt(Cos2Phi(w) * m_alphax * m_alphax + Sin2Phi(w) * m_alphay * m_alphay);
     Float a = 1 / (alpha * absTanTheta);
-    if (a >= 1.6f) return 0;
+    if (a >= 1.6f) return 0.f;
     return (1 - 1.259f * a + 0.396f * a * a) / (3.535f * a + 2.181f * a * a);
 }
 
@@ -126,17 +126,17 @@ void GGXDistribution::GGXSample11(
     }
 
     Float sinTheta =
-        std::sqrt(max((Float)0, (Float)1 - cosTheta * cosTheta));
+        sqrt(max((Float)0, (Float)1 - cosTheta * cosTheta));
     Float tanTheta = sinTheta / cosTheta;
     Float a = 1 / tanTheta;
-    Float G1 = 2 / (1 + std::sqrt(1.f + 1.f / (a * a)));
+    Float G1 = 2 / (1 + sqrt(1.f + 1.f / (a * a)));
 
     // sample slope_x
     Float A = 2 * U1 / G1 - 1;
     Float tmp = 1.f / (A * A - 1.f);
     if (tmp > 1e10) tmp = 1e10;
     Float B = tanTheta;
-    Float D = std::sqrt(
+    Float D = sqrt(
         max(Float(B * B * tmp * tmp - (A * A - B * B) * tmp), Float(0)));
     Float slope_x_1 = B * tmp - D;
     Float slope_x_2 = B * tmp + D;
@@ -155,7 +155,7 @@ void GGXDistribution::GGXSample11(
     Float z =
         (U2 * (U2 * (U2 * 0.27385f - 0.73369f) + 0.46341f)) /
         (U2 * (U2 * (U2 * 0.093073f + 0.309420f) - 1.000000f) + 0.597999f);
-    *slope_y = S * z * std::sqrt(1.f + *slope_x * *slope_x);
+    *slope_y = S * z * sqrt(1.f + *slope_x * *slope_x);
 }
 
 inline __host__ __device__

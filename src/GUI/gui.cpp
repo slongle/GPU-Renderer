@@ -29,6 +29,11 @@
 // Header file
 #include "gui.h"
 
+
+int iDivUp(int a, int b) {
+    return (a + b - 1) / b;
+}
+
 namespace Gui {
     // Window configure
     const char* sample = "CUDA Path Tracing";
@@ -65,6 +70,8 @@ void Gui::init(std::shared_ptr<Renderer> renderer)
 {
     width = renderer->m_camera.m_film.m_resolution.x;
     height = renderer->m_camera.m_film.m_resolution.y;
+
+    gridSize = dim3(iDivUp(width, blockSize.x), iDivUp(height, blockSize.y));
 
     cudaInit(renderer);
 #if defined(__linux__)
@@ -115,7 +122,7 @@ void Gui::render()
     // map PBO to get CUDA device pointer
     uint* d_output;
     // map PBO to get CUDA device pointer
-    checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource, 0));
+    checkCudaErrors(cudaGraphicsMapResources(1, &cuda_pbo_resource));
     size_t num_bytes;
     checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_output, &num_bytes,
         cuda_pbo_resource));
@@ -141,7 +148,7 @@ void Gui::computeFPS()
     {
         char fps[256];
         float ifps = 1.f / (sdkGetAverageTimerValue(&timer) / 1000.f);
-        sprintf(fps, "Volume Render: %3.1f fps", ifps);
+        sprintf(fps, "Render: %3.1f fps", ifps);
 
         glutSetWindowTitle(fps);
         fpsCount = 0;
@@ -198,11 +205,7 @@ void Gui::initGL(int* argc, char** argv)
 }
 
 void Gui::reshape(int w, int h)
-{
-    auto iDivUp = [](int a, int b)->int {
-        return (a + b - 1) / b;
-    };
-
+{    
     width = w;
     height = h;
     initPixelBuffer();

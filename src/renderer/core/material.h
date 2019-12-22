@@ -103,15 +103,17 @@ Spectrum Material::Sample(
     CoordinateSystem(n, &s, &t);
     Vector3f localWo = WorldToLocal(worldWo, n, s, t);
     Vector3f localWi;
-    Spectrum cosBSDF(0);
+    Spectrum cosBSDF(0);    
 
     if (m_type == DIFFUSE_REFLECT) {
         cosBSDF = m_diffuseReflect.Sample(localWo, &localWi, pdf, seed);
     }
-    else if (m_type == GLOSSY_REFLECT) {
+    else if (m_type == GLOSSY_REFLECT) {   
+        //printf("!");
         cosBSDF = m_glossyReflect.Sample(localWo, &localWi, pdf, seed);
     }
 
+    //return cosBSDF;
     *worldWi = LocalToWorld(localWi, n, s, t);
     return cosBSDF;
 }

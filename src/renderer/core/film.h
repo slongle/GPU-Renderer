@@ -7,6 +7,8 @@
 #include "renderer/core/parameterset.h"
 #include "renderer/core/spectrum.h"
 
+#include "sm_20_atomic_functions.h"
+
 class Film {
 public:
     Film() {}
@@ -45,7 +47,7 @@ inline __host__ __device__
 void Film::AddSample(int x, int y, Spectrum v)
 {
     int index = y * m_resolution.x + x;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++) {        
         m_bitmap[index * 3 + i] += v[i];
     }
     m_sampleNum[index]++;

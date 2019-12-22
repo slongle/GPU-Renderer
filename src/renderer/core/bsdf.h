@@ -129,8 +129,8 @@ Spectrum GGXSmithReflectBSDF::Sample(
     Float* pdf, 
     unsigned int& seed) const
 {
-    // Sample microfacet orientation $\wh$ and reflected direction $\wi$
-    if (wo.z == 0) return 0.;
+    // Sample microfacet orientation $\wh$ and reflected direction $\wi$    
+    if (wo.z == 0) return Spectrum(0.f);    
     Vector3f wh = m_distribution.Sample_wh(wo, seed);
     *wi = Reflect(wo, wh);
     if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);
@@ -145,11 +145,12 @@ Spectrum GGXSmithReflectBSDF::F(
     const Vector3f& wo, 
     const Vector3f& wi) const
 {
+    //return 0;
     Float cosThetaO = AbsCosTheta(wo), cosThetaI = AbsCosTheta(wi);
     Vector3f wh = wi + wo;
     // Handle degenerate cases for microfacet reflection
-    if (cosThetaI == 0 || cosThetaO == 0) return Spectrum(0.);
-    if (wh.x == 0 && wh.y == 0 && wh.z == 0) return Spectrum(0.);
+    if (cosThetaI == 0 || cosThetaO == 0) return Spectrum(0.f);
+    if (wh.x == 0 && wh.y == 0 && wh.z == 0) return Spectrum(0.f);
     wh = Normalize(wh);    
     Spectrum F;
     if (m_conductor) {

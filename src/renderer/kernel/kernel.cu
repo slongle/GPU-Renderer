@@ -109,7 +109,7 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
     cudaMalloc(&film.m_sampleNum, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned int));
     cudaMemset(film.m_sampleNum, 0, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned int));
     cudaMalloc(&dev_camera, sizeof(Camera));
-    cudaMemcpy(dev_camera, hst_camera, sizeof(Camera), cudaMemcpyHostToDevice);
+    checkCudaErrors(cudaMemcpy(dev_camera, hst_camera, sizeof(Camera), cudaMemcpyHostToDevice));
 
     // Move Integrator
     hst_integrator = &(renderer->m_integrator);
@@ -118,7 +118,7 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
 
     hst_renderer = new CUDARenderer(dev_integrator, dev_camera, dev_scene);
     cudaMalloc(&dev_renderer, sizeof(CUDARenderer));
-    cudaMemcpy(dev_renderer, hst_renderer, sizeof(CUDARenderer), cudaMemcpyHostToDevice);
+    checkCudaErrors(cudaMemcpy(dev_renderer, hst_renderer, sizeof(CUDARenderer), cudaMemcpyHostToDevice));
 
 
 }
@@ -131,11 +131,12 @@ typedef struct
 __constant__ float3x4 c_invViewMatrix;  // inverse view matrix
 
 __device__
-Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, unsigned int& seed, Point3f& pLight) {
+Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, unsigned int& seed, Point3f& pLight) 
+{    
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
 
-    Spectrum est(0.);
+    Spectrum est;
     
     // Sample one of lights
     int lightID = min(scene.m_lightNum - 1, int(NextRandom(seed) * scene.m_lightNum));
@@ -169,7 +170,8 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
 
         // BSDF
         Float bsdfPdf;
-        Spectrum cosBSDF = material.F(n, inter.m_wo, d, &bsdfPdf);
+        Spectrum cosBSDF;
+        cosBSDF = material.F(n, inter.m_wo, d, &bsdfPdf);
 
         // Contribution
         est = Le * cosBSDF / lightSamplePdf;
@@ -179,14 +181,16 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
 
 __device__
 Spectrum SampleMaterial(const CUDAScene& scene, Interaction& inter, unsigned int& seed) {
+    Spectrum cosBSDF;
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
     
     Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
 
     Float bsdfPdf;
-    Spectrum cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
-
+    cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
+    //return cosBSDF;    
+    if (bsdfPdf < Epsilon) return Spectrum(0);
     return cosBSDF / bsdfPdf;
 }
 
@@ -235,11 +239,13 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
 
         // get material's bsdf
         //const Material& material = scene->m_materials[primitive.m_materialID];        
+        if (throughput.isBlack()) {
+            break;
+        }
 
         // direct light
         Point3f pLight;
         L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
-
 
         // calculate BSDF
         throughput *= SampleMaterial(*scene, interaction, seed);
@@ -259,7 +265,12 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
     L = camera->m_film.GetPixelSpectrum(index);
 
     // write output color
-    SpectrumToUnsignedChar(L, (unsigned char*)&d_output[(imageH - y - 1) * imageW + x], 4);
+    if (d_output) {
+        SpectrumToUnsignedChar(L, (unsigned char*)&d_output[(imageH - y - 1) * imageW + x], 4);
+    }
+    else {
+        //printf("0");
+    }
 
 }
 
@@ -272,7 +283,9 @@ void freeCudaBuffers()
 extern "C"
 void render_kernel(dim3 gridSize, dim3 blockSize, uint * d_output, uint imageW, uint imageH)
 {
+    //printf("%ud %ud\n", imageW, imageH);
     d_render << <gridSize, blockSize >> > (d_output, imageW, imageH, frame, dev_renderer);
+    //checkCudaErrors(cudaDeviceSynchronize());
     frame++;
 }
 
@@ -282,5 +295,36 @@ void copyInvViewMatrix(float* invViewMatrix, size_t sizeofMatrix)
     //checkCudaErrors(cudaMemcpyToSymbol(c_invViewMatrix, invViewMatrix, sizeofMatrix));
 }
 
+extern "C"
+void gpu_render(std::shared_ptr<Renderer> renderer) {
+    auto iDivUp = [](unsigned int a, unsigned int b)->unsigned int {
+        return (a + b - 1) / b;
+    };
+
+    cudaInit(renderer);
+
+    int width = renderer->m_camera.m_film.m_resolution.x;
+    int height = renderer->m_camera.m_film.m_resolution.y;
+    Camera* camera = &renderer->m_camera;
+    Film film = camera->m_film;
+
+    int num = 64;
+    dim3 blockSize{ 16, 16 };
+    dim3 gridSize{ iDivUp(width, blockSize.x), iDivUp(height, blockSize.y) };
+    for (int i = 0; i < num; i++) {        
+        d_render << <gridSize, blockSize >> > (NULL, width, height, 0, dev_renderer);
+    }
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    film.m_bitmap = new Float[film.m_resolution.x * film.m_resolution.y * 3];
+    film.m_sampleNum = new unsigned int[film.m_resolution.x * film.m_resolution.y];
+    memset(film.m_bitmap, 0, sizeof(Float) * film.m_resolution.x * film.m_resolution.y * 3);
+    memset(film.m_sampleNum, 0, sizeof(unsigned int) * film.m_resolution.x * film.m_resolution.y);    
+    checkCudaErrors(cudaMemcpy(film.m_bitmap, hst_camera->m_film.m_bitmap, sizeof(Float) * film.m_resolution.x * film.m_resolution.y * 3, cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(film.m_sampleNum, hst_camera->m_film.m_sampleNum, sizeof(unsigned int) * film.m_resolution.x * film.m_resolution.y, cudaMemcpyDeviceToHost));
+    //cudaDeviceSynchronize();
+    film.Output();
+     
+}
 
 #endif // #ifndef _VOLUMERENDER_KERNEL_CU_

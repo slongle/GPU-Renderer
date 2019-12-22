@@ -66,7 +66,7 @@ Float Sin2Theta(const Vector3f& w) {
     return max((Float)0, (Float)1 - Cos2Theta(w));
 }
 inline __device__ __host__
-Float SinTheta(const Vector3f& w) { return std::sqrt(Sin2Theta(w)); }
+Float SinTheta(const Vector3f& w) { return sqrt(Sin2Theta(w)); }
 
 inline __device__ __host__
 Float TanTheta(const Vector3f& w) { return SinTheta(w) / CosTheta(w); }

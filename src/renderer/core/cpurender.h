@@ -76,7 +76,8 @@ Spectrum SampleMaterial(const Scene& scene, Interaction& inter, unsigned int& se
     return cosBSDF / bsdfPdf;
 }
 
-inline void render(std::shared_ptr<Renderer> renderer)
+inline 
+void render(std::shared_ptr<Renderer> renderer)
 {
     Integrator* integrator = &renderer->m_integrator;
     Camera* camera = &renderer->m_camera;

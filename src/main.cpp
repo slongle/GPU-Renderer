@@ -10,6 +10,7 @@ using std::endl;
 #include "utility/helper_logger.h"
 #include "renderer/core/sampling.h"
 #include "renderer/core/cpurender.h"
+#include "renderer/core/gpurender.h"
 #include "renderer/core/triangle.h"
 
 int main() {   
@@ -23,10 +24,12 @@ int main() {
     sceneLoader = new  PBRTLoader(filepath);
     std::shared_ptr<Renderer> renderer = sceneLoader->Load();  
 
-    render(renderer);
-    return 0;
+    //render(renderer);
+    //return 0;
 
-    Gui::init(renderer);
+    //GPURender(renderer);
+
+    Gui::init(renderer);             
     Gui::mainLoop();
     return 0;
 }
