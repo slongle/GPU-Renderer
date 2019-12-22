@@ -18,13 +18,13 @@ typedef float Float;
 
 #define Infinity ((float)(_HUGE_ENUF * _HUGE_ENUF))
 #define Epsilon  1e-5f
-#define Pi       3.14159265358979323846
-#define InvPi    0.31830988618379067154
-#define Inv2Pi   0.15915494309189533577
-#define Inv4Pi   0.07957747154594766788
-#define PiOver2  1.57079632679489661923
-#define PiOver4  0.78539816339744830961
-#define Sqrt2    1.41421356237309504880
+#define Pi       3.14159265358979323846f
+#define InvPi    0.31830988618379067154f
+#define Inv2Pi   0.15915494309189533577f
+#define Inv4Pi   0.07957747154594766788f
+#define PiOver2  1.57079632679489661923f
+#define PiOver4  0.78539816339744830961f
+#define Sqrt2    1.41421356237309504880f
 
 template<typename T> class Vector2;
 template<typename T> class Vector3;
@@ -51,14 +51,13 @@ typedef Bounds3<int> Bounds3i;
 class Ray;
 class BSDF;
 class Light;
-class Shape;
 class Primitive;
 class Material;
 class Medium;
 
 inline __device__ __host__
 Float Radians(Float ang) {
-    return ang * Pi / 180;
+    return ang * Pi / 180.f;
 }
 
 template<typename T>

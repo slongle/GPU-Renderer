@@ -67,7 +67,7 @@ Spectrum FrConductor(
     Spectrum etak = k / etai;
 
     Float cosThetaI2 = cosThetaI * cosThetaI;
-    Float sinThetaI2 = 1. - cosThetaI2;
+    Float sinThetaI2 = 1.f - cosThetaI2;
     Spectrum eta2 = eta * eta;
     Spectrum etak2 = etak * etak;
 

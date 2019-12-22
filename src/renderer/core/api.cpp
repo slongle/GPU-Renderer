@@ -228,6 +228,9 @@ int Options::MakeMaterial(
     else if (type == "metal") {
         mtl = CreateMetalMaterial(params);
     }
+    else if (type == "glass") {
+        mtl = CreateGlassMaterial(params);
+    }
     else {
         ASSERT(0, "Can't support material " + type);
     }
@@ -236,14 +239,17 @@ int Options::MakeMaterial(
 }
 
 std::pair<int, int> Options::MakeShape(
-    const std::string& type, 
+    const std::string& type,
     const ParameterSet& params)
 {
     Transform objToWorld = m_currentTransform;
     Transform worldToObj = Inverse(objToWorld);
     std::vector<std::shared_ptr<Triangle>> triangles;
     if (type == "trianglemesh") {
-         triangles = CreateTriangleMeshShape(params, objToWorld, worldToObj);
+        triangles = CreateTriangleMeshShape(params, objToWorld, worldToObj);
+    }
+    else if (type == "plymesh") {
+        triangles = CreatePLYMeshShape(params, objToWorld, worldToObj);
     }
     else if (type == "sphere") {
         triangles = CreateSphereShape(params, objToWorld, worldToObj);

@@ -75,10 +75,17 @@ CreateTriangleMeshShape(
     Transform worldToObj);
 
 std::vector<std::shared_ptr<Triangle>>
+CreatePLYMeshShape(
+    const ParameterSet& params,
+    const Transform& o2w,
+    const Transform& w2o);
+
+std::vector<std::shared_ptr<Triangle>>
 CreateSphereShape(
     const ParameterSet& params,
     Transform objToWorld,
     Transform worldToObj);
+
 
 /*
  * Moller-Trumbore algorithm
@@ -215,7 +222,7 @@ Float Triangle::Area() const
     const Point3f& p0 = m_triangleMeshPtr->m_P[indices[0]];
     const Point3f& p1 = m_triangleMeshPtr->m_P[indices[1]];
     const Point3f& p2 = m_triangleMeshPtr->m_P[indices[2]];
-    return 0.5 * Cross(p1 - p0, p2 - p0).Length();
+    return 0.5f * Cross(p1 - p0, p2 - p0).Length();
 }
 
 

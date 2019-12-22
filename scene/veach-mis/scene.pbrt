@@ -2,7 +2,7 @@ Integrator "path" "integer maxdepth" [ 3 ]
 Transform [ 4.37113e-008 -0 -1 -0 -0 1 -0 -0 -1 -0 -4.37113e-008 -0 -0 -3.5 28.2792 1]
 Sampler "sobol" "integer pixelsamples" [ 64 ] 
 PixelFilter "triangle" "float xwidth" [ 1.000000 ] "float ywidth" [ 1.000000 ] 
-Film "image" "integer xresolution" [ 256 ] "integer yresolution" [ 128 ] "string filename" [ "veach-mis.png" ] 
+Film "image" "integer xresolution" [ 640 ] "integer yresolution" [ 320 ] "string filename" [ "veach-mis.png" ] 
 Camera "perspective" "float fov" [ 20.114292 ] 
 WorldBegin
 	MakeNamedMaterial "Diffuse" "string type" [ "matte" ] "rgb Kd" [ 0.500000 0.500000 0.500000 ] 

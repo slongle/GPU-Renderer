@@ -2,12 +2,9 @@
 #ifndef __FILM_H
 #define __FILM_H
 
-#include "renderer/core/fwd.h"
 #include "renderer/core/transform.h"
 #include "renderer/core/parameterset.h"
 #include "renderer/core/spectrum.h"
-
-#include "sm_20_atomic_functions.h"
 
 class Film {
 public:
@@ -57,7 +54,7 @@ inline __host__ __device__
 Spectrum Film::GetPixelSpectrum(int index) const
 {
     Spectrum v(m_bitmap[index * 3], m_bitmap[index * 3 + 1], m_bitmap[index * 3 + 2]);
-    v /= m_sampleNum[index];
+    v /= Float(m_sampleNum[index]);
     return v;
 }
 

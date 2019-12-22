@@ -2,7 +2,6 @@
 #ifndef __SAMPLING_H
 #define __SAMPLING_H
 
-#include "renderer/core/fwd.h"
 #include "renderer/core/geometry.h"
 
 inline __device__ __host__

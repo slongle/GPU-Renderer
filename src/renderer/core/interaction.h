@@ -2,7 +2,7 @@
 #ifndef __INTERACTION_H
 #define __INTERACTION_H
 
-#include "renderer/core/fwd.h"
+#include "renderer/core/geometry.h"
 
 class Interaction {
 public:

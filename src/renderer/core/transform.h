@@ -2,7 +2,6 @@
 #ifndef __TRANSFORM_H
 #define __TRANSFORM_H
 
-#include "renderer/core/fwd.h"
 #include "renderer/core/geometry.h"
 
 class Matrix4x4 {
@@ -265,10 +264,10 @@ Transform Scale(Float x, Float y, Float z)
         0, y, 0, 0,
         0, 0, z, 0,
         0, 0, 0, 1);
-    Matrix4x4 mInv(1. / x, 0, 0, 0,
-        0, 1. / y, 0, 0,
-        0, 0, 1. / z, 0,
-        0, 0, 0, 1.);
+    Matrix4x4 mInv(1.f / x, 0, 0, 0,
+        0, 1.f / y, 0, 0,
+        0, 0, 1.f / z, 0,
+        0, 0, 0, 1.f);
     return Transform(m, mInv);
 }
 

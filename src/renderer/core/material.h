@@ -2,7 +2,6 @@
 #ifndef __MATERIAL_H
 #define __MATERIAL_H
 
-#include "renderer/core/fwd.h"
 #include "renderer/core/parameterset.h"
 #include "renderer/core/spectrum.h"
 #include "renderer/core/interaction.h"
@@ -12,19 +11,29 @@
 class Material {
 public:
     enum ComponentType {
-        DIFFUSE_REFLECT = 0x1u, 
-        GLOSSY_REFLECT  = 0x2u,
+        DIFFUSE_REFLECT      = 0x1u, 
+        DIFFUSE_TRANSMISSION = 0x2u,
+        GLOSSY_REFLECT       = 0x4u,
+        GLOSSY_TRANSMISSION  = 0x8u,
     };
 
     // Diffuse Material
     Material(
-        ComponentType type,
+        int type,
         Spectrum Kd);
     // Metal Material
     Material(
-        ComponentType type,
+        int type,
         const Spectrum& eta,
         const Spectrum& k,
+        const Float& uroughness,
+        const Float& vroughness);
+    // Glass Material
+    Material(
+        int type,
+        const Spectrum& Kr,
+        const Spectrum& Kt,
+        const Float& eta,        
         const Float& uroughness,
         const Float& vroughness);
    
@@ -33,10 +42,11 @@ public:
     Spectrum F(const Normal3f& n, const Vector3f& worldWo, const Vector3f& worldWi, Float* pdf) const;    
 
     // Global
-    ComponentType m_type;
+    int m_type;
 
     LambertReflectBSDF m_diffuseReflect;
     GGXSmithReflectBSDF m_glossyReflect;
+    GGXSmithTransmission m_glossyTransmission;
 };
 
 std::shared_ptr<Material>
@@ -45,6 +55,10 @@ CreateMatteMaterial(
 
 std::shared_ptr<Material>
 CreateMetalMaterial(
+    const ParameterSet& param);
+
+std::shared_ptr<Material>
+CreateGlassMaterial(
     const ParameterSet& param);
 
 inline __device__ __host__
@@ -108,9 +122,11 @@ Spectrum Material::Sample(
     if (m_type == DIFFUSE_REFLECT) {
         cosBSDF = m_diffuseReflect.Sample(localWo, &localWi, pdf, seed);
     }
-    else if (m_type == GLOSSY_REFLECT) {   
-        //printf("!");
+    else if (m_type == GLOSSY_REFLECT) {
         cosBSDF = m_glossyReflect.Sample(localWo, &localWi, pdf, seed);
+    }
+    else if (m_type == GLOSSY_REFLECT | GLOSSY_TRANSMISSION) {
+
     }
 
     //return cosBSDF;

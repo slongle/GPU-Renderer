@@ -77,7 +77,9 @@ set(sources
 	src/ext/stb_image/stb_image_write.h
     src/ext/tinyformat/tinyformat.h
     src/ext/tinyobjloader/tiny_obj_loader.h
-    src/ext/tinyobjloader/tiny_obj_loader.cc    
+    src/ext/tinyobjloader/tiny_obj_loader.cc  
+	src/ext/rply/rply.h
+	src/ext/rply/rply.cpp
     src/GUI/gui.cpp
     src/GUI/gui.h    
     src/utility/exception.h

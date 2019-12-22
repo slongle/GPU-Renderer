@@ -2,8 +2,6 @@
 #ifndef __MICROFACET_H
 #define __MICROFACET_H
 
-#include "renderer/core/fwd.h"
-#include "renderer/core/geometry.h"
 #include "renderer/core/sampling.h"
 
 class GGXDistribution {
@@ -117,9 +115,9 @@ void GGXDistribution::GGXSample11(
     Float* slope_y)
 {
     // special case (normal incidence)
-    if (cosTheta > .9999) {
+    if (cosTheta > .9999f) {
         Float r = sqrt(U1 / (1 - U1));
-        Float phi = 6.28318530718 * U2;
+        Float phi = 6.28318530718f * U2;
         *slope_x = r * cos(phi);
         *slope_y = r * sin(phi);
         return;
@@ -134,7 +132,7 @@ void GGXDistribution::GGXSample11(
     // sample slope_x
     Float A = 2 * U1 / G1 - 1;
     Float tmp = 1.f / (A * A - 1.f);
-    if (tmp > 1e10) tmp = 1e10;
+    if (tmp > 1e10) tmp = 1e10f;
     Float B = tanTheta;
     Float D = sqrt(
         max(Float(B * B * tmp * tmp - (A * A - B * B) * tmp), Float(0)));

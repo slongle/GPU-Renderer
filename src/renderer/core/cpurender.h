@@ -3,12 +3,10 @@
 #define __CPURENDERER_H
 
 #include "renderer/core/renderer.h"
-#include "renderer/core/film.h"
-#include "renderer/core/sampling.h"
 
 inline Point3f 
 WorldToRaster(Camera* camera, Point3f p) {
-    Float znear = 1e-2;
+    Float znear = 1e-2f;
     Point3f pHit1 = p;
     Point3f pCamera1 = camera->m_worldToCamera(pHit1);
     Point3f pCameraFilm1(pCamera1.x / pCamera1.z * znear, pCamera1.y / pCamera1.z * znear, znear);
@@ -119,6 +117,7 @@ Spectrum NextEventEstimate(const Scene& scene, const Interaction& inter, unsigne
     return est / lightChoosePdf;
 }
 
+inline
 Spectrum SampleMaterial(const Scene& scene, Interaction& inter, unsigned int& seed) {
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
@@ -180,9 +179,6 @@ void render(std::shared_ptr<Renderer> renderer)
 
                     // calculate BSDF
                     throughput *= SampleMaterial(*scene, interaction, seed);
-
-                    // delete BSDF
-                    delete interaction.m_bsdf;
 
                     // indirect light                    
                     if (throughput.Max() < 1 && i > 3) {
