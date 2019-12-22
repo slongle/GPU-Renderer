@@ -27,8 +27,8 @@ int main() {
     //render(renderer);
     //return 0;
 
-    GPURender(renderer);
-    return 0;
+    //GPURender(renderer);
+    //return 0;
 
     Gui::init(renderer);             
     Gui::mainLoop();

@@ -131,6 +131,12 @@ typedef struct
 __constant__ float3x4 c_invViewMatrix;  // inverse view matrix
 
 __device__
+Float PowerHeuristic(int nf, Float fPdf, int ng, Float gPdf) {
+    Float f = nf * fPdf, g = ng * gPdf;
+    return (f * f) / (f * f + g * g);
+}
+
+__device__
 Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, unsigned int& seed, Point3f& pLight) 
 {    
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
@@ -143,39 +149,84 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
     Float lightChoosePdf = Float(1) / scene.m_lightNum;
     const Light& light = scene.m_lights[lightID];
 
-    // Light Sample Li
-    const Triangle& triangle = scene.m_triangles[light.m_shapeID];
-    Float lightSamplePdf;
-    Interaction lightSample = triangle.Sample(&lightSamplePdf, seed);
-    pLight = lightSample.m_p;
-    lightSamplePdf *= (lightSample.m_p - inter.m_p).SqrLength() / 
-        AbsDot(-Normalize(lightSample.m_p - inter.m_p), lightSample.m_shadingN);
+    // Light Sampling
+    {
+        // Light Sample Li
+        const Triangle& triangle = scene.m_triangles[light.m_shapeID];
+        Float lightSamplePdf;
+        Interaction lightSample = triangle.Sample(&lightSamplePdf, seed);
+        pLight = lightSample.m_p;
+        lightSamplePdf *= (lightSample.m_p - inter.m_p).SqrLength() / 
+            AbsDot(-Normalize(lightSample.m_p - inter.m_p), lightSample.m_shadingN);
 
-    // Visibility test
-    Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
-    Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
-    Vector3f d = target - origin;
-    Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
-    bool hit = scene.Intersect(testRay);
+        // Visibility test
+        Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
+        Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
+        Vector3f d = target - origin;
+        Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
+        bool hit = scene.Intersect(testRay);
 
+        if (!hit) {
+            Vector3f d = Normalize(lightSample.m_p - inter.m_p);
+            // Get Le
+            Spectrum Le(0.);
+            if (Dot(-d, lightSample.m_shadingN) > 0) {
+                Le = light.m_L;
+            }
 
-    if (!hit) {
-        Vector3f d = Normalize(lightSample.m_p - inter.m_p);
-        // Get Le
-        Spectrum Le(0.);
-        if (Dot(-d, lightSample.m_shadingN) > 0) {
-            Le = light.m_L;
+            // BSDF Sample
+            Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+            Float bsdfPdf;
+            Spectrum cosBSDF;
+            cosBSDF = material.F(n, inter.m_wo, d, &bsdfPdf);
+
+            // Contribution
+            if (light.isDelta()) {
+                est += Le * cosBSDF / lightSamplePdf;
+            }
+            else {
+                Float weight = PowerHeuristic(1, lightSamplePdf, 1, bsdfPdf);                
+                est += Le * cosBSDF * weight / lightSamplePdf;
+            }
         }
-        Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+    }
 
-        // BSDF
+    // BSDF Sampling
+    if (!light.isDelta()) {
+
+        // BSDF Sample
+        Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
         Float bsdfPdf;
         Spectrum cosBSDF;
-        cosBSDF = material.F(n, inter.m_wo, d, &bsdfPdf);
+        Vector3f wi;
+        cosBSDF = material.Sample(n, inter.m_wo, &wi, &bsdfPdf, seed);
 
-        // Contribution
-        est = Le * cosBSDF / lightSamplePdf;
+        // Light Sample
+        const Triangle& triangle = scene.m_triangles[light.m_shapeID];
+
+        Point3f origin = inter.m_p + wi * Epsilon;
+        Ray testRay(origin, wi);
+        Interaction lightInter;
+        bool hit = scene.IntersectP(testRay, &lightInter);
+
+        if (hit && scene.m_primitives[lightInter.m_primitiveID].m_lightID != -1)
+        {
+            Float lightSamplePdf;
+            lightSamplePdf = (lightInter.m_p - inter.m_p).SqrLength() /
+                (AbsDot(-wi, lightInter.m_shadingN) * triangle.Area());
+            pLight = lightInter.m_p;
+
+            // Get Le            
+            Spectrum Le(0.);
+            if (Dot(-wi, lightInter.m_shadingN) > 0) {
+                Le = scene.m_lights[scene.m_primitives[lightInter.m_primitiveID].m_lightID].m_L;
+            }
+
+            Float weight = PowerHeuristic(1, bsdfPdf, 1, lightSamplePdf);
+            est += Le * cosBSDF * weight / bsdfPdf;            
+        }
     }
+
     return est / lightChoosePdf;
 }
 
