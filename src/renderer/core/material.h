@@ -11,10 +11,12 @@
 class Material {
 public:
     enum ComponentType {
-        DIFFUSE_REFLECT      = 0x1u, 
-        DIFFUSE_TRANSMISSION = 0x2u,
-        GLOSSY_REFLECT       = 0x4u,
-        GLOSSY_TRANSMISSION  = 0x8u,
+        DIFFUSE_REFLECT       = 0x1u, 
+        DIFFUSE_TRANSMISSION  = 0x2u,
+        SPECULAR_TRANSMISSION = 0x4u,
+        SPECULAR_REFLECT      = 0x8u,
+        GLOSSY_REFLECT        = 0x10u,
+        GLOSSY_TRANSMISSION   = 0x20u,
     };
 
     // Diffuse Material
@@ -33,9 +35,17 @@ public:
         int type,
         const Spectrum& Kr,
         const Spectrum& Kt,
-        const Float& eta,        
+        const Float& eta);
+
+    /*
+    Material(
+        int type,
+        const Spectrum& Kr,
+        const Spectrum& Kt,
+        const Float& eta,
         const Float& uroughness,
         const Float& vroughness);
+    */
    
     Spectrum Sample(const Normal3f& n, const Vector3f& worldWo, Vector3f* worldWi, Float* pdf, unsigned int& seed) const;
     Spectrum F(const Normal3f& n, const Vector3f& worldWo, const Vector3f& worldWi) const;
@@ -45,8 +55,11 @@ public:
     int m_type;
 
     LambertReflectBSDF m_diffuseReflect;
+    //SpecularReflectBSDF m_specularReflect;
+    //SpecularTransmission m_specularTransmission;
     GGXSmithReflectBSDF m_glossyReflect;
-    GGXSmithTransmission m_glossyTransmission;
+    //GGXSmithTransmission m_glossyTransmission;
+    FresnelSpecular m_fresnelSpecular;
 };
 
 std::shared_ptr<Material>
@@ -73,12 +86,16 @@ Spectrum Material::F(
     Vector3f localWo = WorldToLocal(worldWo, n, s, t);
     Vector3f localWi = WorldToLocal(worldWi, n, s, t);
     Spectrum cosBSDF(0);
+    bool reflect = CosTheta(localWo) * CosTheta(localWi) > 0;
 
     if (m_type == DIFFUSE_REFLECT) {
         cosBSDF = m_diffuseReflect.F(localWo, localWi, pdf);
     }
     else if (m_type == GLOSSY_REFLECT) {
         cosBSDF = m_glossyReflect.F(localWo, localWi, pdf);
+    }
+    else if (m_type == (SPECULAR_REFLECT | SPECULAR_TRANSMISSION)) {
+        cosBSDF = m_fresnelSpecular.F(localWo, localWi, pdf);
     }
 
     return cosBSDF;
@@ -95,12 +112,16 @@ Spectrum Material::F(
     Vector3f localWo = WorldToLocal(worldWo, n, s, t);
     Vector3f localWi = WorldToLocal(worldWi, n, s, t);
     Spectrum cosBSDF(0);
+    bool reflect = CosTheta(localWo) * CosTheta(localWi) > 0;
 
     if (m_type == DIFFUSE_REFLECT) {
         cosBSDF = m_diffuseReflect.F(localWo, localWi);
     }
     else if (m_type == GLOSSY_REFLECT) {
         cosBSDF = m_glossyReflect.F(localWo, localWi);
+    }
+    else if (m_type == (SPECULAR_REFLECT | SPECULAR_TRANSMISSION)) {        
+        cosBSDF = m_fresnelSpecular.F(localWo, localWi);
     }
 
     return cosBSDF;
@@ -117,16 +138,18 @@ Spectrum Material::Sample(
     CoordinateSystem(n, &s, &t);
     Vector3f localWo = WorldToLocal(worldWo, n, s, t);
     Vector3f localWi;
-    Spectrum cosBSDF(0);    
-
+    Spectrum cosBSDF(0);        
+    //Point2f u(NextRandom(seed), NextRandom(seed));    
     if (m_type == DIFFUSE_REFLECT) {
+        //printf("Diffuse");
         cosBSDF = m_diffuseReflect.Sample(localWo, &localWi, pdf, seed);
     }
     else if (m_type == GLOSSY_REFLECT) {
         cosBSDF = m_glossyReflect.Sample(localWo, &localWi, pdf, seed);
     }
-    else if (m_type == GLOSSY_REFLECT | GLOSSY_TRANSMISSION) {
-
+    else if (m_type == (SPECULAR_REFLECT | SPECULAR_TRANSMISSION)) {
+        //printf("Glass");
+        cosBSDF = m_fresnelSpecular.Sample(localWo, &localWi, pdf, seed);
     }
 
     //return cosBSDF;

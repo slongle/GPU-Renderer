@@ -130,13 +130,13 @@ typedef struct
 
 __constant__ float3x4 c_invViewMatrix;  // inverse view matrix
 
-__device__
+inline __device__
 Float PowerHeuristic(int nf, Float fPdf, int ng, Float gPdf) {
     Float f = nf * fPdf, g = ng * gPdf;
     return (f * f) / (f * f + g * g);
 }
 
-__device__
+inline __device__
 Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, unsigned int& seed, Point3f& pLight) 
 {    
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
@@ -175,7 +175,7 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
             }
 
             // BSDF Sample
-            Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+            Normal3f n = inter.m_shadingN;
             Float bsdfPdf;
             Spectrum cosBSDF;
             cosBSDF = material.F(n, inter.m_wo, d, &bsdfPdf);
@@ -195,7 +195,7 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
     if (!light.isDelta()) {
 
         // BSDF Sample
-        Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+        Normal3f n = inter.m_shadingN;
         Float bsdfPdf;
         Spectrum cosBSDF;
         Vector3f wi;
@@ -230,13 +230,13 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
     return est / lightChoosePdf;
 }
 
-__device__
+inline __device__
 Spectrum SampleMaterial(const CUDAScene& scene, Interaction& inter, unsigned int& seed) {
     Spectrum cosBSDF;
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
     
-    Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+    Normal3f n = inter.m_shadingN;
 
     Float bsdfPdf;
     cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
@@ -289,8 +289,6 @@ d_render(uint* d_output, uint imageW, uint imageH, unsigned int frame, CUDARende
         //L = Spectrum(interaction.m_geometryN);
         //break;
 
-        // get material's bsdf
-        //const Material& material = scene->m_materials[primitive.m_materialID];        
         if (throughput.isBlack()) {
             break;
         }

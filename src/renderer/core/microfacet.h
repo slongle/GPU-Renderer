@@ -9,6 +9,8 @@ public:
     GGXDistribution() {}
     GGXDistribution(const Float& uroughness, const Float& vroughness);
 
+    bool isSpecular() const;
+
     Float D(
         const Vector3f& wh) const;
     Vector3f Sample_wh(
@@ -44,6 +46,12 @@ GGXDistribution::GGXDistribution(
     const Float& vroughness)
     : m_alphax(uroughness), m_alphay(vroughness)
 {
+}
+
+inline __host__ __device__
+bool GGXDistribution::isSpecular() const
+{
+    return m_alphax == 0 && m_alphay == 0;
 }
 
 inline __host__ __device__

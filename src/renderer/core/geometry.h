@@ -121,6 +121,7 @@ public:
 template <typename T>
 class Bounds3 {
 public:
+    __host__ __device__ Bounds3() {}
     __host__ __device__ Bounds3(const Point3<T>& p) :pMin(p), pMax(p) {}
     __host__ __device__ Bounds3(const Point3<T>& p1, const Point3<T>& p2)
         : pMin(min(p1.x, p2.x), min(p1.y, p2.y), min(p1.z, p2.z)),
@@ -129,6 +130,7 @@ public:
     }
     
     Point3<T> operator [] (int idx) const;
+    Point3<T> Centroid() const;
     bool Intersect(const Ray& ray, Float* hitt0 = nullptr, Float* hitt1 = nullptr) const;
     bool Intersect(const Ray& ray, const Vector3f& invDir, const int dirIsNeg[3]) const;
     // Bounds3 Public Data
@@ -409,6 +411,13 @@ Point3<T> Bounds3<T>::operator[](int idx) const
 {
     if (idx == 0) return pMin;
     else return pMax;
+}
+
+template<typename T>
+inline __device__ __host__
+Point3<T> Bounds3<T>::Centroid() const
+{
+    return (pMin + pMax) * 0.5f;
 }
 
 template<typename T>

@@ -54,6 +54,7 @@ class Light;
 class Primitive;
 class Material;
 class Medium;
+class Spectrum;
 
 inline __device__ __host__
 Float Radians(Float ang) {

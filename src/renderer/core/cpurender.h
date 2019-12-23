@@ -49,7 +49,7 @@ Spectrum NextEventEstimate(const Scene& scene, const Interaction& inter, unsigne
         Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
         Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
         Vector3f d = target - origin;
-        Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
+        Ray testRay(origin, Normalize(d), d.Length() - 2 * Epsilon);
         bool hit = scene.Intersect(testRay);
 
         if (!hit) {
@@ -61,7 +61,7 @@ Spectrum NextEventEstimate(const Scene& scene, const Interaction& inter, unsigne
             }
 
             // BSDF Sample
-            Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+            Normal3f n = inter.m_shadingN;
             Float bsdfPdf;
             Spectrum cosBSDF;
             cosBSDF = material.F(n, inter.m_wo, d, &bsdfPdf);
@@ -81,7 +81,7 @@ Spectrum NextEventEstimate(const Scene& scene, const Interaction& inter, unsigne
     if (!light.isDelta()) {
 
         // BSDF Sample
-        Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+        Normal3f n = inter.m_shadingN;
         Float bsdfPdf;
         Spectrum cosBSDF;
         Vector3f wi;
@@ -121,8 +121,8 @@ inline
 Spectrum SampleMaterial(const Scene& scene, Interaction& inter, unsigned int& seed) {
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
-
-    Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
+    
+    Normal3f n = inter.m_shadingN;
 
     Float bsdfPdf;
     Spectrum cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
@@ -146,7 +146,8 @@ void render(std::shared_ptr<Renderer> renderer)
                 Spectrum L(0);
                 Spectrum throughput(1);
                 Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
-                for (int i = 0; i < integrator->m_maxDepth; i++) {
+                int bounce;
+                for (bounce = 0; bounce < integrator->m_maxDepth; bounce++) {
 
                     // find intersection with scene
                     Interaction interaction;
@@ -157,7 +158,7 @@ void render(std::shared_ptr<Renderer> renderer)
                     }
 
                     const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
-                    if (i == 0 && primitive.m_lightID != -1) {
+                    if (bounce == 0 && primitive.m_lightID != -1) {
                         int lightID = primitive.m_lightID;
                         const Light& light = scene->m_lights[lightID];
                         if (Dot(interaction.m_shadingN, interaction.m_wo) > 0) {
@@ -169,19 +170,19 @@ void render(std::shared_ptr<Renderer> renderer)
                     //L = Spectrum(interaction.m_geometryN);
                     //break;
 
-                    // get material's bsdf
-                    //const Material& material = scene->m_materials[primitive.m_materialID];
+                    if (throughput.isBlack()) {
+                        break;
+                    }
 
                     // direct light
                     Point3f pLight;
                     L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
 
-
                     // calculate BSDF
                     throughput *= SampleMaterial(*scene, interaction, seed);
 
                     // indirect light                    
-                    if (throughput.Max() < 1 && i > 3) {
+                    if (throughput.Max() < 1 && bounce > 5) {
                         Float q = max((Float).05, 1 - throughput.Max());
                         if (NextRandom(seed) < q) break;
                         throughput /= 1 - q;
@@ -196,7 +197,7 @@ void render(std::shared_ptr<Renderer> renderer)
         }
     }
 
-    //DrawTransportLine(Point2i(234, 234), *renderer);
+    DrawTransportLine(Point2i(234, 450), *renderer);
 
     camera->m_film.Output();
 }
@@ -226,14 +227,6 @@ void DrawTransportLine(Point2i p, Renderer& renderer) {
 
         vertex.push_back(interaction.m_p);
 
-        if (Dot(ray.d, interaction.m_geometryN) > 0)
-        {
-            interaction.m_geometryN = -interaction.m_geometryN;
-        }
-        if (Dot(ray.d, interaction.m_shadingN) > 0) {
-            interaction.m_shadingN = -interaction.m_shadingN;
-        }
-
         const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
         if (i == 0 && primitive.m_lightID != -1) {
             int lightID = primitive.m_lightID;
@@ -254,7 +247,7 @@ void DrawTransportLine(Point2i p, Renderer& renderer) {
         // calculate BSDF
         throughput *= SampleMaterial(*scene, interaction, seed);
 
-        if (throughput.Max() < 1 && i > 3) {
+        if (throughput.Max() < 1 && i > 5) {
             Float q = max((Float).05, 1 - throughput.Max());
             if (NextRandom(seed) < q) break;
             throughput /= 1 - q;
@@ -266,6 +259,8 @@ void DrawTransportLine(Point2i p, Renderer& renderer) {
     }
     for (int i = 1; i < vertex.size(); i++) {
         film->DrawLine(Point2f(WorldToRaster(camera, vertex[i-1])), Point2f(WorldToRaster(camera, vertex[i])), Spectrum(1, 1, 1));
+        Point2f s(WorldToRaster(camera, vertex[i - 1]));
+        film->SetVal(s.x, s.y, Spectrum(1, 0, 0));
     }
 }
 

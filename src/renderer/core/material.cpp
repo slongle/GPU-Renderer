@@ -17,6 +17,18 @@ Material::Material(
 {
 }
 
+/*
+Material::Material(
+    int type,
+    const Spectrum& Kr,
+    const Spectrum& Kt,
+    const Float& eta)
+    : m_type(type),
+    m_specularReflect(Kr, false, 1.f, eta),
+    m_specularTransmission(Kt, 1.f, eta)
+{
+}
+
 Material::Material(
     int type,
     const Spectrum& Kr,
@@ -27,6 +39,17 @@ Material::Material(
     : m_type(type),
     m_glossyReflect(Kr, false, 1.f, eta, uroughness, vroughness),
     m_glossyTransmission(Kt, 1.f, eta, uroughness, vroughness)
+{
+}
+*/
+
+Material::Material(
+    int type,
+    const Spectrum& Kr,
+    const Spectrum& Kt,
+    const Float& eta)
+    : m_type(type),
+    m_fresnelSpecular(Kt, Kr, 1.f, eta)
 {
 }
 
@@ -58,10 +81,13 @@ CreateGlassMaterial(
     Spectrum Kr(param.GetSpectrum("Kr", std::vector<Float>{1, 1, 1}));
     Spectrum Kt(param.GetSpectrum("Kt", std::vector<Float>{1, 1, 1}));
     Float eta = param.GetFloat("index", 1.5f);
-    Float uroughness = param.GetFloat("uroughness", 0.f);
-    Float vroughness = param.GetFloat("vroughness", 0.f);
-    return std::make_shared<Material>(Material::GLOSSY_TRANSMISSION | Material::GLOSSY_REFLECT, 
-        Kr, Kt, eta, uroughness, vroughness);
+    //Float uroughness = param.GetFloat("uroughness", 0.00001f);
+    //Float vroughness = param.GetFloat("vroughness", 0.00001f);
+    //return std::make_shared<Material>(Material::GLOSSY_TRANSMISSION | Material::GLOSSY_REFLECT, Kr, Kt, eta, uroughness, vroughness);
+    printf("%f %f %f\n", Kr.r, Kr.g, Kr.b);
+    printf("%f %f %f\n", Kt.r, Kt.g, Kt.b);
+    printf("%f\n", eta);
+    return std::make_shared<Material>(Material::SPECULAR_TRANSMISSION | Material::SPECULAR_REFLECT, Kr, Kt, eta);
 }
 
 
