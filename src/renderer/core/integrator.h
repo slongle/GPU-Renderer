@@ -11,6 +11,7 @@ public:
     Integrator(int maxDepth);
 
     int m_maxDepth;
+    int m_nSample;
 };
 
 std::shared_ptr<Integrator>

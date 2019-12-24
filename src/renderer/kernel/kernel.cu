@@ -31,7 +31,7 @@ Integrator* dev_integrator;
 CUDARenderer* hst_renderer;
 CUDARenderer* dev_renderer;
 
-int frame = 0;
+unsigned int frame = 0;
 
 extern "C"
 void cudaInit(std::shared_ptr<Renderer> renderer) {
@@ -109,7 +109,7 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
     cudaMalloc(&film.m_sampleNum, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned int));
     cudaMemset(film.m_sampleNum, 0, film.m_resolution.x * film.m_resolution.y * sizeof(unsigned int));
     cudaMalloc(&dev_camera, sizeof(Camera));
-    cudaMemcpy(dev_camera, hst_camera, sizeof(Camera), cudaMemcpyHostToDevice);
+    checkCudaErrors(cudaMemcpy(dev_camera, hst_camera, sizeof(Camera), cudaMemcpyHostToDevice));
 
     // Move Integrator
     hst_integrator = &(renderer->m_integrator);
@@ -118,7 +118,9 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
 
     hst_renderer = new CUDARenderer(dev_integrator, dev_camera, dev_scene);
     cudaMalloc(&dev_renderer, sizeof(CUDARenderer));
-    cudaMemcpy(dev_renderer, hst_renderer, sizeof(CUDARenderer), cudaMemcpyHostToDevice);
+    checkCudaErrors(cudaMemcpy(dev_renderer, hst_renderer, sizeof(CUDARenderer), cudaMemcpyHostToDevice));
+
+
 }
 
 typedef struct
@@ -128,104 +130,123 @@ typedef struct
 
 __constant__ float3x4 c_invViewMatrix;  // inverse view matrix
 
-/*struct Ray
-{
-    float3 o;   // origin
-    float3 d;   // direction
-};
+inline __device__
+Float PowerHeuristic(int nf, Float fPdf, int ng, Float gPdf) {
+    Float f = nf * fPdf, g = ng * gPdf;
+    return (f * f) / (f * f + g * g);
+}
 
-// intersect ray with a box
-// http://www.siggraph.org/education/materials/HyperGraph/raytrace/rtinter3.htm
-
-__device__
-int intersectBox(Ray r, float3 boxmin, float3 boxmax, float* tnear, float* tfar)
-{
-    // compute intersection of ray with all six bbox planes
-    float3 invR = make_float3(1.0f) / r.d;
-    float3 tbot = invR * (boxmin - r.o);
-    float3 ttop = invR * (boxmax - r.o);
-
-    // re-order intersections to find smallest and largest on each axis
-    float3 tmin = fminf(ttop, tbot);
-    float3 tmax = fmaxf(ttop, tbot);
-
-    // find the largest tmin and the smallest tmax
-    float largest_tmin = fmaxf(fmaxf(tmin.x, tmin.y), fmaxf(tmin.x, tmin.z));
-    float smallest_tmax = fminf(fminf(tmax.x, tmax.y), fminf(tmax.x, tmax.z));
-
-    *tnear = largest_tmin;
-    *tfar = smallest_tmax;
-
-    return smallest_tmax > largest_tmin;
-}*/
-
-__device__
-Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, unsigned int& seed, Point3f& pLight) {
+inline __device__
+Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, unsigned int& seed, Point3f& pLight) 
+{    
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
 
-    Spectrum est(0.);
+    Spectrum est;
     
     // Sample one of lights
     int lightID = min(scene.m_lightNum - 1, int(NextRandom(seed) * scene.m_lightNum));
     Float lightChoosePdf = Float(1) / scene.m_lightNum;
     const Light& light = scene.m_lights[lightID];
 
-    // Light Sample Li
-    const Triangle& triangle = scene.m_triangles[light.m_shapeID];
-    Float lightSamplePdf;
-    Interaction lightSample = triangle.Sample(&lightSamplePdf, seed);
-    pLight = lightSample.m_p;
-    lightSamplePdf *= (lightSample.m_p - inter.m_p).SqrLength() / 
-        AbsDot(-Normalize(lightSample.m_p - inter.m_p), lightSample.m_shadingN);
+    // Light Sampling
+    {
+        // Light Sample Li
+        const Triangle& triangle = scene.m_triangles[light.m_shapeID];
+        Float lightSamplePdf;
+        Interaction lightSample = triangle.Sample(&lightSamplePdf, seed);
+        pLight = lightSample.m_p;
+        lightSamplePdf *= (lightSample.m_p - inter.m_p).SqrLength() / 
+            AbsDot(-Normalize(lightSample.m_p - inter.m_p), lightSample.m_shadingN);
 
-    // Visibility test
-    Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
-    Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
-    Vector3f d = target - origin;
-    Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
-    bool hit = scene.Intersect(testRay);
+        // Visibility test
+        Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
+        Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
+        Vector3f d = target - origin;
+        Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
+        bool hit = scene.Intersect(testRay);
 
+        if (!hit) {
+            Vector3f d = Normalize(lightSample.m_p - inter.m_p);
+            // Get Le
+            Spectrum Le(0.);
+            if (Dot(-d, lightSample.m_shadingN) > 0) {
+                Le = light.m_L;
+            }
 
-    if (!hit) {
-        Vector3f d = Normalize(lightSample.m_p - inter.m_p);
-        // Get Le
-        Spectrum Le(0.);
-        if (Dot(-d, lightSample.m_shadingN) > 0) {
-            Le = light.m_L;
+            // BSDF Sample
+            Normal3f n = inter.m_shadingN;
+            Float bsdfPdf;
+            Spectrum cosBSDF;
+            cosBSDF = material.F(n, inter.m_wo, d, &bsdfPdf);
+
+            // Contribution
+            if (light.isDelta()) {
+                est += Le * cosBSDF / lightSamplePdf;
+            }
+            else {
+                Float weight = PowerHeuristic(1, lightSamplePdf, 1, bsdfPdf);                
+                est += Le * cosBSDF * weight / lightSamplePdf;
+            }
         }
-        Normal3f n = Faceforward(inter.m_shadingN, d);
-
-        // BSDF
-        Spectrum cosineBSDF = material.m_Kd * InvPi * AbsDot(d, n);
-
-        // Contribution
-        est = Le * cosineBSDF / lightSamplePdf;
     }
+
+    // BSDF Sampling
+    if (!light.isDelta()) {
+
+        // BSDF Sample
+        Normal3f n = inter.m_shadingN;
+        Float bsdfPdf;
+        Spectrum cosBSDF;
+        Vector3f wi;
+        cosBSDF = material.Sample(n, inter.m_wo, &wi, &bsdfPdf, seed);
+
+        // Light Sample
+        const Triangle& triangle = scene.m_triangles[light.m_shapeID];
+
+        Point3f origin = inter.m_p + wi * Epsilon;
+        Ray testRay(origin, wi);
+        Interaction lightInter;
+        bool hit = scene.IntersectP(testRay, &lightInter);
+
+        if (hit && scene.m_primitives[lightInter.m_primitiveID].m_lightID != -1)
+        {
+            Float lightSamplePdf;
+            lightSamplePdf = (lightInter.m_p - inter.m_p).SqrLength() /
+                (AbsDot(-wi, lightInter.m_shadingN) * triangle.Area());
+            pLight = lightInter.m_p;
+
+            // Get Le            
+            Spectrum Le(0.);
+            if (Dot(-wi, lightInter.m_shadingN) > 0) {
+                Le = scene.m_lights[scene.m_primitives[lightInter.m_primitiveID].m_lightID].m_L;
+            }
+
+            Float weight = PowerHeuristic(1, bsdfPdf, 1, lightSamplePdf);
+            est += Le * cosBSDF * weight / bsdfPdf;            
+        }
+    }
+
     return est / lightChoosePdf;
 }
 
-__device__
+inline __device__
 Spectrum SampleMaterial(const CUDAScene& scene, Interaction& inter, unsigned int& seed) {
+    Spectrum cosBSDF;
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
     
-    Spectrum cosBsdf(1.);
+    Normal3f n = inter.m_shadingN;
 
-    Vector3f wi = CosineSampleHemisphere(seed);
-    cosBsdf = material.m_Kd * InvPi * wi.z;
-    Float bsdfPdf = CosineSampleHemispherePdf(wi.z);
-
-    Normal3f n = Faceforward(inter.m_shadingN, inter.m_wo);
-    Vector3f s, t;
-    CoordinateSystem(n, &s, &t);
-    inter.m_wi = LocalToWorld(wi, n, s, t);
-
-    return cosBsdf / bsdfPdf;
+    Float bsdfPdf;
+    cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
+    //return cosBSDF;    
+    if (bsdfPdf < Epsilon) return Spectrum(0);
+    return cosBSDF / bsdfPdf;
 }
 
 __global__ void
-d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* renderer)
+d_render(uint* d_output, uint imageW, uint imageH, unsigned int frame, CUDARenderer* renderer)
 {
     const float3 boxMin = make_float3(-1.0f, -1.0f, -1.0f);
     const float3 boxMax = make_float3(1.0f, 1.0f, 1.0f);
@@ -240,11 +261,12 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
     uint index = y * imageW + x;
     if ((x >= imageW) || (y >= imageH)) return;
 
+    Spectrum L(0);    
     uint seed = InitRandom(index, frame);
-    Spectrum L(0);
     Spectrum throughput(1);
     Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
-    for (int i = 0; i < integrator->m_maxDepth; i++) {
+    int bounce;
+    for (bounce = 0; bounce < integrator->m_maxDepth; bounce++) {
 
         // find intersection with scene
         Interaction interaction;
@@ -252,10 +274,10 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
 
         if (!hit) {
             break;
-        }        
+        }
 
         const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
-        if (i == 0 && primitive.m_lightID != -1) {
+        if (bounce == 0 && primitive.m_lightID != -1) {
             int lightID = primitive.m_lightID;
             const Light& light = scene->m_lights[lightID];
             if (Dot(interaction.m_shadingN, interaction.m_wo) > 0) {
@@ -267,19 +289,19 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
         //L = Spectrum(interaction.m_geometryN);
         //break;
 
-        // get material's bsdf
-        const Material& material = scene->m_materials[primitive.m_materialID];        
+        if (throughput.isBlack()) {
+            break;
+        }
 
         // direct light
         Point3f pLight;
         L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
 
-
         // calculate BSDF
         throughput *= SampleMaterial(*scene, interaction, seed);
 
         // indirect light                    
-        if (throughput.Max() < 1 && i > 3) {
+        if (throughput.Max() < 1 && bounce > 3) {
             Float q = max((Float).05, 1 - throughput.Max());
             if (NextRandom(seed) < q) break;
             throughput /= 1 - q;
@@ -293,7 +315,12 @@ d_render(uint* d_output, uint imageW, uint imageH, int frame, CUDARenderer* rend
     L = camera->m_film.GetPixelSpectrum(index);
 
     // write output color
-    SpectrumToUnsignedChar(L, (unsigned char*)&d_output[(imageH - y - 1) * imageW + x], 4);
+    if (d_output) {
+        SpectrumToUnsignedChar(L, (unsigned char*)&d_output[(imageH - y - 1) * imageW + x], 4);
+    }
+    else {
+        //printf("0");
+    }
 
 }
 
@@ -306,7 +333,9 @@ void freeCudaBuffers()
 extern "C"
 void render_kernel(dim3 gridSize, dim3 blockSize, uint * d_output, uint imageW, uint imageH)
 {
+    //printf("%ud %ud\n", imageW, imageH);
     d_render << <gridSize, blockSize >> > (d_output, imageW, imageH, frame, dev_renderer);
+    //checkCudaErrors(cudaDeviceSynchronize());
     frame++;
 }
 
@@ -316,5 +345,34 @@ void copyInvViewMatrix(float* invViewMatrix, size_t sizeofMatrix)
     //checkCudaErrors(cudaMemcpyToSymbol(c_invViewMatrix, invViewMatrix, sizeofMatrix));
 }
 
+extern "C"
+void gpu_render(std::shared_ptr<Renderer> renderer) {
+    auto iDivUp = [](unsigned int a, unsigned int b)->unsigned int {
+        return (a + b - 1) / b;
+    };
+
+    cudaInit(renderer);
+
+    int width = renderer->m_camera.m_film.m_resolution.x;
+    int height = renderer->m_camera.m_film.m_resolution.y;
+    Camera* camera = &renderer->m_camera;
+    Film film = camera->m_film;
+    
+    dim3 blockSize{ 16, 16 };
+    dim3 gridSize{ iDivUp(width, blockSize.x), iDivUp(height, blockSize.y) };
+    for (unsigned int i = 0; i < renderer->m_integrator.m_nSample; i++) {
+        d_render << <gridSize, blockSize >> > (NULL, width, height, i, dev_renderer);
+    }
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    film.m_bitmap = new Float[film.m_resolution.x * film.m_resolution.y * 3];
+    film.m_sampleNum = new unsigned int[film.m_resolution.x * film.m_resolution.y];
+    memset(film.m_bitmap, 0, sizeof(Float) * film.m_resolution.x * film.m_resolution.y * 3);
+    memset(film.m_sampleNum, 0, sizeof(unsigned int) * film.m_resolution.x * film.m_resolution.y);    
+    checkCudaErrors(cudaMemcpy(film.m_bitmap, hst_camera->m_film.m_bitmap, sizeof(Float) * film.m_resolution.x * film.m_resolution.y * 3, cudaMemcpyDeviceToHost));
+    checkCudaErrors(cudaMemcpy(film.m_sampleNum, hst_camera->m_film.m_sampleNum, sizeof(unsigned int) * film.m_resolution.x * film.m_resolution.y, cudaMemcpyDeviceToHost));
+    //cudaDeviceSynchronize();
+    film.Output();     
+}
 
 #endif // #ifndef _VOLUMERENDER_KERNEL_CU_

@@ -14,6 +14,8 @@ public:
 
     __device__ __host__ Light() {}
     __device__ __host__ Light(LightType type, const Spectrum& L, int shapeID);
+    
+    __device__ __host__ bool isDelta() const;
 
 
 // Global
@@ -27,5 +29,11 @@ std::shared_ptr<Light>
 CreateAreaLight(
     const ParameterSet& params,
     int shapeID);
+
+inline __device__ __host__ 
+bool Light::isDelta() const
+{
+    return false;
+}
 
 #endif // !__LIGHT_H

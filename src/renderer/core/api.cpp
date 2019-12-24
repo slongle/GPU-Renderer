@@ -223,8 +223,14 @@ int Options::MakeMaterial(
     const ParameterSet& params)
 {
     std::shared_ptr<Material> mtl;
-    if (type == "Diffuse" || type == "matte") {
+    if (type == "diffuse" || type == "matte") {
         mtl = CreateMatteMaterial(params);
+    }
+    else if (type == "metal") {
+        mtl = CreateMetalMaterial(params);
+    }
+    else if (type == "glass") {
+        mtl = CreateGlassMaterial(params);
     }
     else {
         ASSERT(0, "Can't support material " + type);
@@ -234,14 +240,17 @@ int Options::MakeMaterial(
 }
 
 std::pair<int, int> Options::MakeShape(
-    const std::string& type, 
+    const std::string& type,
     const ParameterSet& params)
 {
     Transform objToWorld = m_currentTransform;
     Transform worldToObj = Inverse(objToWorld);
     std::vector<std::shared_ptr<Triangle>> triangles;
     if (type == "trianglemesh") {
-         triangles = CreateTriangleMeshShape(params, objToWorld, worldToObj);
+        triangles = CreateTriangleMeshShape(params, objToWorld, worldToObj);
+    }
+    else if (type == "plymesh") {
+        triangles = CreatePLYMeshShape(params, objToWorld, worldToObj);
     }
     else if (type == "sphere") {
         triangles = CreateSphereShape(params, objToWorld, worldToObj);
@@ -280,6 +289,8 @@ void Options::MakeFilm() {
 void Options::MakeIntegrator()
 {
     m_integrator = *CreateIntegrator(m_integratorParameterSet);    
+    int nSample = m_samplerParameterSet.GetInt("pixelsamples");
+    m_integrator.m_nSample = nSample;
 }
 
 void Options::MakeRenderer()

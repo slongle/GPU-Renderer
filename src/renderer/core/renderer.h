@@ -2,7 +2,6 @@
 #ifndef __RENDERER_H
 #define __RENDERER_H
 
-#include "renderer/core/fwd.h"
 #include "renderer/core/scene.h"
 #include "renderer/core/camera.h"
 #include "renderer/core/integrator.h"

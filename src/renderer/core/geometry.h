@@ -31,15 +31,15 @@ public:
     __host__ __device__ explicit Vector3<T>(Point3<T> p) : x(p.x), y(p.y), z(p.z) {}
     __host__ __device__ explicit Vector3<T>(Normal3<T> n) : x(n.x), y(n.y), z(n.z) {}
 
-    __host__ __device__ T operator [] (int idx) const;
-    __host__ __device__ Vector3<T> operator - ()const;
-    __host__ __device__ Vector3<T> operator + (const Vector3<T>& v)const;
-    __host__ __device__ Vector3<T> operator + (const Normal3<T>& v)const;
-    __host__ __device__ Vector3<T> operator * (const Float f)const;
-    __host__ __device__ Vector3<T> operator / (const Float f)const;
+    T operator [] (int idx) const;
+    Vector3<T> operator - ()const;
+    Vector3<T> operator + (const Vector3<T>& v)const;
+    Vector3<T> operator + (const Normal3<T>& v)const;
+    Vector3<T> operator * (const Float f)const;
+    Vector3<T> operator / (const Float f)const;
 
-    __host__ __device__ Float Length() const;
-    __host__ __device__ Float SqrLength() const;
+    Float Length() const;
+    Float SqrLength() const;
 
     // Vector3 Public Data
     T x, y, z;
@@ -57,8 +57,8 @@ public:
     __host__ __device__ Point2(T x = 0, T y = 0) :x(x), y(y) {}
     __host__ __device__ Point2(const Point3<T>& p) : x(p.x), y(p.y) {}
 
-    __host__ __device__ Point2<T> operator + (const Point2<T>& p) const;
-    __host__ __device__ Point2<T> operator * (const Float g) const;
+    Point2<T> operator + (const Point2<T>& p) const;
+    Point2<T> operator * (const Float g) const;
 
     // Point2 Public Data
     T x, y;
@@ -70,12 +70,12 @@ class Point3 {
 public:
     __host__ __device__ Point3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
 
-    __host__ __device__ T operator [] (int idx) const;
-    __host__ __device__ Point3<T> operator + (const Vector3<T>& v) const;
-    __host__ __device__ Point3<T> operator + (const Point3<T>& v) const;
-    __host__ __device__ Vector3<T> operator - (const Point3<T>& p) const;
-    __host__ __device__ Point3<T> operator * (T v) const;
-    __host__ __device__ Point3<T> operator / (T v) const;
+    T operator [] (int idx) const;
+    Point3<T> operator + (const Vector3<T>& v) const;
+    Point3<T> operator + (const Point3<T>& v) const;
+    Vector3<T> operator - (const Point3<T>& p) const;
+    Point3<T> operator * (T v) const;
+    Point3<T> operator / (T v) const;
 
     // Point3 Public Data
     T x, y, z;
@@ -94,12 +94,12 @@ public:
     __host__ __device__ Normal3(T x = 0, T y = 0, T z = 0) :x(x), y(y), z(z) {}
     __host__ __device__ explicit Normal3(Vector3<T> v) : x(v.x), y(v.y), z(v.z) {}
 
-    __host__ __device__ Normal3<T> operator - () const;
-    __host__ __device__ Normal3<T> operator + (const Normal3<T>& n) const;
-    __host__ __device__ Normal3<T> operator * (Float f) const;
-    __host__ __device__ Normal3<T> operator / (Float f) const;
+    Normal3<T> operator - () const;
+    Normal3<T> operator + (const Normal3<T>& n) const;
+    Normal3<T> operator * (Float f) const;
+    Normal3<T> operator / (Float f) const;
 
-    __host__ __device__ Float Length() const;
+    Float Length() const;
 
     // Normal3 Public Data
     T x, y, z;
@@ -121,15 +121,16 @@ public:
 template <typename T>
 class Bounds3 {
 public:
-    Bounds3() :pMin(Point3<T>(99999, 99999, 99999)),pMax(Point3<T>(-99999, -99999,-99999)){}
-    Bounds3(const Point3<T>& p) :pMin(p), pMax(p) {}
-    Bounds3(const Point3<T>& p1, const Point3<T>& p2)
+    __host__ __device__ Bounds3() :pMin(Point3<T>(99999, 99999, 99999)),pMax(Point3<T>(-99999, -99999,-99999)){}
+    __host__ __device__ Bounds3(const Point3<T>& p) :pMin(p), pMax(p) {}
+    __host__ __device__ Bounds3(const Point3<T>& p1, const Point3<T>& p2)
         : pMin(min(p1.x, p2.x), min(p1.y, p2.y), min(p1.z, p2.z)),
           pMax(max(p1.x, p2.x), max(p1.y, p2.y), max(p1.z, p2.z))
     {
     }
     
     Point3<T> operator [] (int idx) const;
+    Point3<T> Centroid() const;
     bool Intersect(const Ray& ray, Float* hitt0 = nullptr, Float* hitt1 = nullptr) const;
     bool Intersect(const Ray& ray, const Vector3f& invDir, const int dirIsNeg[3]) const;
     // Bounds3 Public Data
@@ -146,7 +147,7 @@ class Ray {
 public:
     __host__ __device__ Ray(Point3f o, Vector3f d, Float tMax = Infinity) :o(o), d(d), tMax(tMax) {}
     
-    __host__ __device__ Point3f operator() (Float t) const;
+    Point3f operator() (Float t) const;
 
     // Ray Public Data
     Point3f o;
@@ -303,7 +304,7 @@ Normal3<T> Normal3<T>::operator*(Float f) const
 template<typename T>
 inline __host__ __device__ Normal3<T> Normal3<T>::operator/(Float f) const
 {
-    Float invF = 1. / f;
+    Float invF = 1.f / f;
     return Normal3<T>(x * invF, y * invF, z * invF);
 }
 
@@ -410,6 +411,13 @@ Point3<T> Bounds3<T>::operator[](int idx) const
 {
     if (idx == 0) return pMin;
     else return pMax;
+}
+
+template<typename T>
+inline __device__ __host__
+Point3<T> Bounds3<T>::Centroid() const
+{
+    return (pMin + pMax) * 0.5f;
 }
 
 template<typename T>

@@ -2,7 +2,7 @@
 #ifndef __SAMPLING_H
 #define __SAMPLING_H
 
-#include "renderer/core/fwd.h"
+#include "renderer/core/geometry.h"
 
 inline __device__ __host__
 unsigned int InitRandom(
@@ -51,6 +51,58 @@ inline __device__ __host__
 Vector3f WorldToLocal(const Vector3f& v, const Normal3f& n, const Vector3f& s, const Vector3f t) {
     return Normalize(Vector3f(Dot(v, s), Dot(v, t), Dot(v, n)));
 }
+
+
+inline __device__ __host__
+Float CosTheta(const Vector3f& v) { return v.z; }
+inline __device__ __host__
+Float AbsCosTheta(const Vector3f& v) { return abs(v.z); }
+inline __device__ __host__
+Float Cos2Theta(const Vector3f& v) { return v.z * v.z; }
+
+inline __device__ __host__
+Float Sin2Theta(const Vector3f& w) {
+    return max((Float)0, (Float)1 - Cos2Theta(w));
+}
+inline __device__ __host__
+Float SinTheta(const Vector3f& w) { return sqrt(Sin2Theta(w)); }
+
+inline __device__ __host__
+Float TanTheta(const Vector3f& w) { return SinTheta(w) / CosTheta(w); }
+inline __device__ __host__
+Float Tan2Theta(const Vector3f& w) {
+    return Sin2Theta(w) / Cos2Theta(w);
+}
+
+inline __device__ __host__
+Float CosPhi(const Vector3f& w) {
+    Float sinTheta = SinTheta(w);
+    if (sinTheta == 0) return 1;
+    else return Clamp(w.x / sinTheta, -1, 1);
+}
+inline __device__ __host__
+Float Cos2Phi(const Vector3f& w) { return CosPhi(w) * CosPhi(w); }
+
+inline __device__ __host__
+Float SinPhi(const Vector3f& w) {
+    Float sinTheta = SinTheta(w);
+    if (sinTheta == 0) return 0;
+    else return Clamp(w.y / sinTheta, -1, 1);
+}
+inline __device__ __host__
+Float Sin2Phi(const Vector3f& w) { return SinPhi(w) * SinPhi(w); }
+
+
+inline __device__ __host__
+bool SameHemisphere(const Vector3f& w, const Vector3f& wp) {
+    return w.z * wp.z > 0;
+}
+
+inline __device__ __host__
+bool SameHemisphere(const Vector3f& w, const Normal3f& wp) {
+    return w.z * wp.z > 0;
+}
+
 
 inline __device__ __host__
 Vector3f UniformSampleHemisphere(unsigned int& seed)

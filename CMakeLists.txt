@@ -77,7 +77,9 @@ set(sources
 	src/ext/stb_image/stb_image_write.h
     src/ext/tinyformat/tinyformat.h
     src/ext/tinyobjloader/tiny_obj_loader.h
-    src/ext/tinyobjloader/tiny_obj_loader.cc    
+    src/ext/tinyobjloader/tiny_obj_loader.cc  
+	src/ext/rply/rply.h
+	src/ext/rply/rply.cpp
     src/GUI/gui.cpp
     src/GUI/gui.h    
     src/utility/exception.h
@@ -93,6 +95,8 @@ set(sources
     src/renderer/core/api.cpp
     src/renderer/core/api.h
 	src/renderer/core/bsdf.h
+	src/renderer/core/bvh.h
+	src/renderer/core/bvh.cpp
     src/renderer/core/camera.cpp
     src/renderer/core/camera.h
 	src/renderer/core/cpurender.h
@@ -100,6 +104,7 @@ set(sources
     src/renderer/core/film.h
     src/renderer/core/fwd.h
     src/renderer/core/geometry.h
+	src/renderer/core/gpurender.h
 	src/renderer/core/integrator.cpp
     src/renderer/core/integrator.h
     src/renderer/core/interaction.h
@@ -109,6 +114,8 @@ set(sources
     src/renderer/core/material.h
     src/renderer/core/medium.cpp
     src/renderer/core/medium.h
+	src/renderer/core/microfacet.h
+	src/renderer/core/optic.h
     src/renderer/core/parameterset.cpp
     src/renderer/core/parameterset.h
     src/renderer/core/primitive.h

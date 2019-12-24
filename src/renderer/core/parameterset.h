@@ -2,7 +2,6 @@
 #ifndef __PARAMETERSET_H
 #define __PARAMETERSET_H
 
-#include "renderer/core/fwd.h"
 #include "renderer/core/geometry.h"
 
 #include <map>
@@ -12,6 +11,7 @@
 class ParameterSet {
 public:
 
+    void AddBool(const std::string& name, bool val);
     void AddInt(const std::string& name, std::vector<int> val);
     void AddFloat(const std::string& name, std::vector<Float> val);
     void AddString(const std::string& name, std::vector<std::string> val);
@@ -19,6 +19,8 @@ public:
     void AddNormal(const std::string& name, std::vector<Normal3f> val);
     void AddSpectrum(const std::string& name, std::vector<Float> val);
 
+    bool GetBool(const std::string& name) const;
+    bool GetBool(const std::string& name, const bool d) const;
     int GetInt(const std::string& name) const;
     int GetInt(const std::string& name, const int d) const;
     std::vector<int> GetInts(const std::string& name) const;
@@ -41,6 +43,7 @@ public:
     std::vector<Float> GetSpectrum(const std::string& name, const std::vector<Float> d) const;    
 
 
+    std::map<std::string, bool> m_bools;
     std::map<std::string, std::vector<int>> m_ints;
     std::map<std::string, std::vector<Float>> m_floats;
     std::map<std::string, std::vector<std::string>> m_strings;

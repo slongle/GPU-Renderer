@@ -2,7 +2,6 @@
 #ifndef __FILM_H
 #define __FILM_H
 
-#include "renderer/core/fwd.h"
 #include "renderer/core/transform.h"
 #include "renderer/core/parameterset.h"
 #include "renderer/core/spectrum.h"
@@ -45,7 +44,7 @@ inline __host__ __device__
 void Film::AddSample(int x, int y, Spectrum v)
 {
     int index = y * m_resolution.x + x;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 3; i++) {        
         m_bitmap[index * 3 + i] += v[i];
     }
     m_sampleNum[index]++;
@@ -55,7 +54,7 @@ inline __host__ __device__
 Spectrum Film::GetPixelSpectrum(int index) const
 {
     Spectrum v(m_bitmap[index * 3], m_bitmap[index * 3 + 1], m_bitmap[index * 3 + 2]);
-    v /= m_sampleNum[index];
+    v /= Float(m_sampleNum[index]);
     return v;
 }
 
