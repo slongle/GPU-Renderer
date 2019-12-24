@@ -121,7 +121,7 @@ public:
 template <typename T>
 class Bounds3 {
 public:
-    __host__ __device__ Bounds3() {}
+    __host__ __device__ Bounds3() :pMin(Point3<T>(99999, 99999, 99999)),pMax(Point3<T>(-99999, -99999,-99999)){}
     __host__ __device__ Bounds3(const Point3<T>& p) :pMin(p), pMax(p) {}
     __host__ __device__ Bounds3(const Point3<T>& p1, const Point3<T>& p2)
         : pMin(min(p1.x, p2.x), min(p1.y, p2.y), min(p1.z, p2.z)),

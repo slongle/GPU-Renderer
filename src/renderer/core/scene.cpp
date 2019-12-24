@@ -38,3 +38,9 @@ void Scene::AddPrimitive(Primitive p)
 {
     m_primitives.push_back(p);
 }
+
+void Scene::preprocess()
+{
+    m_shapeBvh->Build(m_primitives, m_triangles);
+    //    m_shapeBvh->checkP(m_shapeBvh->m_root);
+}

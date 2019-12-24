@@ -136,7 +136,7 @@ void render(std::shared_ptr<Renderer> renderer)
     Integrator* integrator = &renderer->m_integrator;
     Camera* camera = &renderer->m_camera;
     Scene* scene = &renderer->m_scene;    
-
+    scene->preprocess();
     int num = integrator->m_nSample;
     for (int x = 0; x < camera->m_film.m_resolution.x; x++) {
         for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
@@ -152,10 +152,18 @@ void render(std::shared_ptr<Renderer> renderer)
                     // find intersection with scene
                     Interaction interaction;
                     bool hit = scene->IntersectP(ray, &interaction);
-
                     if (!hit) {
                         break;
                     }
+                  
+                    // fix normal direction
+//                    if (Dot(ray.d, interaction.m_geometryN) > 0)
+//                    {
+//                        interaction.m_geometryN = -interaction.m_geometryN;
+//                    }
+//                    if (Dot(ray.d, interaction.m_shadingN) > 0) {
+//                        interaction.m_shadingN = -interaction.m_shadingN;
+//                    }
 
                     const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
                     if (bounce == 0 && primitive.m_lightID != -1) {

@@ -20,11 +20,8 @@ int main() {
     sceneLoader = new  PBRTLoader(filepath);
     std::shared_ptr<Renderer> renderer = sceneLoader->Load();  
 
-    render(renderer);
-    return 0;
-
-    //GPURender(renderer);
-    //return 0;
+//    render(renderer);
+//    return 0;
 
     Gui::init(renderer);             
     Gui::mainLoop();
