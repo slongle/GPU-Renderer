@@ -53,6 +53,7 @@ class Shape;
 class Primitive;
 class Material;
 class Medium;
+class Ray;
 
 inline __device__ __host__
 Float Radians(Float ang) {

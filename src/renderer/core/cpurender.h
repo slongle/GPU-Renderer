@@ -75,7 +75,7 @@ inline void render(std::shared_ptr<Renderer> renderer)
     Integrator* integrator = &renderer->m_integrator;
     Camera* camera = &renderer->m_camera;
     Scene* scene = &renderer->m_scene;    
-
+    scene->preprocess();
     int num = 2;
     for (int x = 0; x < camera->m_film.m_resolution.x; x++) {
         for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
@@ -90,11 +90,9 @@ inline void render(std::shared_ptr<Renderer> renderer)
                     // find intersection with scene
                     Interaction interaction;
                     bool hit = scene->IntersectP(ray, &interaction);
-
                     if (!hit) {
                         break;
                     }
-
                     // fix normal direction
                     if (Dot(ray.d, interaction.m_geometryN) > 0)
                     {

@@ -6,8 +6,9 @@
 #include "renderer/core/geometry.h"
 #include "renderer/core/primitive.h"
 #include "renderer/core/interaction.h"
-
+#include "renderer/core/bvh.h"
 #include <vector>
+
 
 
 class Scene {
@@ -23,27 +24,22 @@ public:
     int AddMaterial(std::shared_ptr<Material> material);
     int AddLight(std::shared_ptr<Light> light);
     void AddPrimitive(Primitive p);
-
+    void preprocess();
     std::vector<TriangleMesh> m_triangleMeshes;
     std::vector<Triangle> m_triangles;
     std::vector<Material> m_materials;
     std::vector<Light> m_lights;
     std::vector<Primitive> m_primitives;
+    BVH* m_shapeBvh;
 };
 
-inline 
+inline
 bool Scene::Intersect(const Ray& ray) const
 {
-    for (int i = 0; i < m_primitives.size(); i++) {
-        int triangleID = m_primitives[i].m_shapeID;
-        bool hit = m_triangles[triangleID].Intersect(ray);
-        if (hit) {
-            return true;
-        }
-    }
-    return false;
+    return m_shapeBvh->Intersect(ray);
 }
 
+/*
 inline
 bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
 {
@@ -56,10 +52,19 @@ bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
             ret_hit = true;
             ray.tMax = tHit;
             interaction->m_primitiveID = i;
+//            printf("   %d\n", i);
         }
     }
     return ret_hit;
 }
+*/
+
+inline
+bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
+{
+    return m_shapeBvh->IntersectP(ray, interaction);
+}
+
 
 inline 
 Spectrum Scene::Shading(const Interaction& interaction) const
