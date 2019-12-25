@@ -316,7 +316,8 @@ Spectrum FresnelSpecular::Sample(
     unsigned int& seed) const
 {
     Float F = FrDielectric(CosTheta(wo), m_etaA, m_etaB);
-    if (NextRandom(seed) < F) {
+    Float u = NextRandom(seed);
+    if (u < F) {
         // Compute specular reflection for _FresnelSpecular_
 
         // Compute perfect specular reflection direction

@@ -46,10 +46,10 @@ Spectrum NextEventEstimate(const Scene& scene, const Interaction& inter, unsigne
 			AbsDot(-Normalize(lightSample.m_p - inter.m_p), lightSample.m_shadingN);
 
 		// Visibility test
-		Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
-		Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
+		Point3f origin = inter.m_p + (lightSample.m_p - inter.m_p) * Epsilon;
+		Point3f target = lightSample.m_p + (origin - lightSample.m_p) * Epsilon;
 		Vector3f d = target - origin;
-		Ray testRay(origin, Normalize(d), d.Length() - 2 * Epsilon);
+		Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
 		bool hit = scene.Intersect(testRay);
 
 		if (!hit) {
@@ -136,26 +136,27 @@ void render(std::shared_ptr<Renderer> renderer)
 	Scene* scene = &renderer->m_scene;
 	scene->Preprocess();
 	int num = integrator->m_nSample;
-	for (int x = 0; x < camera->m_film.m_resolution.x; x++) {			
-		for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
-	        for (int k = 0; k < num; k++) {		
-				int index = y * camera->m_film.m_resolution.x + x;
-				unsigned int seed = InitRandom(index, k);
-				Spectrum L(0);
-				Spectrum throughput(1);
-				int bounce;
+    for (int k = 0; k < num; k++) {
+        for (int x = 0; x < camera->m_film.m_resolution.x; x++) {
+            fprintf(stderr, "\r%f", Float(x) / camera->m_film.m_resolution.x);
+            for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
+                int index = y * camera->m_film.m_resolution.x + x;
+                unsigned int seed = InitRandom(index, k);
+                Spectrum L(0);
+                Spectrum throughput(1);
+                int bounce;
                 bool specular = false;
-				Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
-				for (bounce = 0; bounce < integrator->m_maxDepth; bounce++) {
+                Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
+                for (bounce = 0; bounce < integrator->m_maxDepth; bounce++) {
 
-					// find intersection with scene
-					Interaction interaction;
-					bool hit = scene->IntersectP(ray, &interaction);
-					if (!hit) {
-						break;
-					}
+                    // find intersection with scene
+                    Interaction interaction;
+                    bool hit = scene->IntersectP(ray, &interaction);
+                    if (!hit) {
+                        break;
+                    }
 
-					const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
+                    const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
                     const Material& material = scene->m_materials[primitive.m_materialID];
                     if (bounce == 0 || specular) {
                         if (primitive.m_lightID != -1) {
@@ -167,44 +168,45 @@ void render(std::shared_ptr<Renderer> renderer)
                         }
                     }
 
-					// render normal
-					//L = Spectrum(interaction.m_geometryN);
-					//break;
+                    // render normal
+                    //L = Spectrum(interaction.m_geometryN);
+                    //break;
 
-					if (throughput.isBlack()) {
-						break;
-					}
+                    if (throughput.isBlack()) {
+                        break;
+                    }
 
-					// direct light
-					Point3f pLight;
+                    // direct light
+                    Point3f pLight;
                     if (!material.isDelta()) {
-					    L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
+                        L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
                         specular = false;
                     }
                     else {
                         specular = true;
                     }
 
-					// calculate BSDF
-					throughput *= SampleMaterial(*scene, interaction, seed);
+                    // calculate BSDF
+                    throughput *= SampleMaterial(*scene, interaction, seed);
 
-					// indirect light                    
-					if (throughput.Max() < 1 && bounce > 5) {
-						Float q = max((Float).05, 1 - throughput.Max());
-						if (NextRandom(seed) < q) break;
-						throughput /= 1 - q;
-					}
+                    // indirect light                    
+                    if (throughput.Max() < 1 && bounce > 5) {
+                        Float q = max((Float).05, 1 - throughput.Max());
+                        if (NextRandom(seed) < q) break;
+                        throughput /= 1 - q;
+                    }
 
-					ray.o = interaction.m_p + interaction.m_wi * Epsilon;
-					ray.d = interaction.m_wi;
-					ray.tMax = Infinity;
-				}
-				camera->m_film.AddSample(x, y, L);
-			}
-		}		
-	}
+                    ray.o = interaction.m_p + interaction.m_wi * Epsilon;
+                    ray.d = interaction.m_wi;
+                    ray.tMax = Infinity;
+                }
+                camera->m_film.AddSample(x, y, L);
+            }
+        }
+        camera->m_film.Output();
+    }
 
-	//DrawTransportLine(Point2i(234, 450), *renderer);
+	DrawTransportLine(Point2i(289, 325), *renderer);
     camera->m_film.Output();
 }
 

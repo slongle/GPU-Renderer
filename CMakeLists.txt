@@ -114,6 +114,7 @@ set(sources
     src/renderer/core/material.h
     src/renderer/core/medium.cpp
     src/renderer/core/medium.h
+	src/renderer/core/memory.h
 	src/renderer/core/microfacet.h
 	src/renderer/core/optic.h
     src/renderer/core/parameterset.cpp

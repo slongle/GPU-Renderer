@@ -58,8 +58,8 @@ public:
         unsigned int& seed) const;
 
     Point3f Centroid() const;
-
     Float Area() const;
+    Bounds3f WorldBounds() const;
 
 
 
@@ -223,6 +223,16 @@ Float Triangle::Area() const
     const Point3f& p1 = m_triangleMeshPtr->m_P[indices[1]];
     const Point3f& p2 = m_triangleMeshPtr->m_P[indices[2]];
     return 0.5f * Cross(p1 - p0, p2 - p0).Length();
+}
+
+inline __device__ __host__
+Bounds3f Triangle::WorldBounds() const
+{
+    int* indices = &m_triangleMeshPtr->m_indices[m_index * 3];
+    const Point3f& p0 = m_triangleMeshPtr->m_P[indices[0]];
+    const Point3f& p1 = m_triangleMeshPtr->m_P[indices[1]];
+    const Point3f& p2 = m_triangleMeshPtr->m_P[indices[2]];
+    return Union(Bounds3f(p0, p1), p2);
 }
 
 

@@ -110,7 +110,6 @@ apiWorldEnd()
     options->MakeFilm();
     options->MakeCamera();
     options->MakeIntegrator();    
-    options->m_scene.m_shapeBvh = new BVH();
     options->MakeRenderer();
     return options->m_renderer;
 }

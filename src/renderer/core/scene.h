@@ -11,7 +11,7 @@
 
 class Scene {
 public:
-    Scene() {}
+    Scene():m_shapeBvh(new BVHAccelerator()) {}
 
     void Preprocess();
 
@@ -29,7 +29,7 @@ public:
     std::vector<Material> m_materials;
     std::vector<Light> m_lights;
     std::vector<Primitive> m_primitives;
-    BVH* m_shapeBvh;
+    BVHAccelerator* m_shapeBvh;
 };
 
 inline
@@ -45,7 +45,8 @@ bool Scene::Intersect(const Ray& ray) const
     }
     return false;
     */
-    return m_shapeBvh->Intersect(ray);
+    //return m_shapeBvh->Intersect(ray);
+    return m_shapeBvh->Intersect(ray, &m_triangles[0]);
 }
 
 inline
@@ -65,7 +66,8 @@ bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
     }
     return ret_hit;
     */
-    return m_shapeBvh->IntersectP(ray, interaction);
+    //return m_shapeBvh->IntersectP(ray, interaction);
+    return m_shapeBvh->IntersectP(ray, interaction, &m_triangles[0]);
 }
 
 #endif // !__SCENE_H

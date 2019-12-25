@@ -9,6 +9,8 @@
 
 class Primitive {
 public:
+    Primitive() {}
+
     Primitive(
         int shapeID,
         int materialID,

@@ -130,7 +130,14 @@ public:
     }
     
     Point3<T> operator [] (int idx) const;
+    Vector3<T> Offset(const Point3<T>& p) const;
+    Vector3<T> Diagonal() const;
     Point3<T> Centroid() const;
+    int MaximumExtent() const;
+    T Area() const;
+
+
+
     bool Intersect(const Ray& ray, Float* hitt0 = nullptr, Float* hitt1 = nullptr) const;
     bool Intersect(const Ray& ray, const Vector3f& invDir, const int dirIsNeg[3]) const;
     // Bounds3 Public Data
@@ -154,6 +161,22 @@ public:
     Vector3f d;
     mutable Float tMax;
 };
+
+template<typename T>
+inline __device__ __host__
+Point3<T> Min(const Point3<T>& p1, const Point3<T>& p2) {
+    return Point3<T>(min(p1.x, p2.x),
+        min(p1.y, p2.y),
+        min(p1.z, p2.z));
+}
+
+template<typename T>
+inline __device__ __host__
+Point3<T> Max(const Point3<T>& p1, const Point3<T>& p2) {
+    return Point3<T>(max(p1.x, p2.x),
+        max(p1.y, p2.y),
+        max(p1.z, p2.z));
+}
 
 template<typename T>
 inline __host__ __device__
@@ -415,6 +438,44 @@ Point3<T> Bounds3<T>::operator[](int idx) const
 
 template<typename T>
 inline __device__ __host__
+Vector3<T> Bounds3<T>::Offset(const Point3<T>& p) const
+{
+    Vector3<T> ret = p - pMin;
+    if (pMax.x > pMin.x) ret.x /= pMax.x - pMin.x;
+    if (pMax.y > pMin.y) ret.y /= pMax.y - pMin.y;
+    if (pMax.z > pMin.z) ret.z /= pMax.z - pMin.z;
+    return ret;
+}
+
+template<typename T>
+inline __device__ __host__
+Vector3<T> Bounds3<T>::Diagonal() const
+{
+    return pMax - pMin;
+}
+
+template<typename T>
+inline __device__ __host__
+int Bounds3<T>::MaximumExtent() const
+{
+    Vector3<T> diag = Diagonal();
+    if (diag.x > diag.y&& diag.x > diag.z)
+        return 0;
+    else if (diag.y > diag.z)
+        return 1;
+    else return 2;
+}
+
+template<typename T>
+inline __device__ __host__
+T Bounds3<T>::Area() const
+{
+    Vector3<T> det = Diagonal();
+    return 2 * (det.x * det.y + det.y * det.z + det.x * det.z);
+}
+
+template<typename T>
+inline __device__ __host__
 Point3<T> Bounds3<T>::Centroid() const
 {
     return (pMin + pMax) * 0.5f;
@@ -422,11 +483,21 @@ Point3<T> Bounds3<T>::Centroid() const
 
 template<typename T>
 inline __device__ __host__
+Bounds3<T> Union(const Bounds3<T>& b1, const Point3<T>& b2)
+{
+    Bounds3<T> bounds;
+    bounds.pMin = Min(b1.pMin, b2);
+    bounds.pMax = Max(b1.pMax, b2);
+    return bounds;
+}
+
+template<typename T>
+inline __device__ __host__
 Bounds3<T> Union(const Bounds3<T>& b1, const Bounds3<T>& b2) 
 {
     Bounds3<T> bounds;
-    bounds.pMin = Point3<T>(min(b1.pMin.x, b2.pMin.x), min(b1.pMin.y, b2.pMin.y), min(b1.pMin.z, b2.pMin.z));
-    bounds.pMax = Point3<T>(max(b1.pMax.x, b2.pMax.x), max(b1.pMax.y, b2.pMax.y), max(b1.pMax.z, b2.pMax.z));
+    bounds.pMin = Min(b1.pMin, b2.pMin);
+    bounds.pMax = Max(b1.pMax, b2.pMax);
     return bounds;
 }
 
