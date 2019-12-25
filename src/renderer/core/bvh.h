@@ -173,6 +173,7 @@ void BVH::Build(std::vector<Primitive>& primitives, std::vector<Triangle>& trian
 		while ((j < m_length) && (level[j] > level[i]))
 		{
 			if (level[k] >= level[j])
+
 			{
 				k = j;
 			}
@@ -184,16 +185,14 @@ void BVH::Build(std::vector<Primitive>& primitives, std::vector<Triangle>& trian
 			innerNodes[i].childB = &leafNodes[i];
 		}
 		innerNodes[i].childB->parent = &innerNodes[i];
-	}
 
+	}
 	int* flag = (int*)malloc(sizeof(int) * m_length);
 	for (int i = 0; i < m_length; i++)
 	{
 		flag[i] = 0;
 		innerNodes[i].flag = 0;
 	}
-
-
 	for (int i = 0; i < m_length; i++)
 	{
 		Node* p = leafNodes[i].parent;
@@ -205,7 +204,6 @@ void BVH::Build(std::vector<Primitive>& primitives, std::vector<Triangle>& trian
 			p = p->parent;
 		}
 	}
-
 
 
 	Node* p = leafNodes[0].parent;

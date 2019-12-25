@@ -48,18 +48,6 @@ bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
 
 /*
 inline
-bool Scene::Intersect(const Ray& ray) const
-{
-    for (int i = 0; i < m_primitives.size(); i++) {
-        int triangleID = m_primitives[i].m_shapeID;
-        bool hit = m_triangles[triangleID].Intersect(ray);
-        if (hit) {
-            return true;
-        }
-    }
-    return false;
-}
-inline
 bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
 {
     Float tHit;
@@ -77,5 +65,8 @@ bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
     return ret_hit;
 }
 */
+
+
+
 
 #endif // !__SCENE_H

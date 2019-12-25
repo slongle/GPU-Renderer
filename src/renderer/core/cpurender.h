@@ -133,84 +133,81 @@ Spectrum SampleMaterial(const Scene& scene, Interaction& inter, unsigned int& se
 inline
 void render(std::shared_ptr<Renderer> renderer)
 {
-	Integrator* integrator = &renderer->m_integrator;
-	Camera* camera = &renderer->m_camera;
-	Scene* scene = &renderer->m_scene;
-	scene->preprocess();
-	int num = integrator->m_nSample;
-	for (int k = 0; k < num; k++) {
-		printf("%d\n", k);
-		for (int x = 0; x < camera->m_film.m_resolution.x; x++) {
-			fprintf(stderr, "\r%f", x * 1.0 / camera->m_film.m_resolution.x);
-			for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
-				int index = y * camera->m_film.m_resolution.x + x;
-				unsigned int seed = InitRandom(index, k);
-				Spectrum L(0);
-				Spectrum throughput(1);
-				Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
-				int bounce;
-				for (bounce = 0; bounce < integrator->m_maxDepth; bounce++) {
+    Integrator* integrator = &renderer->m_integrator;
+    Camera* camera = &renderer->m_camera;
+    Scene* scene = &renderer->m_scene;    
+    scene->preprocess();
+    int num = integrator->m_nSample;
+    for (int x = 0; x < camera->m_film.m_resolution.x; x++) {
+        for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
+            int index = y * camera->m_film.m_resolution.x + x;
+            unsigned int seed = InitRandom(index, 0);
+            for (int k = 0; k < num; k++) {                
+                Spectrum L(0);
+                Spectrum throughput(1);
+                Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
+                int bounce;
+                for (bounce = 0; bounce < integrator->m_maxDepth; bounce++) {
 
-					// find intersection with scene
-					Interaction interaction;
-					bool hit = scene->IntersectP(ray, &interaction);
-					if (!hit) {
-						break;
-					}
+                    // find intersection with scene
+                    Interaction interaction;
+                    bool hit = scene->IntersectP(ray, &interaction);
+                    if (!hit) {
+                        break;
+                    }
+                  
+                    // fix normal direction
+//                    if (Dot(ray.d, interaction.m_geometryN) > 0)
+//                    {
+//                        interaction.m_geometryN = -interaction.m_geometryN;
+//                    }
+//                    if (Dot(ray.d, interaction.m_shadingN) > 0) {
+//                        interaction.m_shadingN = -interaction.m_shadingN;
+//                    }
 
-					// fix normal direction
- //                     if (Dot(ray.d, interaction.m_geometryN) > 0)
- //                     {
- //                         interaction.m_geometryN = -interaction.m_geometryN;
- //                     }
- //                     if (Dot(ray.d, interaction.m_shadingN) > 0) {
- //                         interaction.m_shadingN = -interaction.m_shadingN;
- //                     }
+                    const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
+                    if (bounce == 0 && primitive.m_lightID != -1) {
+                        int lightID = primitive.m_lightID;
+                        const Light& light = scene->m_lights[lightID];
+                        if (Dot(interaction.m_shadingN, interaction.m_wo) > 0) {
+                            L += throughput * light.m_L;
+                        }
+                    }
 
-					const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
-					if (bounce == 0 && primitive.m_lightID != -1) {
-						int lightID = primitive.m_lightID;
-						const Light& light = scene->m_lights[lightID];
-						if (Dot(interaction.m_shadingN, interaction.m_wo) > 0) {
-							L += throughput * light.m_L;
-						}
-					}
+                    // render normal
+                    //L = Spectrum(interaction.m_geometryN);
+                    //break;
 
-					// render normal
-					//L = Spectrum(interaction.m_geometryN);
-					//break;
+                    if (throughput.isBlack()) {
+                        break;
+                    }
 
-					if (throughput.isBlack()) {
-						break;
-					}
+                    // direct light
+                    Point3f pLight;
+                    L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
 
-					// direct light
-					Point3f pLight;
-					L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
+                    // calculate BSDF
+                    throughput *= SampleMaterial(*scene, interaction, seed);
 
-					// calculate BSDF
-					throughput *= SampleMaterial(*scene, interaction, seed);
+                    // indirect light                    
+                    if (throughput.Max() < 1 && bounce > 5) {
+                        Float q = max((Float).05, 1 - throughput.Max());
+                        if (NextRandom(seed) < q) break;
+                        throughput /= 1 - q;
+                    }
 
-					// indirect light                    
-					/*if (throughput.Max() < 1 && bounce > 5) {
-						Float q = max((Float).05, 1 - throughput.Max());
-						if (NextRandom(seed) < q) break;
-						throughput /= 1 - q;
-					}*/
+                    ray.o = interaction.m_p + interaction.m_wi * Epsilon;
+                    ray.d = interaction.m_wi;
+                    ray.tMax = Infinity;
+                }
+                camera->m_film.AddSample(x, y, L);
+            }
+        }
+    }
 
-					ray.o = interaction.m_p + interaction.m_wi * Epsilon;
-					ray.d = interaction.m_wi;
-					ray.tMax = Infinity;
-				}
-				camera->m_film.AddSample(x, y, L);
-			}
-		}
-		if (k%3==1) camera->m_film.Output();
+    DrawTransportLine(Point2i(234, 450), *renderer);
 
-	}
-
-	//    DrawTransportLine(Point2i(234, 450), *renderer);
-
+    camera->m_film.Output();
 }
 
 void DrawTransportLine(Point2i p, Renderer& renderer) {
