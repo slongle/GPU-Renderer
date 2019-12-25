@@ -141,7 +141,7 @@ void render(std::shared_ptr<Renderer> renderer)
 	for (int k = 0; k < num; k++) {
 		printf("%d\n", k);
 		for (int x = 0; x < camera->m_film.m_resolution.x; x++) {
-			fprintf(stderr, "\r%f", x * 1.0 / camera->m_film.m_resolution.x);
+			fprintf(stderr, "\r%d//%d", x , camera->m_film.m_resolution.x);
 			for (int y = 0; y < camera->m_film.m_resolution.y; y++) {
 				int index = y * camera->m_film.m_resolution.x + x;
 				unsigned int seed = InitRandom(index, k);
