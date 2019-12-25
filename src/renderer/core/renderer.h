@@ -10,7 +10,6 @@ class Renderer {
 public:
     Renderer() {}
 
-
     Scene m_scene;
     Camera m_camera;
     Integrator m_integrator;

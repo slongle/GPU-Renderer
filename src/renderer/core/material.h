@@ -47,6 +47,8 @@ public:
         const Float& vroughness);
     */
    
+    bool isDelta() const;
+
     Spectrum Sample(const Normal3f& n, const Vector3f& worldWo, Vector3f* worldWi, Float* pdf, unsigned int& seed) const;
     Spectrum F(const Normal3f& n, const Vector3f& worldWo, const Vector3f& worldWi) const;
     Spectrum F(const Normal3f& n, const Vector3f& worldWo, const Vector3f& worldWi, Float* pdf) const;    
@@ -73,6 +75,13 @@ CreateMetalMaterial(
 std::shared_ptr<Material>
 CreateGlassMaterial(
     const ParameterSet& param);
+
+inline __device__ __host__
+bool Material::isDelta() const
+{
+    return (m_type & SPECULAR_REFLECT) ||
+           (m_type & SPECULAR_TRANSMISSION);
+}
 
 inline __device__ __host__
 Spectrum Material::F(
@@ -126,6 +135,7 @@ Spectrum Material::F(
 
     return cosBSDF;
 }
+
 inline __device__ __host__
 Spectrum Material::Sample(
     const Normal3f& n,
@@ -140,19 +150,17 @@ Spectrum Material::Sample(
     Vector3f localWi;
     Spectrum cosBSDF(0);        
     //Point2f u(NextRandom(seed), NextRandom(seed));    
+
     if (m_type == DIFFUSE_REFLECT) {
-        //printf("Diffuse");
         cosBSDF = m_diffuseReflect.Sample(localWo, &localWi, pdf, seed);
     }
     else if (m_type == GLOSSY_REFLECT) {
         cosBSDF = m_glossyReflect.Sample(localWo, &localWi, pdf, seed);
     }
-    else if (m_type == (SPECULAR_REFLECT | SPECULAR_TRANSMISSION)) {
-        //printf("Glass");
+    else if (m_type == (SPECULAR_REFLECT | SPECULAR_TRANSMISSION)) {        
         cosBSDF = m_fresnelSpecular.Sample(localWo, &localWi, pdf, seed);
     }
 
-    //return cosBSDF;
     *worldWi = LocalToWorld(localWi, n, s, t);
     return cosBSDF;
 }

@@ -4,7 +4,7 @@ Transform [
 -0 1 -0 -0 
 -0 -0 -1 -0 
 -0 -1 6.8 1]
-Sampler "random" "integer pixelsamples" [ 8 ] 
+Sampler "random" "integer pixelsamples" [ 1 ] 
 PixelFilter "triangle" "float xwidth" [ 1.000000 ] "float ywidth" [ 1.000000 ] 
 Film "image" "integer xresolution" [ 512 ] "integer yresolution" [ 512 ] "string filename" [ "cornell-box.png" ] 
 Camera "perspective" "float fov" [ 19.500000 ] 

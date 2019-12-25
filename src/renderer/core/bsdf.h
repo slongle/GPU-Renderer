@@ -317,7 +317,6 @@ Spectrum FresnelSpecular::Sample(
 {
     Float F = FrDielectric(CosTheta(wo), m_etaA, m_etaB);
     if (NextRandom(seed) < F) {
-        //printf("Reflect\n");
         // Compute specular reflection for _FresnelSpecular_
 
         // Compute perfect specular reflection direction
@@ -327,7 +326,6 @@ Spectrum FresnelSpecular::Sample(
         return m_r * F;
     }
     else {
-        //printf("Refract\n");
         // Compute specular transmission for _FresnelSpecular_
 
         // Figure out which $\eta$ is incident and which is transmitted
@@ -417,7 +415,6 @@ Spectrum GGXSmithReflectBSDF::F(
     const Vector3f& wo, 
     const Vector3f& wi) const
 {
-    //return 0;
     Float cosThetaO = AbsCosTheta(wo), cosThetaI = AbsCosTheta(wi);
     Vector3f wh = wi + wo;
     // Handle degenerate cases for microfacet reflection

@@ -240,8 +240,7 @@ Spectrum SampleMaterial(const CUDAScene& scene, Interaction& inter, unsigned int
 
     Float bsdfPdf;
     cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
-    //return cosBSDF;    
-    if (bsdfPdf < Epsilon) return Spectrum(0);
+
     return cosBSDF / bsdfPdf;
 }
 
@@ -332,8 +331,7 @@ void freeCudaBuffers()
 
 extern "C"
 void render_kernel(dim3 gridSize, dim3 blockSize, uint * d_output, uint imageW, uint imageH)
-{
-    //printf("%ud %ud\n", imageW, imageH);
+{    
     d_render << <gridSize, blockSize >> > (d_output, imageW, imageH, frame, dev_renderer);
     //checkCudaErrors(cudaDeviceSynchronize());
     frame++;

@@ -1,5 +1,10 @@
 #include "scene.h"
 
+void Scene::Preprocess()
+{
+    m_shapeBvh->Build(m_primitives, m_triangles);
+}
+
 int Scene::AddTriangleMesh(TriangleMesh triangleMesh)
 {
     int ID = m_triangleMeshes.size();
@@ -37,10 +42,4 @@ int Scene::AddLight(std::shared_ptr<Light> light)
 void Scene::AddPrimitive(Primitive p)
 {
     m_primitives.push_back(p);
-}
-
-void Scene::preprocess()
-{
-    m_shapeBvh->Build(m_primitives, m_triangles);
-    //    m_shapeBvh->checkP(m_shapeBvh->m_root);
 }

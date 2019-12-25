@@ -81,12 +81,9 @@ CreateGlassMaterial(
     Spectrum Kr(param.GetSpectrum("Kr", std::vector<Float>{1, 1, 1}));
     Spectrum Kt(param.GetSpectrum("Kt", std::vector<Float>{1, 1, 1}));
     Float eta = param.GetFloat("index", 1.5f);
-    //Float uroughness = param.GetFloat("uroughness", 0.00001f);
-    //Float vroughness = param.GetFloat("vroughness", 0.00001f);
-    //return std::make_shared<Material>(Material::GLOSSY_TRANSMISSION | Material::GLOSSY_REFLECT, Kr, Kt, eta, uroughness, vroughness);
-    printf("%f %f %f\n", Kr.r, Kr.g, Kr.b);
-    printf("%f %f %f\n", Kt.r, Kt.g, Kt.b);
-    printf("%f\n", eta);
+    Float uroughness = param.GetFloat("uroughness", 0.00001f);
+    Float vroughness = param.GetFloat("vroughness", 0.00001f);
+    //return std::make_shared<Material>(Material::GLOSSY_TRANSMISSION | Material::GLOSSY_REFLECT, Kr, Kt, eta, uroughness, vroughness);    
     return std::make_shared<Material>(Material::SPECULAR_TRANSMISSION | Material::SPECULAR_REFLECT, Kr, Kt, eta);
 }
 

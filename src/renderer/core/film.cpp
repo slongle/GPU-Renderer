@@ -14,8 +14,7 @@ Film::Film(
     Point2i resolution,
     std::string filename)
     : m_resolution(resolution), m_filename(filename), m_channels(3)
-{
-    //m_bitmapOutput = new unsigned char[m_resolution.x * m_resolution.y * m_channels];
+{    
     m_bitmap = new  Float[m_resolution.x * m_resolution.y * 3];
     m_sampleNum = new unsigned int[m_resolution.x * m_resolution.y];
     memset(m_bitmap, 0, sizeof(Float) * m_resolution.x * m_resolution.y * 3);
@@ -24,9 +23,10 @@ Film::Film(
 
 void Film::Output()
 {
-    printf("@!@@@@");
+    printf("Output\n");
     ExportToUnsignedChar();
     stbi_write_png(m_filename.c_str(), m_resolution.x, m_resolution.y, m_channels, m_bitmapOutput, 0);
+    printf("Done\n");
 }
 
 void Film::DrawLine(
