@@ -32,11 +32,19 @@ public:
     BVH* m_shapeBvh;
 };
 
+
 inline
 bool Scene::Intersect(const Ray& ray) const
 {
     return m_shapeBvh->Intersect(ray);
 }
+inline
+bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
+{
+    return m_shapeBvh->IntersectP(ray, interaction);
+}
+
+
 
 /*
 inline
@@ -57,12 +65,6 @@ bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
     return ret_hit;
 }
 */
-
-inline
-bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
-{
-    return m_shapeBvh->IntersectP(ray, interaction);
-}
 
 
 
