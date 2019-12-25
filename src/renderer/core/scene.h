@@ -32,13 +32,33 @@ public:
     BVH* m_shapeBvh;
 };
 
+
 inline
 bool Scene::Intersect(const Ray& ray) const
 {
     return m_shapeBvh->Intersect(ray);
 }
+inline
+bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
+{
+    return m_shapeBvh->IntersectP(ray, interaction);
+}
+
+
 
 /*
+inline
+bool Scene::Intersect(const Ray& ray) const
+{
+    for (int i = 0; i < m_primitives.size(); i++) {
+        int triangleID = m_primitives[i].m_shapeID;
+        bool hit = m_triangles[triangleID].Intersect(ray);
+        if (hit) {
+            return true;
+        }
+    }
+    return false;
+}
 inline
 bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
 {
@@ -57,14 +77,5 @@ bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
     return ret_hit;
 }
 */
-
-inline
-bool Scene::IntersectP(const Ray& ray, Interaction* interaction) const
-{
-    return m_shapeBvh->IntersectP(ray, interaction);
-}
-
-
-
 
 #endif // !__SCENE_H

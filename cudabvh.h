@@ -1,19 +1,22 @@
 #pragma once
-#pragma once
-#ifndef __BVH_H
-#define __BVH_H
+#ifndef __CUDABVH_H
+#define __CUDABVH_H
 
 #include "renderer/core/fwd.h"
 #include "renderer/core/geometry.h"
 #include "renderer/core/triangle.h"
 #include "renderer/core/primitive.h"
-
 #include <thrust/sort.h>
 
-class BVH
+
+__global__ 
+
+
+
+class CUDABVH
 {
 public:
-	BVH() {}
+	CUDABVH() {}
 	struct Node
 	{
 		Node() {}
@@ -27,26 +30,15 @@ public:
 
 	};
 
-	void Build(std::vector<Primitive>& primitives,std::vector<Triangle>& triangles);
-	bool InterTest(
-		const Ray& ray,
-		Node* p,
-		const Vector3f& invDir,
-		const int dirIsNeg[3]
-	)const;
-	bool InterTestP(
-		const Ray& ray,
-		Interaction* interaction,
-		Node* p,
-		const Vector3f& invDir,
-		const int dirIsNeg[3]
-	)const;
+	void Build(Primitive* primitives, Triangle* triangles,int length);
+	bool InterTest(const Ray& ray, Node* p) const;
+	bool InterTestP(const Ray& ray, Interaction* interaction, Node* p) const;
 	bool Intersect(const Ray& ray) const;
 	bool IntersectP(const Ray& ray, Interaction* interaction) const;
-	
+
 	int m_length;
 	Node* m_root;
-	
+
 };
 
 inline __host__ __device__
@@ -55,7 +47,7 @@ Vector3f DirectDiv(Vector3f a, Vector3f b)
 	Float x = (b.x != 0) ? (a.x / b.x) : 0;
 	Float y = (b.y != 0) ? (a.y / b.y) : 0;
 	Float z = (b.z != 0) ? (a.z / b.z) : 0;
-	return Vector3f(x,y,z);
+	return Vector3f(x, y, z);
 }
 
 inline __host__ __device__
@@ -69,9 +61,9 @@ unsigned int Expand(unsigned int v)
 }
 
 inline __host__ __device__
-unsigned int Morton(Point3f p,Bounds3f sceneBox)
+unsigned int Morton(Point3f p, Bounds3f sceneBox)
 {
-	Vector3f v = DirectDiv(p - sceneBox.pMin, sceneBox.pMax - sceneBox.pMin)*1023.;
+	Vector3f v = DirectDiv(p - sceneBox.pMin, sceneBox.pMax - sceneBox.pMin) * 1023.;
 	unsigned int x = Expand((unsigned int)v.x);
 	unsigned int y = Expand((unsigned int)v.y);
 	unsigned int z = Expand((unsigned int)v.z);
@@ -90,9 +82,9 @@ Point3f pMax(Point3f a, Point3f b)
 
 
 inline __host__ __device__
-void BVH::Build(std::vector<Primitive>& primitives, std::vector<Triangle>& triangles)
+void CUDABVH::Build(Primitive* primitives, Triangle* triangles, int length)
 {
-	m_length = primitives.size();
+	m_length = length;
 	Node* leafNodes = new Node[m_length];
 	Node* innerNodes = new Node[m_length];
 	unsigned int* morton = (unsigned int*)malloc(sizeof(unsigned int) * m_length);
@@ -104,18 +96,18 @@ void BVH::Build(std::vector<Primitive>& primitives, std::vector<Triangle>& trian
 	{
 		sceneBox = Union(sceneBox, Bounds3f(triangles[i].Centroid()));
 	}
-	
+
 	for (int i = 0; i < m_length; i++)
 	{
 		int idx = primitives[i].m_shapeID;
-		morton[i] = Morton(triangles[idx].Centroid(),sceneBox);
+		morton[i] = Morton(triangles[idx].Centroid(), sceneBox);
 	}
 	for (int i = 0; i < m_length; i++)
 	{
 		idx[i] = i;
 	}
 
-	thrust::sort_by_key(morton,morton+m_length,idx);
+	thrust::sort_by_key(morton, morton + m_length, idx);
 	for (int i = 0; i < m_length; i++)
 	{
 		leafNodes[i].idx = idx[i];
@@ -126,34 +118,29 @@ void BVH::Build(std::vector<Primitive>& primitives, std::vector<Triangle>& trian
 		Point3f p0 = triangle->m_triangleMeshPtr->m_P[indices[0]];
 		Point3f p1 = triangle->m_triangleMeshPtr->m_P[indices[1]];
 		Point3f p2 = triangle->m_triangleMeshPtr->m_P[indices[2]];
-		leafNodes[i].Box = Union(Bounds3f(p0,p1),Bounds3f(p2));
+		leafNodes[i].Box = Union(Bounds3f(p0, p1), Bounds3f(p2));
 		leafNodes[i].flag = 3;
 	}
-	level[0] = 300;
+	level[0] = 30;
 	for (int i = 1; i < m_length; i++)
 	{
 		level[i] = 0;
-		
-		unsigned int tmp = (morton[i]^morton[i - 1]);
+
+		unsigned int tmp = (morton[i] ^ morton[i - 1]);
 		unsigned int k = 1 << 29;
-		while ((k!=0)&&(k & tmp) == 0)
+		while ((k & tmp) == 0)
 		{
 			level[i]++;
 			k >>= 1;
 		}
 	}
 
-	for (int i = 1 ; i < m_length; i++)
+	for (int i = 1; i < m_length; i++)
 	{
 		innerNodes[i].idx = i;
-		int j = i-1;
+		int j = i - 1;
 		int k = 0;
-		if ((level[j] == level[i])&&(j>0))
-		{
-			k = j;
-			j--;
-		}
-		while ((j>0)&&(level[j]>level[i]))
+		while ((j > 0) && (level[j] >= level[i]))
 		{
 			if (level[k] > level[j])
 			{
@@ -164,15 +151,15 @@ void BVH::Build(std::vector<Primitive>& primitives, std::vector<Triangle>& trian
 		innerNodes[i].childA = &innerNodes[k];
 		if (k == 0)
 		{
-			innerNodes[i].childA = &leafNodes[i-1];
+			innerNodes[i].childA = &leafNodes[i - 1];
 		}
 		innerNodes[i].childA->parent = &innerNodes[i];
 
-		j = i+1;
+		j = i + 1;
 		k = 0;
 		while ((j < m_length) && (level[j] > level[i]))
 		{
-			if (level[k] >= level[j])
+			if (level[k] > level[j])
 			{
 				k = j;
 			}
@@ -184,16 +171,15 @@ void BVH::Build(std::vector<Primitive>& primitives, std::vector<Triangle>& trian
 			innerNodes[i].childB = &leafNodes[i];
 		}
 		innerNodes[i].childB->parent = &innerNodes[i];
-	}
 
+
+	}
 	int* flag = (int*)malloc(sizeof(int) * m_length);
 	for (int i = 0; i < m_length; i++)
 	{
 		flag[i] = 0;
 		innerNodes[i].flag = 0;
 	}
-
-
 	for (int i = 0; i < m_length; i++)
 	{
 		Node* p = leafNodes[i].parent;
@@ -202,86 +188,70 @@ void BVH::Build(std::vector<Primitive>& primitives, std::vector<Triangle>& trian
 			flag[p->idx]++;
 			if (flag[p->idx] == 1) break;
 			p->Box = Union(p->childA->Box, p->childB->Box);
+			//			printf("     %d %d  %d\n", p->idx, p->childA->idx, p->childB->idx);
 			p = p->parent;
 		}
 	}
-
-
-
 	Node* p = leafNodes[0].parent;
-	while (p->parent!=0){
+	while (p->parent != 0) {
 		p = p->parent;
 	}
 	m_root = p;
-//	puts("NO");
+	//	puts("NO");
 }
 
 inline __host__ __device__
-bool BVH::InterTest(
-	const Ray& ray, 
-	Node* p,
-	const Vector3f& invDir,
-	const int dirIsNeg[3]
-)const
+bool CUDABVH::InterTest(const Ray& ray, Node* p)const
 {
-
-	if (p->Box.Intersect(ray, invDir, dirIsNeg)) {
+	if (p->Box.Intersect(ray)) {
 		if (p->flag == 3)
 		{
 			return p->triangle->Intersect(ray);
 		}
-		return InterTest(ray, p->childA,invDir,dirIsNeg) || InterTest(ray, p->childB, invDir, dirIsNeg);
+		return InterTest(ray, p->childA) || InterTest(ray, p->childB);
 	}
 	return false;
 }
 
 
 inline __host__ __device__
-bool BVH::Intersect(const Ray& ray) const
+bool CUDABVH::Intersect(const Ray& ray) const
 {
 	Node* p = m_root;
-	Vector3f invDir = Vector3f(1 / ray.d.x, 1 / ray.d.y, 1 / ray.d.z);
-	int dirIsNeg[3] = { invDir.x < 0, invDir.y < 0, invDir.z < 0 };
-	return InterTest(ray, p, invDir, dirIsNeg);
+	return InterTest(ray, p);
 }
 
 inline __host__ __device__
-bool BVH::InterTestP(
-	const Ray& ray,
-	Interaction* interaction, 
-	Node* p,
-	const Vector3f& invDir,
-	const int dirIsNeg[3]
-)const
+bool CUDABVH::InterTestP(const Ray& ray, Interaction* interaction, Node* p)const
 {
 	Float tHit;
 
-	if (p->Box.Intersect(ray, invDir, dirIsNeg)) {
+	if (p->Box.Intersect(ray)) {
 		if (p->flag == 3)
 		{
 			bool hit = p->triangle->IntersectP(ray, &tHit, interaction);
 			if (hit) {
 				ray.tMax = tHit;
 				interaction->m_primitiveID = p->idx;
+				//				printf("    %d\n", p->idx);
 				return true;
 			}
 			return false;
 		}
-		bool ret_hitA = InterTestP(ray, interaction, p->childA, invDir, dirIsNeg);
-		bool ret_hitB = InterTestP(ray, interaction, p->childB, invDir, dirIsNeg);
+		bool ret_hitA = InterTestP(ray, interaction, p->childA);
+		bool ret_hitB = InterTestP(ray, interaction, p->childB);
 		return ret_hitA || ret_hitB;
 	}
 	return false;
 }
 
 inline __host__ __device__
-bool BVH::IntersectP(const Ray& ray, Interaction* interaction) const
+bool CUDABVH::IntersectP(const Ray& ray, Interaction* interaction) const
 {
 	Node* p = nullptr;
-	p=m_root;
-	Vector3f invDir = Vector3f(1 / ray.d.x, 1 / ray.d.y, 1 / ray.d.z);
-	int dirIsNeg[3] = { invDir.x < 0, invDir.y < 0, invDir.z < 0 };
-	return InterTestP(ray,interaction, p, invDir, dirIsNeg);
+	p = m_root;
+	return InterTestP(ray, interaction, p);
 }
 
-#endif // __BVH_H
+
+#endif // __CUDABVH_H

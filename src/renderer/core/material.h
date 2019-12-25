@@ -88,10 +88,10 @@ Spectrum Material::F(
     Spectrum cosBSDF(0);
     bool reflect = CosTheta(localWo) * CosTheta(localWi) > 0;
 
-    if (m_type == DIFFUSE_REFLECT) {
-        cosBSDF = m_diffuseReflect.F(localWo, localWi, pdf);
+    if (m_type == DIFFUSE_REFLECT && reflect) {
+        cosBSDF = m_diffuseReflect.F(localWo, localWi, pdf); 
     }
-    else if (m_type == GLOSSY_REFLECT) {
+    else if (m_type == GLOSSY_REFLECT && reflect) {
         cosBSDF = m_glossyReflect.F(localWo, localWi, pdf);
     }
     else if (m_type == (SPECULAR_REFLECT | SPECULAR_TRANSMISSION)) {
@@ -114,10 +114,10 @@ Spectrum Material::F(
     Spectrum cosBSDF(0);
     bool reflect = CosTheta(localWo) * CosTheta(localWi) > 0;
 
-    if (m_type == DIFFUSE_REFLECT) {
+    if (m_type == DIFFUSE_REFLECT && reflect) {
         cosBSDF = m_diffuseReflect.F(localWo, localWi);
     }
-    else if (m_type == GLOSSY_REFLECT) {
+    else if (m_type == GLOSSY_REFLECT && reflect) {
         cosBSDF = m_glossyReflect.F(localWo, localWi);
     }
     else if (m_type == (SPECULAR_REFLECT | SPECULAR_TRANSMISSION)) {        
