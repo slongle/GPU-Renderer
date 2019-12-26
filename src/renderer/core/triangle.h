@@ -118,7 +118,7 @@ bool Triangle::Intersect(const Ray& ray) const
         return false;
     }
     Float t = Dot(Q, E2) * invDet;
-    if (t<0 || t > ray.tMax) {
+    if (t < Epsilon || t > ray.tMax) {        
         return false;
     }
     return true;
@@ -155,7 +155,7 @@ bool Triangle::IntersectP(const Ray& ray, Float* tHit, Interaction* interaction)
         return false;
     }
     Float t = Dot(Q, E2) * invDet;
-    if (t<0 || t > ray.tMax) {
+    if (t < Epsilon || t > ray.tMax) {
         return false;
     }
     *tHit = t;

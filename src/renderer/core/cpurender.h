@@ -206,7 +206,7 @@ void render(std::shared_ptr<Renderer> renderer)
         camera->m_film.Output();
     }
 
-	DrawTransportLine(Point2i(289, 325), *renderer);
+	DrawTransportLine(Point2i(783, 458), *renderer);
     camera->m_film.Output();
 }
 
@@ -286,7 +286,7 @@ void DrawTransportLine(Point2i p, Renderer& renderer) {
     }
 
 	for (int i = 1; i < vertex.size(); i++) {
-		film->DrawLine(Point2f(WorldToRaster(camera, vertex[i - 1])), Point2f(WorldToRaster(camera, vertex[i])), Spectrum(1, 1, 1));
+		film->DrawLine(Point2f(WorldToRaster(camera, vertex[i - 1])), Point2f(WorldToRaster(camera, vertex[i])), Spectrum(0, 1, 0));
 		Point2f s(WorldToRaster(camera, vertex[i - 1]));
 		film->SetVal(s.x, s.y, Spectrum(1, 0, 0));
 	}

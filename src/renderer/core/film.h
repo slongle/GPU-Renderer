@@ -38,6 +38,7 @@ void Film::SetVal(int x, int y, Spectrum v)
     for (int i = 0; i < 3; i++) {
         m_bitmap[index * 3 + i] = v[i];
     }    
+    m_sampleNum[index] = 1;
 }
 
 inline __host__ __device__ 
