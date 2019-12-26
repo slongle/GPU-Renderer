@@ -12,8 +12,9 @@
 
 Film::Film(
     Point2i resolution,
-    std::string filename)
-    : m_resolution(resolution), m_filename(filename), m_channels(3)
+    std::string filename,
+    Float scale)
+    : m_resolution(resolution), m_filename(filename), m_scale(scale), m_channels(3)
 {    
     m_bitmap = new  Float[m_resolution.x * m_resolution.y * 3];
     m_sampleNum = new unsigned int[m_resolution.x * m_resolution.y];
@@ -54,6 +55,7 @@ void Film::ExportToUnsignedChar()
         for (int y = 0; y < m_resolution.y; y++) {
             int index = y * m_resolution.x + x;
             Spectrum v(m_bitmap[index * 3], m_bitmap[index * 3 + 1], m_bitmap[index * 3 + 2]);
+            v *= m_scale;
             if (m_sampleNum[index] != 0) {
                 v /= m_sampleNum[index];
             }
@@ -68,5 +70,6 @@ CreateFilm(
 {
     Point2i resolution(param.GetInt("xresolution"), param.GetInt("yresolution"));
     std::string filename(param.GetString("filename"));
-    return std::shared_ptr<Film>(new Film(resolution, filename));
+    Float scale = param.GetFloat("scale", 1.f);
+    return std::shared_ptr<Film>(new Film(resolution, filename, scale));
 }

@@ -14,12 +14,14 @@ std::shared_ptr<Renderer> apiWorldEnd();
 void apiTransformBegin();
 void apiTransformEnd();
 void apiTransform(const Float m[16]);
+void apiLookAt(const Float m[9]);
 
 void apiIntegrator(const std::string& type, ParameterSet params);
 void apiSampler(const std::string& type, ParameterSet params);
 void apiFilter(const std::string& type, ParameterSet params);
 void apiFilm(const std::string& type, ParameterSet params);
 void apiCamera(const std::string& type, ParameterSet params);
+void apiMaterial(const std::string& type, ParameterSet params);
 void apiNamedMaterial(const std::string& name, ParameterSet params);
 void apiMakeNamedMaterial(const std::string& name, ParameterSet params);
 void apiShape(const std::string& type, ParameterSet params);

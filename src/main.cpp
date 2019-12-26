@@ -13,7 +13,8 @@ int main() {
     scenes[0] = "E:/Document/Graphics/code/GPU-Renderer/scene/cornell-box/scene.pbrt";
     scenes[1] = "E:/Document/Graphics/code/GPU-Renderer/scene/veach-mis/scene.pbrt";
     scenes[2] = "E:/Document/Graphics/code/GPU-Renderer/scene/veach-bidir/scene.pbrt";
-    std::string filepath = scenes[2];
+    scenes[3] = "E:/Document/Graphics/code/GPU-Renderer/scene/caustic-glass/scene.pbrt";
+    std::string filepath = scenes[0];
     filesystem::path path(filepath);
     getFileResolver()->prepend(path.parent_path());
     SceneLoader* sceneLoader = nullptr; 

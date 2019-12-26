@@ -26,7 +26,7 @@ public:
 
 class Transform {
 public:
-    __host__ __device__ Transform() {}
+    __host__ __device__ Transform() { Identity(); }
     __host__ __device__ Transform(const Float m[16]);
     __host__ __device__ Transform(const Matrix4x4& m);
     __host__ __device__ Transform(const Matrix4x4& m, const Matrix4x4& invM);
@@ -297,6 +297,37 @@ Transform Perspective(Float fov, Float n, Float f)
     return Transform(perspective);
 }
 
+inline __host__ __device__
+Transform LookAt(const Point3f& pos, const Point3f& look, const Vector3f& up) {
+    Matrix4x4 cameraToWorld;
+    // Initialize fourth column of viewing matrix
+    cameraToWorld.m[0][3] = pos.x;
+    cameraToWorld.m[1][3] = pos.y;
+    cameraToWorld.m[2][3] = pos.z;
+    cameraToWorld.m[3][3] = 1;
+
+    // Initialize first three columns of viewing matrix
+    Vector3f dir = Normalize(look - pos);
+    if (Cross(Normalize(up), dir).Length() == 0) {
+        ASSERT(0, "Up vector and viewing direction are pointing in the same direction");
+        return Transform();
+    }
+    Vector3f right = Normalize(Cross(Normalize(up), dir));
+    Vector3f newUp = Cross(dir, right);
+    cameraToWorld.m[0][0] = right.x;
+    cameraToWorld.m[1][0] = right.y;
+    cameraToWorld.m[2][0] = right.z;
+    cameraToWorld.m[3][0] = 0.;
+    cameraToWorld.m[0][1] = newUp.x;
+    cameraToWorld.m[1][1] = newUp.y;
+    cameraToWorld.m[2][1] = newUp.z;
+    cameraToWorld.m[3][1] = 0.;
+    cameraToWorld.m[0][2] = dir.x;
+    cameraToWorld.m[1][2] = dir.y;
+    cameraToWorld.m[2][2] = dir.z;
+    cameraToWorld.m[3][2] = 0.;
+    return Transform(Inverse(cameraToWorld), cameraToWorld);
+}
 
 
 #endif // __TRANSFORM_H

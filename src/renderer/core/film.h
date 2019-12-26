@@ -9,7 +9,7 @@
 class Film {
 public:
     Film() {}
-    Film(Point2i resolution, std::string filename);
+    Film(Point2i resolution, std::string filename, Float scale);
 
     __host__ __device__ void SetVal(int x, int y, Spectrum v);
     __host__ __device__ void AddSample(int x, int y, Spectrum v);
@@ -21,6 +21,7 @@ public:
 
     std::string m_filename; 
     Point2i m_resolution;
+    Float m_scale;
     int m_channels;
     Float* m_bitmap = nullptr;
     unsigned char* m_bitmapOutput = nullptr;

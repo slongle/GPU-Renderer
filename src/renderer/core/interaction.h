@@ -9,6 +9,20 @@ public:
     __host__ __device__
     Interaction() {}
 
+    __host__ __device__
+    Ray SpawnRayTo(const Interaction& inter) const {
+        Point3f origin = m_p + (inter.m_p - m_p) * Epsilon;
+        Point3f target = inter.m_p + (origin - inter.m_p) * Epsilon;
+        Vector3f d = target - origin;
+        return Ray(origin, Normalize(d), d.Length() - Epsilon);
+    }
+
+    __host__ __device__
+    Ray SpawnRay(const Vector3f& d) const {
+        Point3f origin = m_p + d * Epsilon;
+        return Ray(origin, d);
+    }
+
 // Global
     int m_primitiveID;
 // Surface

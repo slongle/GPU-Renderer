@@ -152,6 +152,7 @@ typedef Bounds3<int> Bounds3i;
 // Ray Declarations
 class Ray {
 public:
+    __host__ __device__ Ray() {}
     __host__ __device__ Ray(Point3f o, Vector3f d, Float tMax = Infinity) :o(o), d(d), tMax(tMax) {}
     
     Point3f operator() (Float t) const;

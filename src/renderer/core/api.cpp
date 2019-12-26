@@ -135,6 +135,12 @@ void apiTransform(const Float m[16])
     options->m_currentTransform *= t;
 }
 
+void apiLookAt(const Float m[9])
+{
+    Transform t = LookAt(Point3f(m[0], m[1], m[2]), Point3f(m[3], m[4], m[5]), Vector3f(m[6], m[7], m[8]));
+    options->m_currentTransform *= t;
+}
+
 void apiIntegrator(const std::string& type, ParameterSet params)
 {
     options->m_integratorType = type;
@@ -163,6 +169,11 @@ void apiCamera(const std::string& type, ParameterSet params)
     options->m_cameraType = type;
     options->m_cameraParameterSet = params;
     options->m_cameraTransform = options->m_currentTransform;
+}
+
+void apiMaterial(const std::string& type, ParameterSet params)
+{
+    options->m_currentMaterial = options->MakeMaterial(type, params);
 }
 
 void apiNamedMaterial(const std::string& name, ParameterSet params)
@@ -269,6 +280,15 @@ int Options::MakeLight(
     std::shared_ptr<Light> light;
     if (type == "area" || type == "diffuse"){
         light = CreateAreaLight(params, shapeID);
+    }
+    else if (type == "spot") {
+        light = CreateSpotLight(params, m_currentTransform);
+    }
+    else if (type == "infinite") {
+        light = CreateInfiniteLight(params);
+    }
+    else {
+        ASSERT(0, "Can't support light " + type);
     }
     int lightID = m_scene.AddLight(light);
     return lightID;

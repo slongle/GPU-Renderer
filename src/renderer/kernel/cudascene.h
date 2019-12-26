@@ -16,15 +16,15 @@ public:
     __device__ __host__
     bool IntersectP(const Ray& ray, Interaction* interaction) const;
 
-    TriangleMesh* m_triangleMeshes;
+    TriangleMesh* m_triangleMeshes = nullptr;
     int m_triangleMeshNum;
-    Triangle* m_triangles;
+    Triangle* m_triangles = nullptr;
     int m_triangleNum;
-    Material* m_materials;
+    Material* m_materials = nullptr;
     int m_materialNum;
-    Primitive* m_primitives;
+    Primitive* m_primitives = nullptr;
     int m_primitiveNum;
-    Light* m_lights;
+    Light* m_lights = nullptr;
     int m_lightNum;
 };
 

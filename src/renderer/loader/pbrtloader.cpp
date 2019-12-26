@@ -351,10 +351,25 @@ Parse(std::unique_ptr<Tokenizer> tokenizer) {
                 parseParameterList(apiIntegrator);
             }
             break;
+        case 'L':
+            if (token == "LookAt") {
+                token = nextToken();
+                char* endPtr;
+                Float m[9];
+                for (int i = 0; i < 9; i++) {
+                    token = nextToken();
+                    m[i] = strtof(token.data(), &endPtr);
+                }
+                apiLookAt(m);
+            }
+            break;
         case 'M':
             if (token == "MakeNamedMaterial") {
                 parseParameterList(apiMakeNamedMaterial);
             } 
+            else if (token == "Material") {
+                parseParameterList(apiMaterial);
+            }
             break;
         case 'N':
             if (token == "NamedMaterial") {
