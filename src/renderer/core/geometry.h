@@ -153,14 +153,15 @@ typedef Bounds3<int> Bounds3i;
 class Ray {
 public:
     __host__ __device__ Ray() {}
-    __host__ __device__ Ray(Point3f o, Vector3f d, Float tMax = Infinity) :o(o), d(d), tMax(tMax) {}
+    __host__ __device__ Ray(Point3f o, Vector3f d, Float tMin = Epsilon, Float tMax = Infinity) 
+        :o(o), d(d), tMin(tMin), tMax(tMax) {}
     
-    Point3f operator() (Float t) const;
+    __host__ __device__ Point3f operator() (Float t) const;
 
     // Ray Public Data
     Point3f o;
     Vector3f d;
-    mutable Float tMax;
+    mutable Float tMin, tMax;
 };
 
 template<typename T>
@@ -509,7 +510,7 @@ bool Bounds3<T>::Intersect(
     Float* hitt0,
     Float* hitt1) const 
 {
-    Float t0 = 0, t1 = ray.tMax;
+    Float t0 = ray.tMin, t1 = ray.tMax;
     for (int i = 0; i < 3; ++i) {
         // Update interval for _i_th bounding box slab
         Float invRayDir = 1 / ray.d[i];
@@ -556,7 +557,7 @@ bool Bounds3<T>::Intersect(
     if (tMin > tzMax || tzMin > tMax) return false;
     if (tzMin > tMin) tMin = tzMin;
     if (tzMax < tMax) tMax = tzMax;
-    return (tMin < ray.tMax) && (tMax > 0);
+    return (tMin < ray.tMax) && (tMax > ray.tMin);
 }
 
 #endif // !__VECTOR_H

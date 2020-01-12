@@ -11,10 +11,14 @@ public:
 
     __host__ __device__
     Ray SpawnRayTo(const Interaction& inter) const {
+        Vector3f d = inter.m_p - m_p;
+        return Ray(m_p, d, Epsilon, 1.f - ShadowEpsilon);
+        /*
         Point3f origin = m_p + (inter.m_p - m_p) * Epsilon;
         Point3f target = inter.m_p + (origin - inter.m_p) * Epsilon;
         Vector3f d = target - origin;
         return Ray(origin, Normalize(d), d.Length() - Epsilon);
+        */
     }
 
     __host__ __device__

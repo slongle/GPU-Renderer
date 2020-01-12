@@ -2,6 +2,7 @@
 #ifndef __CUDASCENE_H
 
 #include "renderer/core/scene.h"
+#include "renderer/kernel/cudabvh.h"
 
 class CUDAScene {    
 public:
@@ -26,6 +27,8 @@ public:
     int m_primitiveNum;
     Light* m_lights = nullptr;
     int m_lightNum;
+
+    CUDABVH m_bvh;
 };
 
 inline __device__ __host__
@@ -68,19 +71,23 @@ CUDAScene::CUDAScene(Scene* scene) {
 inline __device__ __host__
 bool CUDAScene::Intersect(const Ray& ray) const
 {
-    for (int i = 0; i < m_primitiveNum; i++) {
+    return m_bvh.Intersect(ray, m_triangles);
+
+    /*for (int i = 0; i < m_primitiveNum; i++) {
         int triangleID = m_primitives[i].m_shapeID;
         bool hit = m_triangles[triangleID].Intersect(ray);
         if (hit) {
             return true;
         }
     }
-    return false;
+    return false;*/
 }
 
 bool CUDAScene::IntersectP(const Ray& ray, Interaction* interaction) const
 {
-    Float tHit;
+    return m_bvh.IntersectP(ray, interaction, m_triangles);
+
+    /*Float tHit;
     bool ret_hit = false;
     for (int i = 0; i < m_primitiveNum; i++) {
         int triangleID = m_primitives[i].m_shapeID;
@@ -91,7 +98,7 @@ bool CUDAScene::IntersectP(const Ray& ray, Interaction* interaction) const
             interaction->m_primitiveID = i;
         }
     }
-    return ret_hit;
+    return ret_hit;*/
 }
 
 

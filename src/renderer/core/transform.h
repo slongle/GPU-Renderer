@@ -248,7 +248,7 @@ Normal3<T> Transform::operator()(const Normal3<T>& n) const
 inline __device__ __host__
 Ray Transform::operator()(const Ray& r) const
 {
-    return Ray((*this)(r.o), (*this)(r.d), r.tMax);
+    return Ray((*this)(r.o), (*this)(r.d), r.tMin, r.tMax);
 }
 
 inline __device__ __host__

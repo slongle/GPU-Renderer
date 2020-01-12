@@ -152,10 +152,15 @@ Spectrum Material::Sample(
     //Point2f u(NextRandom(seed), NextRandom(seed));    
 
     if (m_type == DIFFUSE_REFLECT) {
+        //printf("Diffuse begin\n");
         cosBSDF = m_diffuseReflect.Sample(localWo, &localWi, pdf, seed);
+        //printf("Diffuse end\n");
     }
     else if (m_type == GLOSSY_REFLECT) {
+        //printf("Glossy begin\n");
+        //localWi = CosineSampleHemisphere(seed);
         cosBSDF = m_glossyReflect.Sample(localWo, &localWi, pdf, seed);
+        //printf("Glossy end\n");
     }
     else if (m_type == (SPECULAR_REFLECT | SPECULAR_TRANSMISSION)) {        
         cosBSDF = m_fresnelSpecular.Sample(localWo, &localWi, pdf, seed);

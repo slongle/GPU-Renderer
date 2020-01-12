@@ -17,7 +17,7 @@ public:
     __host__ __device__ Spectrum GetPixelSpectrum(int index)const;
     void DrawLine(const Point2f& s, const Point2f& t, const Spectrum& col);
     void ExportToUnsignedChar();
-    void Output();
+    void Output(std::string prefix = "");
 
     std::string m_filename; 
     Point2i m_resolution;

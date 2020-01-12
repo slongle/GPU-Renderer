@@ -22,11 +22,11 @@ Film::Film(
     memset(m_sampleNum, 0, sizeof(unsigned int) * m_resolution.x * m_resolution.y);    
 }
 
-void Film::Output()
+void Film::Output(std::string prefix)
 {
     printf("Output\n");
     ExportToUnsignedChar();
-    stbi_write_png(m_filename.c_str(), m_resolution.x, m_resolution.y, m_channels, m_bitmapOutput, 0);
+    stbi_write_png((prefix + m_filename).c_str(), m_resolution.x, m_resolution.y, m_channels, m_bitmapOutput, 0);
     printf("Done\n");
 }
 

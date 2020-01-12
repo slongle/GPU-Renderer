@@ -401,7 +401,7 @@ Spectrum GGXSmithReflectBSDF::Sample(
     unsigned int& seed) const
 {
     // Sample microfacet orientation $\wh$ and reflected direction $\wi$    
-    if (wo.z == 0) return Spectrum(0.f);    
+    if (wo.z == 0.f) return Spectrum(0.f);    
     Vector3f wh = m_distribution.Sample_wh(wo, seed);
     *wi = Reflect(wo, wh);
     if (!SameHemisphere(wo, *wi)) return Spectrum(0.f);

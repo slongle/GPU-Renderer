@@ -43,16 +43,6 @@ struct BucketInfo {
     Bounds3f bounds;
 };
 
-struct LinearBVHNode {
-    Bounds3f bounds;
-    union {
-        int primitivesOffset; // Leaf      the offset in m_primitives array
-        int rightChildOffset; // Interior  the offset in node array
-    };
-    uint16_t nPrimitives;     // the number of m_primitives in this node
-    uint8_t axis;             // SplitAxis   
-    uint8_t pad;              // Ensure 32 byte size
-};
 
 
 
@@ -84,6 +74,7 @@ BVHAccelerator::BVHAccelerator(
 
     // Compute representation of depth-first traversal of BVH tree
     m_nodes = AllocAligned<LinearBVHNode>(totalNodes);
+    m_totalNodes = totalNodes;
     int offset = 0;
     FlattenBVHTree(root, &offset);
 }
@@ -117,6 +108,7 @@ void BVHAccelerator::Build(
     orderedPrims.resize(0);
 
     // Compute representation of depth-first traversal of BVH tree
+    m_totalNodes = totalNodes;
     m_nodes = AllocAligned<LinearBVHNode>(totalNodes);
     int offset = 0;
     FlattenBVHTree(root, &offset);

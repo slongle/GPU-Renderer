@@ -131,6 +131,7 @@ set(sources
     src/renderer/core/transform.h
     src/renderer/core/triangle.cpp
     src/renderer/core/triangle.h
+	src/renderer/kernel/cudabvh.h
 	src/renderer/kernel/cudarenderer.h
 	src/renderer/kernel/cudascene.cpp
 	src/renderer/kernel/cudascene.h

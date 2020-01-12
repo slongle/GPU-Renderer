@@ -18,6 +18,7 @@ typedef float Float;
 
 #define Infinity ((float)(_HUGE_ENUF * _HUGE_ENUF))
 #define Epsilon  1e-4f
+#define ShadowEpsilon 1e-3f
 #define Pi       3.14159265358979323846f
 #define InvPi    0.31830988618379067154f
 #define Inv2Pi   0.15915494309189533577f

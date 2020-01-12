@@ -254,7 +254,18 @@ bool BVH::IntersectP(const Ray& ray, Interaction* interaction) const
 
 struct BVHPrimitiveInfo;
 struct BVHBuildNode;
-struct LinearBVHNode;
+//struct LinearBVHNode;
+struct LinearBVHNode {
+    Bounds3f bounds;
+    union {
+        int primitivesOffset; // Leaf      the offset in m_primitives array
+        int rightChildOffset; // Interior  the offset in node array
+    };
+    uint16_t nPrimitives;     // the number of m_primitives in this node
+    uint8_t axis;             // SplitAxis   
+    uint8_t pad;              // Ensure 32 byte size
+};
+
 
 class BVHAccelerator {
 public:
@@ -292,7 +303,7 @@ public:
         const Triangle* triangles) const;
 
     std::vector<Primitive> m_primitives;
-    int m_maxPrimsInNode;
+    int m_maxPrimsInNode, m_totalNodes;
     SplitMethod m_splitMethod;
     LinearBVHNode* m_nodes = nullptr;    
 };

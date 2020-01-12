@@ -22,6 +22,54 @@
 #include "renderer/kernel/cudascene.h"
 #include "renderer/kernel/cudarenderer.h"
 
+struct PathState {
+    // Film position
+    uint x, y;
+    // Pipline information
+    uint nSample;
+    uint state;
+    // Path information
+    Spectrum L;
+    uint seed;
+    Spectrum throughput;
+    Ray ray;
+    bool specular;
+    int bounce;
+    bool hit;
+    Interaction inter;
+};
+
+struct Queue {
+    __device__ __host__
+    bool isEmpty() {
+        return queue[l] == -1;
+    }
+
+    __device__ __host__
+    void push(int v) {
+        queue[r] = v;
+        r++;
+        if (r == size) {
+            r = 0;
+        }
+    }
+
+    __device__ __host__
+    int pop() {
+        int ret = queue[l];
+        queue[l] = -1;
+        l++;
+        if (l == size) {
+            l = 0;
+        }
+        return ret;
+    }
+
+    int l, r;
+    int size;
+    int* queue;
+};
+
 CUDAScene* hst_scene;
 CUDAScene* dev_scene;
 Camera* hst_camera;
@@ -31,12 +79,40 @@ Integrator* dev_integrator;
 CUDARenderer* hst_renderer;
 CUDARenderer* dev_renderer;
 
+PathState* pathStates;
+Queue* newPathRequest;
+Queue* intersectRequest;
+Queue* materialRequest;
+Queue* neeRequest;
+
 unsigned int frame = 0;
+
+__global__
+void InitState(
+    PathState* pathStates, 
+    int pathSize, int width, 
+    Queue* newPathRequest,    
+    Queue* intersectRequest,
+    Queue* materialRequest, 
+    Queue* neeRequest) 
+{
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < pathSize) {
+        int y = index / width;
+        int x = index % width;
+        pathStates[index].x = x;
+        pathStates[index].y = y;
+        pathStates[index].state = 0;
+        newPathRequest->queue[index] = intersectRequest->queue[index] 
+            = materialRequest->queue[index] = neeRequest->queue[index] = -1;
+    }
+}
 
 extern "C"
 void cudaInit(std::shared_ptr<Renderer> renderer) {
     // Move Scene Data
     Scene* scene = &(renderer->m_scene);
+    scene->Preprocess();
     hst_scene = new CUDAScene(scene);
 
     // Move TriangleMesh Data
@@ -97,9 +173,22 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
     cudaMemcpy(hst_scene->m_primitives, scene->m_primitives.data(),
         sizeof(Primitive) * primitiveNum, cudaMemcpyHostToDevice);
 
+    // Move BVH Data   
+    CUDABVH* hst_bvh = new CUDABVH();    
+    hst_bvh->m_maxPrimsInNode = scene->m_shapeBvh->m_maxPrimsInNode;
+    hst_bvh->m_totalNodes = scene->m_shapeBvh->m_totalNodes;
+    hst_bvh->m_splitMethod = static_cast<CUDABVH::SplitMethod>(scene->m_shapeBvh->m_splitMethod);
+    cudaMalloc(&hst_bvh->m_primitives, sizeof(Primitive) * scene->m_shapeBvh->m_primitives.size());
+    cudaMemcpy(hst_bvh->m_primitives, scene->m_shapeBvh->m_primitives.data(),
+        sizeof(Primitive) * scene->m_shapeBvh->m_primitives.size(), cudaMemcpyHostToDevice);    
+    cudaMalloc(&hst_bvh->m_nodes, sizeof(LinearBVHNode) * scene->m_shapeBvh->m_totalNodes);
+    cudaMemcpy(hst_bvh->m_nodes, scene->m_shapeBvh->m_nodes,
+        sizeof(LinearBVHNode) * scene->m_shapeBvh->m_totalNodes, cudaMemcpyHostToDevice);
+    memcpy(&hst_scene->m_bvh, hst_bvh, sizeof(CUDABVH));
+
     // Move cudaScene Data
     cudaMalloc(&dev_scene, sizeof(CUDAScene));
-    cudaMemcpy(dev_scene, hst_scene, sizeof(CUDAScene), cudaMemcpyHostToDevice);
+    cudaMemcpy(dev_scene, hst_scene, sizeof(CUDAScene), cudaMemcpyHostToDevice);    
 
     // Move Camera Data
     hst_camera = &(renderer->m_camera);
@@ -119,8 +208,135 @@ void cudaInit(std::shared_ptr<Renderer> renderer) {
     hst_renderer = new CUDARenderer(dev_integrator, dev_camera, dev_scene);
     cudaMalloc(&dev_renderer, sizeof(CUDARenderer));
     checkCudaErrors(cudaMemcpy(dev_renderer, hst_renderer, sizeof(CUDARenderer), cudaMemcpyHostToDevice));
+    
+    
+
+    int pathSize = film.m_resolution.x* film.m_resolution.y;    
+    cudaMallocManaged(&pathStates, sizeof(PathState) * pathSize);
+
+    cudaMallocManaged(&newPathRequest, sizeof(Queue));
+    cudaMallocManaged(&newPathRequest->queue, sizeof(int) * pathSize);
+    newPathRequest->size = pathSize;
+    newPathRequest->l = newPathRequest->r = 0;
+
+    cudaMallocManaged(&intersectRequest, sizeof(Queue));
+    cudaMallocManaged(&intersectRequest->queue, sizeof(int) * pathSize);
+    intersectRequest->size = pathSize;
+    intersectRequest->l = intersectRequest->r = 0;
+
+    cudaMallocManaged(&materialRequest, sizeof(Queue));
+    cudaMallocManaged(&materialRequest->queue, sizeof(int) * pathSize);
+    materialRequest->size = pathSize;
+    materialRequest->l = materialRequest->r = 0;
+
+    cudaMallocManaged(&neeRequest, sizeof(Queue));
+    cudaMallocManaged(&neeRequest->queue, sizeof(int) * pathSize);
+    neeRequest->size = pathSize;
+    neeRequest->l = neeRequest->r = 0;
+
+    int blockSize = 16;
+    int gridSize = (pathSize + blockSize - 1) / blockSize;    
+    InitState << <gridSize, blockSize >> > (
+        pathStates, pathSize, film.m_resolution.x,
+        newPathRequest, intersectRequest, materialRequest, neeRequest);
+}
+
+__global__
+void logic(CUDARenderer* renderer, int pathSize,
+    PathState* pathStates, Queue* intersectRequest, Queue* newPathRequest, Queue* materialRequest, Queue* neeRequest) {    
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < pathSize) {
+        CUDAScene* scene = renderer->m_scene;
+        Integrator* integrator = renderer->m_integrator;
+        Camera* camera = renderer->m_camera;
+        Film* film = &camera->m_film;
+        PathState& path = pathStates[index];
+        if (path.state == 0) {
+            newPathRequest->push(index);
+        }
+        else if (path.state == 1) {
+            intersectRequest->push(index);
+        }
+        else if (path.state == 2) {
+            const Primitive& primitive = scene->m_primitives[path.inter.m_primitiveID];
+            const Material& material = scene->m_materials[primitive.m_materialID];
+            if (path.bounce == 0 || path.specular) {
+                if (primitive.m_lightID != -1) {
+                    int lightID = primitive.m_lightID;
+                    const Light& light = scene->m_lights[lightID];
+                    if (Dot(path.inter.m_shadingN, path.inter.m_wo) > 0) {
+                        path.L += path.throughput * light.m_L;
+                    }
+                }
+            }
+            path.state = 3;
+        }
+        else if (path.state == 3) {
+            neeRequest->push(index);
+        }
+        else if (path.state == 4) {
+            materialRequest->push(index);
+        }
+        else if (path.state == 5) {
+            if (path.throughput.Max() < 1 && path.bounce > 3) {
+                Float q = max((Float).05, 1 - path.throughput.Max());
+                if (NextRandom(path.seed) < q) {
+                    path.state = 0;
+                    camera->m_film.AddSample(path.x, path.y, path.L);
+                }                
+                path.throughput /= 1 - q;
+            }    
+            if (path.state != 0) {
+                if (path.bounce < integrator->m_maxDepth) {
+                    path.state = 0;
+                    camera->m_film.AddSample(path.x, path.y, path.L);
+                }
+                else {
+                    path.state = 1;
+                    path.ray = Ray(path.inter.m_p, path.inter.m_wi);
+                }
+            }
+        }
+
+    }
+}
+
+__global__
+void newPath(int pathSize) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < pathSize) {
+
+    }
+}
+
+__global__
+void materialEvaluate(int pathSize) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < pathSize) {
+
+    }
+}
+
+__global__
+void nee(int pathSize) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < pathSize) {
+
+    }
+}
 
 
+void render(CUDARenderer* renderer) {
+    Film& film = hst_camera->m_film;
+    int pathSize = film.m_resolution.x * film.m_resolution.y;
+    int blockSize = 16;
+    int gridSize = (pathSize + blockSize - 1) / blockSize;
+
+    logic << <gridSize, blockSize >> > (renderer,
+        pathSize, pathStates, intersectRequest, newPathRequest, materialRequest, neeRequest);
+    newPath << <gridSize, blockSize >> > (pathSize);
+    materialEvaluate << <gridSize, blockSize >> > (pathSize);
+    nee<< <gridSize, blockSize >> > (pathSize);
 }
 
 typedef struct
@@ -160,10 +376,7 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
             AbsDot(-Normalize(lightSample.m_p - inter.m_p), lightSample.m_shadingN);
 
         // Visibility test
-        Point3f origin = inter.m_p + Normalize(lightSample.m_p - inter.m_p) * Epsilon;
-        Point3f target = lightSample.m_p + Normalize(origin - lightSample.m_p) * Epsilon;
-        Vector3f d = target - origin;
-        Ray testRay(origin, Normalize(d), d.Length() - Epsilon);
+        Ray testRay = inter.SpawnRayTo(lightSample);
         bool hit = scene.Intersect(testRay);
 
         if (!hit) {
@@ -219,7 +432,7 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
             // Get Le            
             Spectrum Le(0.);
             if (Dot(-wi, lightInter.m_shadingN) > 0) {
-                Le = scene.m_lights[scene.m_primitives[lightInter.m_primitiveID].m_lightID].m_L;
+                Le = light.m_L;
             }
 
             Float weight = PowerHeuristic(1, bsdfPdf, 1, lightSamplePdf);
@@ -232,14 +445,13 @@ Spectrum NextEventEstimate(const CUDAScene& scene, const Interaction& inter, uns
 
 inline __device__
 Spectrum SampleMaterial(const CUDAScene& scene, Interaction& inter, unsigned int& seed) {
-    Spectrum cosBSDF;
     const Primitive& primitive = scene.m_primitives[inter.m_primitiveID];
     const Material& material = scene.m_materials[primitive.m_materialID];
     
     Normal3f n = inter.m_shadingN;
-
+    
     Float bsdfPdf;
-    cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
+    Spectrum cosBSDF = material.Sample(n, inter.m_wo, &inter.m_wi, &bsdfPdf, seed);
 
     return cosBSDF / bsdfPdf;
 }
@@ -256,6 +468,7 @@ d_render(uint* d_output, uint imageW, uint imageH, unsigned int frame, CUDARende
     Integrator* integrator = renderer->m_integrator;
     Camera* camera = renderer->m_camera;
     CUDAScene* scene = renderer->m_scene;
+    //printf("%d\n", scene->m_bvh.m_primitives);
 
     uint index = y * imageW + x;
     if ((x >= imageW) || (y >= imageH)) return;
@@ -264,28 +477,31 @@ d_render(uint* d_output, uint imageW, uint imageH, unsigned int frame, CUDARende
     uint seed = InitRandom(index, frame);
     Spectrum throughput(1);
     Ray ray = camera->GenerateRay(Point2f(x + NextRandom(seed), y + NextRandom(seed)));
+    bool specular = false;
     int bounce;
     for (bounce = 0; bounce < integrator->m_maxDepth; bounce++) {
 
         // find intersection with scene
-        Interaction interaction;
-        bool hit = scene->IntersectP(ray, &interaction);
-
+        Interaction inter;
+        bool hit = scene->IntersectP(ray, &inter);
         if (!hit) {
             break;
         }
 
-        const Primitive& primitive = scene->m_primitives[interaction.m_primitiveID];
-        if (bounce == 0 && primitive.m_lightID != -1) {
-            int lightID = primitive.m_lightID;
-            const Light& light = scene->m_lights[lightID];
-            if (Dot(interaction.m_shadingN, interaction.m_wo) > 0) {
-                L += throughput * light.m_L;
+        const Primitive& primitive = scene->m_primitives[inter.m_primitiveID];
+        const Material& material = scene->m_materials[primitive.m_materialID];
+        if (bounce == 0 || specular) {
+            if (primitive.m_lightID != -1) {
+                int lightID = primitive.m_lightID;
+                const Light& light = scene->m_lights[lightID];
+                if (Dot(inter.m_shadingN, inter.m_wo) > 0) {
+                    L += throughput * light.m_L;
+                }
             }
         }
 
         // render normal
-        //L = Spectrum(interaction.m_geometryN);
+        //L = Spectrum(inter.m_geometryN);
         //break;
 
         if (throughput.isBlack()) {
@@ -294,10 +510,17 @@ d_render(uint* d_output, uint imageW, uint imageH, unsigned int frame, CUDARende
 
         // direct light
         Point3f pLight;
-        L += throughput * NextEventEstimate(*scene, interaction, seed, pLight);
+        if (!material.isDelta()) {
+            L += throughput * NextEventEstimate(*scene, inter, seed, pLight);
+            specular = false;
+        }
+        else {
+            specular = true;
+        }
 
         // calculate BSDF
-        throughput *= SampleMaterial(*scene, interaction, seed);
+        throughput *= SampleMaterial(*scene, inter, seed);
+        //break;
 
         // indirect light                    
         if (throughput.Max() < 1 && bounce > 3) {
@@ -306,12 +529,11 @@ d_render(uint* d_output, uint imageW, uint imageH, unsigned int frame, CUDARende
             throughput /= 1 - q;
         }
 
-        ray.o = interaction.m_p + interaction.m_wi * Epsilon;
-        ray.d = interaction.m_wi;
-        ray.tMax = Infinity;
+        ray = Ray(inter.m_p, inter.m_wi);
     }
     camera->m_film.AddSample(x, y, L);
     L = camera->m_film.GetPixelSpectrum(index);
+
 
     // write output color
     if (d_output) {
@@ -370,7 +592,7 @@ void gpu_render(std::shared_ptr<Renderer> renderer) {
     checkCudaErrors(cudaMemcpy(film.m_bitmap, hst_camera->m_film.m_bitmap, sizeof(Float) * film.m_resolution.x * film.m_resolution.y * 3, cudaMemcpyDeviceToHost));
     checkCudaErrors(cudaMemcpy(film.m_sampleNum, hst_camera->m_film.m_sampleNum, sizeof(unsigned int) * film.m_resolution.x * film.m_resolution.y, cudaMemcpyDeviceToHost));
     //cudaDeviceSynchronize();
-    film.Output();     
+    film.Output("GPU-");     
 }
 
 #endif // #ifndef _VOLUMERENDER_KERNEL_CU_
