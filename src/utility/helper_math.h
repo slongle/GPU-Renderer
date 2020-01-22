@@ -1053,6 +1053,11 @@ inline  __host__ __device__ float4 fminf(float4 a, float4 b)
     return make_float4(fminf(a.x,b.x), fminf(a.y,b.y), fminf(a.z,b.z), fminf(a.w,b.w));
 }
 
+inline  __host__ __device__ float fminf(float3 a)
+{
+    return fminf(fminf(a.x, a.y), a.z);
+}
+
 inline __host__ __device__ int2 min(int2 a, int2 b)
 {
     return make_int2(min(a.x,b.x), min(a.y,b.y));
@@ -1094,6 +1099,11 @@ inline __host__ __device__ float3 fmaxf(float3 a, float3 b)
 inline __host__ __device__ float4 fmaxf(float4 a, float4 b)
 {
     return make_float4(fmaxf(a.x,b.x), fmaxf(a.y,b.y), fmaxf(a.z,b.z), fmaxf(a.w,b.w));
+}
+
+inline  __host__ __device__ float fmaxf(float3 a)
+{
+    return fmaxf(fmaxf(a.x, a.y), a.z);
 }
 
 inline __host__ __device__ int2 max(int2 a, int2 b)
@@ -1151,7 +1161,7 @@ inline __device__ __host__ float4 lerp(float4 a, float4 b, float t)
 
 inline __device__ __host__ float clamp(float f, float a, float b)
 {
-    return fmaxf(a, fminf(f, b));
+    return fminf(b, fmaxf(f, a));
 }
 inline __device__ __host__ int clamp(int f, int a, int b)
 {
@@ -1280,9 +1290,35 @@ inline __host__ __device__ uint dot(uint4 a, uint4 b)
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // length
 ////////////////////////////////////////////////////////////////////////////////
+
+
+inline __host__ __device__ float3 sqrt(float3 v)
+{
+    return make_float3(sqrtf(v.x), sqrtf(v.y), sqrtf(v.z));
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// length
+////////////////////////////////////////////////////////////////////////////////
+
+
+inline __host__ __device__ float square_length(float2 v)
+{
+    return dot(v, v);
+}
+inline __host__ __device__ float square_length(float3 v)
+{
+    return dot(v, v);
+}
+inline __host__ __device__ float square_length(float4 v)
+{
+    return dot(v, v);
+}
 
 inline __host__ __device__ float length(float2 v)
 {
@@ -1400,6 +1436,30 @@ inline __host__ __device__ int3 abs(int3 v)
 inline __host__ __device__ int4 abs(int4 v)
 {
     return make_int4(abs(v.x), abs(v.y), abs(v.z), abs(v.w));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// permute
+////////////////////////////////////////////////////////////////////////////////
+
+inline __host__ __device__ float op (const float3& p, const int& i)
+{
+    if (i == 0) return p.x;
+    else if (i == 1) return p.y;
+    else return p.z;
+}
+
+inline __host__ __device__ float3 permute(float3 p, int a, int b, int c)
+{    
+    return make_float3(op(p, a), op(p, b), op(p, c));
+}
+
+inline __host__ __device__ int maxdimension(float3 p)
+{
+    float mx = fmaxf(p);
+    if (p.x == mx) return 0;
+    else if (p.y == mx) return 1;
+    return 2;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

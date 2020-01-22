@@ -1,29 +1,26 @@
 #include "GUI/gui.h"
+#include "renderer/pathtracer.h"
+
+#include "renderer/bvh.h"
 
 #include <iostream>
 using std::cout;
 using std::endl;
 
-#include "renderer/loader/pbrtloader.h"
-#include "renderer/core/cpurender.h"
-#include "renderer/core/gpurender.h"
-
-int main() {   
-    std::vector<std::string> scenes(100);
-    scenes[0] = "E:/Document/Graphics/code/GPU-Renderer/scene/cornell-box/scene.pbrt";
-    scenes[1] = "E:/Document/Graphics/code/GPU-Renderer/scene/veach-mis/scene.pbrt";
-    scenes[2] = "E:/Document/Graphics/code/GPU-Renderer/scene/veach-bidir/scene.pbrt";
-    std::string filepath = scenes[2];
-    filesystem::path path(filepath);
-    getFileResolver()->prepend(path.parent_path());
-    SceneLoader* sceneLoader = nullptr; 
-    sceneLoader = new  PBRTLoader(filepath);
-    std::shared_ptr<Renderer> renderer = sceneLoader->Load();  
-
-    render(renderer);
-    return 0;
-
-    Gui::init(renderer);             
+int main(int argc, char** argv) {   
+    std::string filename = "E:\\Document\\Graphics\\code\\Renderer\\scene\\CornellBox\\CornellBox-Original.obj";
+    //filename = "E:\\Document\\Graphics\\code\\Renderer\\scene\\CornellBox\\CornellBox-Sphere.obj";
+    //filename = "E:\\Document\\Graphics\\code\\Renderer\\scene\\CornellBox\\CornellBox-Mirror.obj";
+    //filename = "E:\\Document\\Graphics\\code\\Renderer\\scene\\CornellBox\\CornellBox-Water.obj";
+    //filename = "E:\\Document\\Graphics\\code\\Renderer\\scene\\mori_knob\\testObj.obj";
+    //filename = "E:\\Document\\Graphics\\code\\Renderer\\scene\\fireplace_room\\fireplace_room.obj";    
+    //filename = "E:\\Document\\Graphics\\code\\Renderer\\scene\\CBox\\cbox(mesh).xml"; 
+    filename = "E:\\Document\\Graphics\\code\\Renderer\\scene\\CBox\\cbox(sphere).xml";
+    std::shared_ptr<PathTracer> pathTracer(new PathTracer(filename));
+      
+    
+              
+    Gui::init(pathTracer);             
     Gui::mainLoop();
     return 0;
-}
+} 

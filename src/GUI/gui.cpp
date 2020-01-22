@@ -39,14 +39,8 @@ namespace Gui {
     const char* sample = "CUDA Path Tracing";
     uint width = 512, height = 512;
 
-    // CUDA configure
-    dim3 blockSize{ 16, 16 };
-    dim3 gridSize;
-
-    // Camera configure
-    float3 viewRotation;
-    float3 viewTranslation = make_float3(0.0, 0.0, -4.0f);
-    float invViewMatrix[12];
+    // Renderer
+    std::shared_ptr<PathTracer> renderer;
 
     // Pixel Buffer
     GLuint pbo = 0;     // OpenGL pixel buffer object
@@ -64,18 +58,17 @@ namespace Gui {
     // Mouse motion variables
     int ox, oy;
     int buttonState = 0;
+
+    // Stop
+    bool start = false;
 }
 
-void Gui::init(std::shared_ptr<Renderer> renderer)
+void Gui::init(std::shared_ptr<PathTracer> pathTracer)
 {
-    width = renderer->m_camera.m_film.m_resolution.x;
-    height = renderer->m_camera.m_film.m_resolution.y;
+    // Copy and init renderer
+    renderer = pathTracer;
+    renderer->init();
 
-    gridSize = dim3(iDivUp(width, blockSize.x), iDivUp(height, blockSize.y));
-
-    renderer->m_integrator.m_nSample = 1;
-
-    cudaInit(renderer);
 #if defined(__linux__)
     setenv("DISPLAY", ":0", 0);
 #endif
@@ -118,9 +111,7 @@ void Gui::mainLoop()
 }
 
 void Gui::render()
-{
-    copyInvViewMatrix(invViewMatrix, sizeof(float4) * 3);
-
+{    
     // map PBO to get CUDA device pointer
     uint* d_output;
     // map PBO to get CUDA device pointer
@@ -133,8 +124,10 @@ void Gui::render()
     // clear image
     checkCudaErrors(cudaMemset(d_output, 0, width * height * 4));
 
-    // call CUDA kernel, writing results to PBO
-    render_kernel(gridSize, blockSize, d_output, width, height);
+    // render
+    if (start) {
+        renderer->render(d_output);
+    }
 
     getLastCudaError("kernel failed");
 
@@ -212,9 +205,6 @@ void Gui::reshape(int w, int h)
     height = h;
     initPixelBuffer();
 
-    // calculate new grid size
-    gridSize = dim3(iDivUp(width, blockSize.x), iDivUp(height, blockSize.y));
-
     glViewport(0, 0, w, h);
 
     glMatrixMode(GL_MODELVIEW);
@@ -223,6 +213,8 @@ void Gui::reshape(int w, int h)
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     glOrtho(0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
+
+    renderer->resize(width, height);
 }
 
 void Gui::motion(int x, int y)
@@ -234,19 +226,23 @@ void Gui::motion(int x, int y)
     if (buttonState == 4)
     {
         // right = zoom
-        viewTranslation.z += dy / 100.0f;
+        //viewTranslation.z += dy / 100.0f;
+        renderer->zoom(dy / 100.0f);
     }
     else if (buttonState == 2)
     {
         // middle = translate
-        viewTranslation.x += dx / 100.0f;
-        viewTranslation.y -= dy / 100.0f;
+        //viewTranslation.x += dx / 100.0f;
+        //viewTranslation.y -= dy / 100.0f;
+        renderer->translate(-dx / 100.0f, dy / 100.0f);
+
     }
     else if (buttonState == 1)
     {
         // left = rotate
-        viewRotation.x += dy / 5.0f;
-        viewRotation.y += dx / 5.0f;
+        //viewRotation.x += dy / 5.0f;
+        //viewRotation.y += dx / 5.0f;
+        renderer->rotate(dx / 500.0f, -dy / 500.0f);
     }
 
     ox = x;
@@ -272,8 +268,12 @@ void Gui::mouse(int button, int state, int x, int y)
 
 void Gui::keyboard(unsigned char key, int x, int y)
 {
+    //std::cout << (int)key << std::endl;
     switch (key)
     {
+    case 13:
+        renderer->render(1000);
+        break;
     case 27:
 #if defined (__APPLE__) || defined(MACOSX)
         exit(EXIT_SUCCESS);
@@ -281,6 +281,9 @@ void Gui::keyboard(unsigned char key, int x, int y)
         glutDestroyWindow(glutGetWindow());
         return;
 #endif
+        break;
+    case 32:
+        start ^= 1;
         break;
     default:
         break;
@@ -298,30 +301,6 @@ void Gui::display()
 {
     sdkStartTimer(&timer);
 
-    // use OpenGL to build view matrix
-    GLfloat modelView[16];
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-    glRotatef(-viewRotation.x, 1.0, 0.0, 0.0);
-    glRotatef(-viewRotation.y, 0.0, 1.0, 0.0);
-    glTranslatef(-viewTranslation.x, -viewTranslation.y, -viewTranslation.z);
-    glGetFloatv(GL_MODELVIEW_MATRIX, modelView);
-    glPopMatrix();
-
-    invViewMatrix[0] = modelView[0];
-    invViewMatrix[1] = modelView[4];
-    invViewMatrix[2] = modelView[8];
-    invViewMatrix[3] = modelView[12];
-    invViewMatrix[4] = modelView[1];
-    invViewMatrix[5] = modelView[5];
-    invViewMatrix[6] = modelView[9];
-    invViewMatrix[7] = modelView[13];
-    invViewMatrix[8] = modelView[2];
-    invViewMatrix[9] = modelView[6];
-    invViewMatrix[10] = modelView[10];
-    invViewMatrix[11] = modelView[14];
-
     render();
 
     // display results
@@ -331,13 +310,6 @@ void Gui::display()
     glDisable(GL_DEPTH_TEST);
 
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-#if 0
-    // draw using glDrawPixels (slower)
-    glRasterPos2i(0, 0);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, pbo);
-    glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    glBindBuffer(GL_PIXEL_UNPACK_BUFFER_ARB, 0);
-#else
     // draw using texture
 
     // copy from pbo to texture
@@ -361,7 +333,6 @@ void Gui::display()
 
     glDisable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
-#endif
 
     glutSwapBuffers();
     glutReportErrors();
@@ -374,8 +345,6 @@ void Gui::display()
 void Gui::cleanup()
 {
     sdkDeleteTimer(&timer);
-
-    freeCudaBuffers();
 
     if (pbo)
     {

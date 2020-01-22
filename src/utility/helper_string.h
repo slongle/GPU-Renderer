@@ -91,6 +91,11 @@ inline int stringRemoveDelimiter(char delimiter, const char *string) {
   return string_start;
 }
 
+inline std::string getFileExtension(const std::string& filename) {
+    size_t idx = filename.find_last_of('.');
+    return filename.substr(idx);
+}
+
 inline int getFileExtension(char *filename, char **extension) {
   int string_length = static_cast<int>(strlen(filename));
 

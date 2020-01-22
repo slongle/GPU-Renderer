@@ -35,31 +35,6 @@ if(WIN32)
 endif(WIN32)
 ########################################
 # OpenGL Setup
-find_package(OpenGL REQUIRED)
-
-if(UNIX)
-    find_package(glfw3 REQUIRED)
-    find_package(GLEW REQUIRED)
-    set(LIBRARIES glfw ${GLEW_LIBRARIES} ${OPENGL_gl_LIBRARY})
-else(UNIX)
-    set(EXTERNAL "external")
-
-    set(GLFW_ROOT_DIR ${EXTERNAL})
-    set(GLFW_USE_STATIC_LIBS ON)
-    find_package(GLFW REQUIRED)
-
-    set(GLEW_ROOT_DIR ${EXTERNAL})
-    set(GLEW_USE_STATIC_LIBS ON)
-    find_package(GLEW REQUIRED)
-
-    add_definitions(${GLEW_DEFINITIONS})
-    include_directories(${GLEW_INCLUDE_DIR} ${GLFW_INCLUDE_DIR})
-    set(LIBRARIES ${GLEW_LIBRARY} ${GLFW_LIBRARY} ${OPENGL_LIBRARY})   
-endif(UNIX)
-
-set(GLM_ROOT_DIR "external")
-find_package(GLM REQUIRED)
-include_directories(${GLM_INCLUDE_DIRS})
 
 ########################################
 # Set Source Files
@@ -76,12 +51,13 @@ set(sources
 	src/ext/stb_image/stb_image.h
 	src/ext/stb_image/stb_image_write.h
     src/ext/tinyformat/tinyformat.h
-    src/ext/tinyobjloader/tiny_obj_loader.h
-    src/ext/tinyobjloader/tiny_obj_loader.cc  
 	src/ext/rply/rply.h
 	src/ext/rply/rply.cpp
+
     src/GUI/gui.cpp
     src/GUI/gui.h    
+
+	src/utility/buffer.h
     src/utility/exception.h
     src/utility/helper_cuda.h
     src/utility/helper_functions.h
@@ -90,58 +66,44 @@ set(sources
     src/utility/helper_logger.h
     src/utility/helper_math.h
     src/utility/helper_string.h
-    src/utility/helper_timer.h    
+    src/utility/helper_timer.h  
+	src/utility/memory_arena.h
     src/utility/timer.h    
-    src/renderer/core/api.cpp
-    src/renderer/core/api.h
-	src/renderer/core/bsdf.h
-	src/renderer/core/bvh.h
-	src/renderer/core/bvh.cpp
-    src/renderer/core/camera.cpp
-    src/renderer/core/camera.h
-	src/renderer/core/cpurender.h
-    src/renderer/core/film.cpp
-    src/renderer/core/film.h
-    src/renderer/core/fwd.h
-    src/renderer/core/geometry.h
-	src/renderer/core/gpurender.h
-	src/renderer/core/integrator.cpp
-    src/renderer/core/integrator.h
-    src/renderer/core/interaction.h
-    src/renderer/core/light.cpp
-    src/renderer/core/light.h
-    src/renderer/core/material.cpp
-    src/renderer/core/material.h
-    src/renderer/core/medium.cpp
-    src/renderer/core/medium.h
-	src/renderer/core/memory.h
-	src/renderer/core/microfacet.h
-	src/renderer/core/optic.h
-    src/renderer/core/parameterset.cpp
-    src/renderer/core/parameterset.h
-    src/renderer/core/primitive.h
-    src/renderer/core/renderer.h
-    src/renderer/core/sampler.h
-    src/renderer/core/sampling.h
-    src/renderer/core/scene.cpp
-    src/renderer/core/scene.h
-    src/renderer/core/spectrum.cpp
-    src/renderer/core/spectrum.h
-    src/renderer/core/transform.cpp
-    src/renderer/core/transform.h
-    src/renderer/core/triangle.cpp
-    src/renderer/core/triangle.h
-	src/renderer/kernel/cudarenderer.h
-	src/renderer/kernel/cudascene.cpp
-	src/renderer/kernel/cudascene.h
-    src/renderer/kernel/kernel.cu
-    src/renderer/loader/sceneloader.h
-    src/renderer/loader/sceneloader.cpp
-    src/renderer/loader/mitsubaloader.h
-    src/renderer/loader/mitsubaloader.cpp
-    src/renderer/loader/pbrtloader.h
-    src/renderer/loader/pbrtloader.cpp
-    src/renderer/loader/objloader.h     
+	src/utility/types.h
+
+	src/renderer/bsdfs/fresnel.h
+	src/renderer/bsdfs/lambert.h
+	src/renderer/bsdfs/specular.h
+	src/renderer/bsdfs/specular.cu
+	src/renderer/loaders/loader.h
+	src/renderer/loaders/mitsubaloader.h
+	src/renderer/loaders/mitsubaloader.cpp
+	src/renderer/loaders/objloader.h
+	src/renderer/loaders/objloader.cpp
+	src/renderer/loaders/propertylist.h
+	src/renderer/loaders/propertylist.cpp
+	src/renderer/aabb.h
+	src/renderer/bsdf.h
+	src/renderer/bvh.h
+	src/renderer/camera.h
+	src/renderer/framebuffer.cpp
+	src/renderer/framebuffer.h
+	src/renderer/fwd.h	
+	src/renderer/material.h
+	src/renderer/pathtracer.cpp
+	src/renderer/pathtracer.h
+	src/renderer/pathtracer_kernel.h
+	src/renderer/ray.h
+	src/renderer/rayqueue.h
+	src/renderer/sampling.h
+	src/renderer/scene.cpp
+	src/renderer/scene.h
+	src/renderer/spectrum.h
+	src/renderer/transform.cpp
+	src/renderer/transform.h
+	src/renderer/triangle.h
+	src/renderer/vertex.h
+
     src/main.cpp    
     )
 
