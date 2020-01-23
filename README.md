@@ -39,3 +39,7 @@
 
 ![](images/CornellBox_Sphere_20_1000spp.png)
 
+![](images/dragon_1000spp.png)
+
+
+
