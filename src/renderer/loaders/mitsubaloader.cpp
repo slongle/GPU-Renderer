@@ -1,9 +1,12 @@
 #include "mitsubaloader.h"
 #include "renderer/loaders/objloader.h"
 
-void load_mitsuba_file(const std::string& filename, std::vector<Triangle>& triangles)
+void load_mitsuba_file(
+    const std::string& filename, 
+    std::vector<Triangle>& triangles,
+    Camera& camera)
 {
-    ParseRecord record(filename, &triangles);
+    ParseRecord record(filename, &triangles, &camera);
     Parse(record);
 }
 
@@ -45,6 +48,16 @@ Spectrum toColor(const std::string& str) {
     return ret;
 }
 
+void create_rectangle_triangles(const PropertyList& list, std::vector<Triangle>& triangles)
+{
+    float3 p0 = make_float3(-1, -1, 0);
+    float3 p1 = make_float3( 1, -1, 0);
+    float3 p2 = make_float3( 1,  1, 0);
+    float3 p3 = make_float3(-1,  1, 0);
+    triangles.emplace_back(p0, p1, p2);
+    triangles.emplace_back(p2, p3, p0);
+}
+
 void create_sphere_triangles(const PropertyList& list, std::vector<Triangle>& triangles)
 {
     std::vector<int> indices;
@@ -81,6 +94,7 @@ void create_sphere_triangles(const PropertyList& list, std::vector<Triangle>& tr
         triangles.push_back(Triangle(p[a], p[b], p[0], n[a], n[b], n[0]));
     }
 
+    
     for (int i = 2; i < nLatitude; i++) {
         for (int j = 0; j < nLongitude; j++) {
             int a = (i - 1) * nLongitude + j + 1, b = a + 1, c = a - nLongitude, d = c + 1;
@@ -89,6 +103,7 @@ void create_sphere_triangles(const PropertyList& list, std::vector<Triangle>& tr
             triangles.push_back(Triangle(p[c], p[b], p[d], n[c], n[b], n[d]));
         }
     }
+    
 
     int bottomIdx = nLongitude * (nLatitude - 1) + 1;
     for (int i = 0; i < nLongitude; i++) {
@@ -100,12 +115,12 @@ void create_sphere_triangles(const PropertyList& list, std::vector<Triangle>& tr
 
 ParseRecord::ParseRecord(
     const std::string filename,
-    std::vector<Triangle>* triangles) 
-    : m_filename(filename), m_triangles(triangles)
+    std::vector<Triangle>* triangles,
+    Camera* camera) 
+    : m_filename(filename), m_triangles(triangles), m_camera(camera)
 {
     std::filesystem::path p(filename);
     m_path = p.parent_path();
-    //std::cout << m_path << std::endl;
 
     m_current_material.setZero();
     m_current_light = make_float3(0.f);
@@ -145,6 +160,11 @@ ParseRecord::ParseRecord(
     m_tags["matrix"] = EMatrix;
 }
 
+void ParseRecord::createCamera(const std::string& type, const PropertyList& list)
+{
+    //m_camera->
+}
+
 void ParseRecord::createMaterial(const std::string& type, const PropertyList& list)
 {
     m_current_material.setZero();
@@ -165,6 +185,25 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
         m_current_material.m_ior = 1.5f;
         m_current_material.m_type = MaterialType::MATERIAL_GLASS;
     }
+    else if (type == "dielectric")
+    {
+        float int_ior = list.getFloat("intIOR", 1.5f);
+        float ext_ior = list.getFloat("extIOR", 1.0f);
+        float ior = int_ior / ext_ior;
+        std::cout << ior << std::endl;
+        m_current_material.m_specular = make_float3(1.f);
+        m_current_material.m_ior = ior;
+        m_current_material.m_type = MaterialType::MATERIAL_GLASS;
+    }
+    else if (type == "roughconductor")
+    {
+        m_current_material.m_diffuse = make_float3(1.0f);
+        m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
+    }
+    else {
+        std::cout << type << std::endl;
+        m_current_material.m_diffuse = make_float3(1.0f);
+    }
 }
 
 void ParseRecord::createNamedMaterial(const std::string& id, const std::string& type, const PropertyList& list)
@@ -181,7 +220,7 @@ void ParseRecord::createLight(const std::string& type, const PropertyList& list)
 
 void ParseRecord::createShape(const std::string& type, const PropertyList& list)
 {
-    assert(type == "obj" || type == "sphere");
+    assert(type == "obj" || type == "sphere" || type == "rectangle");
     m_current_material.m_emission = m_current_light;
 
     std::vector<Triangle> triangles;
@@ -191,9 +230,13 @@ void ParseRecord::createShape(const std::string& type, const PropertyList& list)
         filename = (m_path / filename).string();
         load_obj_file(filename, triangles);
     }
-    else
+    else if (type == "sphere")
     {
         create_sphere_triangles(list, triangles);
+    }
+    else if (type == "rectangle")
+    {
+        create_rectangle_triangles(list, triangles);
     }
 
     Transform transform = list.getTransform("toWorld", Transform());
@@ -217,6 +260,11 @@ void ParseRecord::createShape(const std::string& type, const PropertyList& list)
     
     m_current_material.setZero();
     m_current_light = make_float3(0.f);
+}
+
+void ParseRecord::createReference(const std::string& name, const std::string& id)
+{
+    m_current_material = m_named_material[id];
 }
 
 bool HasAttribute(const pugi::xml_node& node, const std::string& name) {
@@ -295,7 +343,7 @@ void HandleTag(
             //RainbowIntegrator(type, myList);
             break;
         case ECamera:
-            //RainbowCamera(type, myList);
+            record.createCamera(type, myList);
             break;
         case ESampler:
             //RainbowSampler(type, myList);
@@ -333,7 +381,7 @@ void HandleTag(
             //RainbowVolume(type, name, myList);
             break;
         case ERef:
-            //RainbowRef(name, id);
+            record.createReference(name, id);
             break;
         }
     }

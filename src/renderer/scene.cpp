@@ -3,12 +3,13 @@
 
 Scene::Scene(const std::string& filename)
 {
-    load_scene(filename, m_cpu_triangles);
+    load_scene(filename, m_cpu_triangles, m_camera);
     for (int i = 0; i < m_cpu_triangles.size(); i++) {
         if (m_cpu_triangles[i].m_material.isEmission()) {
             m_cpu_lights.push_back(m_cpu_triangles[i]);
         }
     }
+    std::cout << m_cpu_lights.size() << std::endl;
     m_cpu_bvh = LBVH_build(m_cpu_triangles);
 }
 

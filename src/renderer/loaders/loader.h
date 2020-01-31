@@ -4,13 +4,15 @@
 
 #include "renderer/fwd.h"
 #include "renderer/triangle.h"
+#include "renderer/camera.h"
 #include "renderer/loaders/objloader.h"
 #include "renderer/loaders/mitsubaloader.h"
 
 inline 
 void load_scene(
     const std::string& filename, 
-    std::vector<Triangle>& triangles)
+    std::vector<Triangle>& triangles,
+    Camera& camera)
 {
     std::string ext = getFileExtension(filename);
     if (ext == ".obj")
@@ -19,7 +21,7 @@ void load_scene(
     }
     else if (ext == ".xml")
     {
-        load_mitsuba_file(filename, triangles);
+        load_mitsuba_file(filename, triangles, camera);
     }
     else
     {

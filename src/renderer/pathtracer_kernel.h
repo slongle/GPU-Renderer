@@ -130,88 +130,35 @@ void generate_primary_rays(
 
 __device__
 bool triangle_intersect(const Triangle* triangle, const Ray ray, Hit* hit) {
-    /*const float3 v0 = triangle->m_p0;
-    const float3 v1 = triangle->m_p1;
-    const float3 v2 = triangle->m_p2;
-    const float3 rayorig3f = ray.o;
-    const float3 raydir3f = ray.d;
-
-    const float EPSILON = 0.00001f; // works better
-
-    float raytmin = ray.tMin;
-    float raytmax = ray.tMax;
-
-    float3 edge1 = v1 - v0;
-    float3 edge2 = v2 - v0;
-
-    float3 tvec = rayorig3f - v0;
-    float3 pvec = cross(raydir3f, edge2);
-    float det = dot(edge1, pvec);
-
-    float invdet = 1.0f / det;
-
-    float u = dot(tvec, pvec) * invdet;
-
-    float3 qvec = cross(tvec, edge1);
-
-    float v = dot(raydir3f, qvec) * invdet;
-
-    if (det > EPSILON)
-    {
-        if (u < 0.0f || u > 1.0f) return false;
-        if (v < 0.0f || (u + v) > 1.0f) return false;
-        // if u and v are within these bounds, continue and go to float t = dot(...	           
-    }
-
-    else if (det < -EPSILON)
-    {
-        if (u > 0.0f || u < 1.0f) return false;
-        if (v > 0.0f || (u + v) < 1.0f) return false;
-        // else continue
-    }
-
-    else // if det is not larger (more positive) than EPSILON or not smaller (more negative) than -EPSILON, there is a "miss"
-        return false;
-
-    float t = dot(edge2, qvec) * invdet;
-
-    if (t <= raytmin || t >= raytmax)
-        return false;
-    
-    hit->u = u;
-    hit->v = v;
-    hit->t = t;
-    return true;
-
-    */
-
     float3 D = ray.d;
     float3 E1 = triangle->m_p1 - triangle->m_p0;
     float3 E2 = triangle->m_p2 - triangle->m_p0;
     float3 P = cross(D, E2);
-    float det = dot(P, E1);
-    if (fabs(det) < Epsilon) {
+    double det = dot(P, E1);
+
+
+    if (det == 0) {//(det > -Epsilon && det < Epsilon) {        
         return false;
     }
-    float invDet = 1.f / det;
+    double invDet = 1.0 / det;
     float3 T = ray.o - triangle->m_p0;
-    float u = dot(P, T) * invDet;
-    if (u < 0 || u > 1) {
+    double u = dot(P, T) * invDet;
+    if (u < 0.0 || u > 1.0) {
         return false;
     }
     float3 Q = cross(T, E1);
-    float v = dot(Q, D) * invDet;
-    if (v < 0 || u + v > 1) {
+    double v = dot(Q, D) * invDet;
+    if (v < 0.0 || u + v > 1.0) {
         return false;
     }
-    float t = dot(Q, E2) * invDet;
+    double t = dot(Q, E2) * invDet;
     if (t < ray.tMin || t > ray.tMax) {
         return false;
     }
     hit->t = t;
     hit->u = u;
     hit->v = v;
-    return true;
+    return true;   
 }
 
 __device__
@@ -244,7 +191,8 @@ void trace_kernel(SceneView scene, uint32 size, Ray* rays, Hit* hits)
         return;
     }
     
-    Ray ray = rays[idx];
+
+    Ray ray = rays[idx];    
     Hit hit;
     hit.triangle_id = -1;
 
@@ -277,10 +225,10 @@ void trace_kernel(SceneView scene, uint32 size, Ray* rays, Hit* hits)
             currentNodeIndex = nodesToVisit[--toVisitOffset];
         }
     }
-    hits[idx] = hit;    
-
+    hits[idx] = hit;        
     
-    /*Ray ray = rays[idx];
+    /*
+    Ray ray = rays[idx];
     Hit hit;
     hit.triangle_id = -1;
     for (uint32 i = 0; i < scene.m_triangles_num; i++)
@@ -291,8 +239,8 @@ void trace_kernel(SceneView scene, uint32 size, Ray* rays, Hit* hits)
             hit.triangle_id = i;
         }
     }
-    hits[idx] = hit;*/
-    
+    hits[idx] = hit;
+    */
 }
 
 void trace(const SceneView& scene, uint32 size, Ray* rays, Hit* hits)
@@ -312,6 +260,7 @@ void trace_shadow_kernel(SceneView scene, uint32 size, Ray* rays, Hit* hits)
         return;
     }
 
+    
     Ray ray = rays[idx];
     Hit hit;
     hit.triangle_id = -1;
@@ -347,9 +296,10 @@ void trace_shadow_kernel(SceneView scene, uint32 size, Ray* rays, Hit* hits)
         }
     }
     hits[idx] = hit;
-
     
-    /*Ray ray = rays[idx];
+
+    /*
+    Ray ray = rays[idx];
     Hit hit;
     hit.triangle_id = -1;
     for (uint32 i = 0; i < scene.m_triangles_num; i++)
@@ -361,8 +311,8 @@ void trace_shadow_kernel(SceneView scene, uint32 size, Ray* rays, Hit* hits)
             break;
         }
     }
-    hits[idx] = hit;*/
-    
+    hits[idx] = hit;
+    */
 }
 
 void trace_shadow(const SceneView& scene, uint32 size, Ray* rays, Hit* hits)
@@ -418,8 +368,8 @@ void shade_hit_kernel(
         const Triangle& triangle = scene.m_triangles[hit.triangle_id];
         Vertex vertex;
         vertex.setup(ray, hit, scene);
-
-        //frame_buffer.addSample(pixel_idx, triangle.m_material.m_diffuse);
+       
+        //frame_buffer.addRadiance(pixel_idx, fabs(vertex.m_normal_g));
         //return;
 
         if (context.m_bounce == 0 || specular)
@@ -433,7 +383,7 @@ void shade_hit_kernel(
         }
 
         // Next Event Estimate
-        if (!vertex.m_bsdf.isDelta())
+        if (!vertex.m_bsdf.isDelta() && scene.m_lights_num > 0)
         {
             LightSample light_record;
             sample_lights(scene, &light_record, make_float3(samples[0], samples[1], samples[2]));
@@ -496,6 +446,11 @@ void shade_hit_kernel(
                 context.m_scatter_queue.append(scatter_ray, out_weight, out_specular, pixel_idx);
             }
         }
+    }
+    else
+    {
+        // Environment Light
+        //frame_buffer.addRadiance(pixel_idx, throughput * make_float3(0.1, 0.1, 0.1));
     }
 }
 

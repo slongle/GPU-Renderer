@@ -64,7 +64,8 @@ public:
         {
             record->m_normal_s = record->m_normal_g;
         }
-        record->m_normal_s = record->m_normal_g;
+        //record->m_normal_s = record->m_normal_g;
+
         record->m_pdf = 2.f / length(n);        
     }    
 

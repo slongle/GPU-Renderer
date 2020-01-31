@@ -37,7 +37,7 @@ public:
         {
             m_normal_s = m_normal_g;
         }
-        m_normal_s = m_normal_g;
+        //m_normal_s = m_normal_g;
 
         m_wo = -normalize(ray.d);
 

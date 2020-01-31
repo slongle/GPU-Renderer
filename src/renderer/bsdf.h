@@ -50,31 +50,10 @@ public:
         else
         {
             //printf("%f\n", material.m_ior);
-            m_lambert_reflect = LambertReflect(material.m_diffuse);
+            //m_lambert_reflect = LambertReflect(material.m_diffuse);
             m_specular = FresnelSpecular(material.m_specular, material.m_specular, 1.f, material.m_ior);
             m_type = BSDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR);
         }
-        /*if (m_material_type == MaterialType::MATERIAL_DIFFUSE)
-        {
-            m_lambert_reflect = LambertReflect(material.m_diffuse);
-            m_type = BSDFType(m_type & BSDF_REFLECTION & BSDF_DIFFUSE);
-        }
-        else if (m_material_type == MaterialType::MATERIAL_MIRROR)
-        {
-            m_specular = FresnelSpecular(material.m_specular, material.m_specular, 1.f, material.m_ior);
-            m_type = BSDFType(m_type & BSDF_REFLECTION & BSDF_SPECULAR);
-        }
-        else if (m_material_type == MaterialType::MATERIAL_GLASS)
-        {
-            m_specular = FresnelSpecular(material.m_specular, material.m_specular, 1.f, material.m_ior);
-            m_type = BSDFType(m_type & BSDF_REFLECTION & BSDF_TRANSMISSION & BSDF_SPECULAR);
-        }
-        else 
-        {
-            //assert(false);
-            m_lambert_reflect = LambertReflect(material.m_diffuse);
-            m_type = BSDFType(m_type & BSDF_REFLECTION & BSDF_DIFFUSE);
-        }*/
     }
 
     /// evaluate f = BSDF * cos
