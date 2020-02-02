@@ -1510,4 +1510,18 @@ inline __device__ __host__ float4 smoothstep(float4 a, float4 b, float4 x)
     return (y*y*(make_float4(3.0f) - (make_float4(2.0f)*y)));
 }
 
+///
+inline __device__ __host__ float spherical_theta(float3 v) {
+    return acos(clamp(v.z, -1.f, 1.f));
+}
+
+inline __device__ __host__ float spherical_phi(float3 v) {
+    float p = atan2(v.y, v.x);
+    return (p < 0) ? (p + 2 * 3.14159265358979323846f) : p;
+}
+
+/// Lerp
+
+
+
 #endif

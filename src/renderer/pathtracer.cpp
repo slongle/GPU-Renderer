@@ -88,10 +88,6 @@ void PathTracer::render(uint32* output)
 
         uint32 shadow_queue_size;
         CUDA_CHECK(cudaMemcpy(&shadow_queue_size, context.m_shadow_queue.m_size, sizeof(uint32), cudaMemcpyDeviceToHost));
-        if (shadow_queue_size == 0)
-        {
-            break;
-        }
         // Solve occlude and Accumulate radiance
         {
             trace_shadow(scene_view, shadow_queue_size, context.m_shadow_queue.m_rays, context.m_shadow_queue.m_hits);

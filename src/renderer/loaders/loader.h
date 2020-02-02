@@ -11,17 +11,16 @@
 inline 
 void load_scene(
     const std::string& filename, 
-    std::vector<Triangle>& triangles,
-    Camera& camera)
+    Scene* scene)
 {
     std::string ext = getFileExtension(filename);
     if (ext == ".obj")
     {
-        load_obj_mtl_file(filename, triangles);
+        load_obj_mtl_file(filename, scene);
     }
     else if (ext == ".xml")
     {
-        load_mitsuba_file(filename, triangles, camera);
+        load_mitsuba_file(filename, scene);
     }
     else
     {

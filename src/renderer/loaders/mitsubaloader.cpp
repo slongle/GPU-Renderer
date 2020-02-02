@@ -1,12 +1,19 @@
 #include "mitsubaloader.h"
+#include "renderer/scene.h"
 #include "renderer/loaders/objloader.h"
 
 void load_mitsuba_file(
     const std::string& filename, 
-    std::vector<Triangle>& triangles,
-    Camera& camera)
+    Scene* scene
+    //std::vector<Triangle>& triangles,
+    //Camera& camera
+    )
 {
-    ParseRecord record(filename, &triangles, &camera);
+    ParseRecord record(
+        filename, 
+        scene
+        //&triangles, &camera
+        );
     Parse(record);
 }
 
@@ -48,6 +55,43 @@ Spectrum toColor(const std::string& str) {
     return ret;
 }
 
+void create_cube_triangles(const PropertyList& list, std::vector<Triangle>& triangles)
+{
+    std::vector<float3> p;
+    std::vector<float3> n;
+    
+    p.push_back(make_float3(0.));
+    p.push_back(make_float3(1.000000 , 1.000000 , -1.000000));        
+    p.push_back(make_float3(1.000000 , -1.000000, -1.000000));
+    p.push_back(make_float3(1.000000 , 1.000000 , 1.000000 ));
+    p.push_back(make_float3(1.000000 , -1.000000, 1.000000 ));
+    p.push_back(make_float3(-1.000000, 1.000000 , -1.000000));
+    p.push_back(make_float3(-1.000000, -1.000000, -1.000000));
+    p.push_back(make_float3(-1.000000, 1.000000 , 1.000000 ));
+    p.push_back(make_float3(-1.000000, -1.000000, 1.000000 ));
+
+    n.push_back(make_float3(0.));
+    n.push_back(make_float3(0.0000 , 1.0000 , 0.0000 ));
+    n.push_back(make_float3(0.0000 , 0.0000 , 1.0000 ));
+    n.push_back(make_float3(-1.0000, 0.0000 , 0.0000 ));
+    n.push_back(make_float3(0.0000 , -1.0000, 0.0000 ));
+    n.push_back(make_float3(1.0000 , 0.0000 , 0.0000 ));
+    n.push_back(make_float3(0.0000 , 0.0000 , -1.0000));
+    
+    triangles.emplace_back(p[1], p[5], p[7], n[1], n[1], n[1]); 
+    triangles.emplace_back(p[1], p[7], p[3], n[1], n[1], n[1]);
+    triangles.emplace_back(p[4], p[3], p[7], n[2], n[2], n[2]); 
+    triangles.emplace_back(p[4], p[7], p[8], n[2], n[2], n[2]);
+    triangles.emplace_back(p[8], p[7], p[5], n[3], n[3], n[3]); 
+    triangles.emplace_back(p[8], p[5], p[6], n[3], n[3], n[3]);
+    triangles.emplace_back(p[6], p[2], p[4], n[4], n[4], n[4]); 
+    triangles.emplace_back(p[6], p[4], p[8], n[4], n[4], n[4]);
+    triangles.emplace_back(p[2], p[1], p[3], n[5], n[5], n[5]); 
+    triangles.emplace_back(p[2], p[3], p[4], n[5], n[5], n[5]);
+    triangles.emplace_back(p[6], p[5], p[1], n[6], n[6], n[6]); 
+    triangles.emplace_back(p[6], p[1], p[2], n[6], n[6], n[6]);
+}
+
 void create_rectangle_triangles(const PropertyList& list, std::vector<Triangle>& triangles)
 {
     float3 p0 = make_float3(-1, -1, 0);
@@ -55,12 +99,11 @@ void create_rectangle_triangles(const PropertyList& list, std::vector<Triangle>&
     float3 p2 = make_float3( 1,  1, 0);
     float3 p3 = make_float3(-1,  1, 0);
     triangles.emplace_back(p0, p1, p2);
-    triangles.emplace_back(p2, p3, p0);
+    triangles.emplace_back(p2, p3, p0); 
 }
 
 void create_sphere_triangles(const PropertyList& list, std::vector<Triangle>& triangles)
 {
-    std::vector<int> indices;
     std::vector<float3> p;
     std::vector<float3> n;    
 
@@ -115,10 +158,13 @@ void create_sphere_triangles(const PropertyList& list, std::vector<Triangle>& tr
 
 ParseRecord::ParseRecord(
     const std::string filename,
-    std::vector<Triangle>* triangles,
-    Camera* camera) 
-    : m_filename(filename), m_triangles(triangles), m_camera(camera)
+    Scene* scene
+    ) 
+    : m_filename(filename), m_scene(scene)
 {
+    m_triangles = &m_scene->m_cpu_triangles;
+    m_camera = &m_scene->m_camera;
+
     std::filesystem::path p(filename);
     m_path = p.parent_path();
 
@@ -170,7 +216,7 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
     m_current_material.setZero();
     if (type == "diffuse")
     {
-        m_current_material.m_diffuse = list.getColor("reflectance", make_float3(0.5f));
+        m_current_material.m_diffuse = list.getColor("reflectance", make_float3(0.5f));       
         m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
     else if (type == "mirror")
@@ -214,13 +260,23 @@ void ParseRecord::createNamedMaterial(const std::string& id, const std::string& 
 
 void ParseRecord::createLight(const std::string& type, const PropertyList& list)
 {
-    assert(type == "area");
-    m_current_light = list.getColor("radiance", make_float3(1.f));
+    assert(type == "area" || type == "envmap");
+    if (type == "area")
+    {
+        m_current_light = list.getColor("radiance", make_float3(1.f));
+    }
+    else
+    {
+        std::string filename = list.getString("filename");
+        filename = (m_path / filename).string();
+        Transform o2w = list.getTransform("toWorld", Transform());
+        m_scene->m_environment_light.setup(filename, o2w);
+    }
 }
 
 void ParseRecord::createShape(const std::string& type, const PropertyList& list)
 {
-    assert(type == "obj" || type == "sphere" || type == "rectangle");
+    assert(type == "obj" || type == "sphere" || type == "rectangle" || type == "cube");
     m_current_material.m_emission = m_current_light;
 
     std::vector<Triangle> triangles;
@@ -237,6 +293,10 @@ void ParseRecord::createShape(const std::string& type, const PropertyList& list)
     else if (type == "rectangle")
     {
         create_rectangle_triangles(list, triangles);
+    }
+    else if (type == "cube")
+    {
+        create_cube_triangles(list, triangles);
     }
 
     Transform transform = list.getTransform("toWorld", Transform());
@@ -310,8 +370,6 @@ std::string GetOffset(ptrdiff_t pos, ParseRecord& record) {
     }
     return "byte offset " + std::to_string(pos);
 }
-
-
 
 void HandleTag(
     pugi::xml_node& node,

@@ -1,14 +1,5 @@
 #include "framebuffer.h"
-
-#ifndef STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#include "ext/stb_image/stb_image.h"
-#endif // !STB_IMAGE_IMPLEMENTATION
-
-#ifndef STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "ext/stb_image/stb_image_write.h"
-#endif // !STB_IMAGE_WRITE_IMPLEMENTATION
+#include "renderer/imageio.h"
 
 FrameBufferView::FrameBufferView(const FrameBuffer* fb):
     m_resolution_x(fb->m_resolution_x),
@@ -31,6 +22,5 @@ void FrameBuffer::output(const std::string& filename)
         ptr_uc[2] = (uint8)clamp(255.f * GammaCorrect(color.z) + 0.5f, 0.f, 255.f);
     }
 
-    stbi_flip_vertically_on_write(true);
-    stbi_write_png(filename.c_str(), m_resolution_x, m_resolution_y, 3, out.data(), 0);
+    WriteImage(filename, m_resolution_x, m_resolution_y, out.data());
 }

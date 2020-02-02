@@ -66,7 +66,7 @@ set(sources
     src/utility/helper_logger.h
     src/utility/helper_math.h
     src/utility/helper_string.h
-    src/utility/helper_timer.h  
+    src/utility/helper_timer.h	
 	src/utility/memory_arena.h
     src/utility/timer.h    
 	src/utility/types.h
@@ -86,9 +86,12 @@ set(sources
 	src/renderer/bsdf.h
 	src/renderer/bvh.h
 	src/renderer/camera.h
+	src/renderer/environment.h
 	src/renderer/framebuffer.cpp
 	src/renderer/framebuffer.h
 	src/renderer/fwd.h	
+	src/renderer/imageio.h
+	src/renderer/imageio.cpp
 	src/renderer/material.h
 	src/renderer/pathtracer.cpp
 	src/renderer/pathtracer.h

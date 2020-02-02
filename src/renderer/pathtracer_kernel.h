@@ -317,6 +317,11 @@ void trace_shadow_kernel(SceneView scene, uint32 size, Ray* rays, Hit* hits)
 
 void trace_shadow(const SceneView& scene, uint32 size, Ray* rays, Hit* hits)
 {
+    if (size == 0)
+    {
+        return;
+    }
+
     dim3 block_size(32);
     dim3 grid_size(divideRoundInf(size, block_size.x));
 
@@ -436,7 +441,7 @@ void shade_hit_kernel(
             }
 
             if (!isBlack(out_weight))
-            {
+            {                
                 Ray scatter_ray;
                 scatter_ray.o = vertex.m_p;
                 scatter_ray.d = bsdf_record.m_wi;
@@ -444,13 +449,19 @@ void shade_hit_kernel(
                 scatter_ray.tMax = 1e8f;
 
                 context.m_scatter_queue.append(scatter_ray, out_weight, out_specular, pixel_idx);
-            }
+            }            
         }
     }
     else
     {
         // Environment Light
-        //frame_buffer.addRadiance(pixel_idx, throughput * make_float3(0.1, 0.1, 0.1));
+        //frame_buffer.addRadiance(pixel_idx, throughput);
+        if (scene.m_environment_light.m_has)
+        {
+            Spectrum le = scene.m_environment_light.Le(ray);
+            Spectrum l = throughput * le;
+            frame_buffer.addRadiance(pixel_idx, l);
+        }
     }
 }
 
@@ -495,6 +506,11 @@ void accumulate(
     SceneView scene,
     FrameBufferView frame_buffer)
 {
+    if (shadow_queue_size == 0)
+    {
+        return;
+    }
+
     dim3 block_size(32);
     dim3 grid_size(divideRoundInf(shadow_queue_size, block_size.x));
 

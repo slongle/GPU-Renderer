@@ -3,14 +3,17 @@
 
 Scene::Scene(const std::string& filename)
 {
-    load_scene(filename, m_cpu_triangles, m_camera);
+    load_scene(filename, this);
     for (int i = 0; i < m_cpu_triangles.size(); i++) {
         if (m_cpu_triangles[i].m_material.isEmission()) {
             m_cpu_lights.push_back(m_cpu_triangles[i]);
         }
-    }
-    std::cout << m_cpu_lights.size() << std::endl;
+    }    
+    std::cout << "# of light : " << m_cpu_lights.size() << std::endl;
     m_cpu_bvh = LBVH_build(m_cpu_triangles);
+    
+    AABB world_box = m_cpu_bvh[0].m_box;
+    m_environment_light.m_world_center = world_box.centroid();
 }
 
 void Scene::createDeviceData()
@@ -26,5 +29,6 @@ SceneView::SceneView(const Scene* scene) :
     m_triangles_num(scene->m_gpu_triangles.size()),
     m_lights(scene->m_gpu_lights.data()),
     m_lights_num(scene->m_gpu_lights.size()),
+    m_environment_light(scene->m_environment_light.view()),
     m_bvh(scene->m_gpu_bvh.data())
 {}

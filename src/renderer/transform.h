@@ -122,3 +122,35 @@ Transform RotateZ(float theta);
 Transform Rotate(float theta, const float3& axis);
 Transform LookAt(const float3& target, const float3& origin, const float3& up);
 Transform Perspective(const float& fov, const float& near, const float& far);
+
+inline HOST_DEVICE
+float3 Transform::transformPoint(const float3& p) const
+{
+    float x = m.m[0][0] * p.x + m.m[0][1] * p.y + m.m[0][2] * p.z + m.m[0][3];
+    float y = m.m[1][0] * p.x + m.m[1][1] * p.y + m.m[1][2] * p.z + m.m[1][3];
+    float z = m.m[2][0] * p.x + m.m[2][1] * p.y + m.m[2][2] * p.z + m.m[2][3];
+    float w = m.m[3][0] * p.x + m.m[3][1] * p.y + m.m[3][2] * p.z + m.m[3][3];
+    assert(w != 0, "Divide Zero");
+    if (w == 1)
+        return make_float3(x, y, z);
+    else
+        return make_float3(x, y, z) / w;
+}
+
+inline HOST_DEVICE
+float3 Transform::transformVector(const float3& v) const
+{
+    float x = m.m[0][0] * v.x + m.m[0][1] * v.y + m.m[0][2] * v.z + m.m[0][3];
+    float y = m.m[1][0] * v.x + m.m[1][1] * v.y + m.m[1][2] * v.z + m.m[1][3];
+    float z = m.m[2][0] * v.x + m.m[2][1] * v.y + m.m[2][2] * v.z + m.m[2][3];
+    return make_float3(x, y, z);
+}
+
+inline HOST_DEVICE
+float3 Transform::transformNormal(const float3& n) const
+{
+    float x = mInv.m[0][0] * n.x + mInv.m[1][0] * n.y + mInv.m[2][0] * n.z;
+    float y = mInv.m[0][1] * n.x + mInv.m[1][1] * n.y + mInv.m[2][1] * n.z;
+    float z = mInv.m[0][2] * n.x + mInv.m[1][2] * n.y + mInv.m[2][2] * n.z;
+    return make_float3(x, y, z);
+}

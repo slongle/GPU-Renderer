@@ -1,5 +1,6 @@
-#include "loader.h"
+#include "objloader.h"
 #include "renderer/triangle.h"
+#include "renderer/scene.h"
 
 #include <iostream>
 #include <filesystem>
@@ -105,7 +106,11 @@ bool load_obj_file(const std::string& filename, std::vector<Triangle>& triangles
 }
 
 
-bool load_obj_mtl_file(const std::string& filename, std::vector<Triangle>& triangles)
+bool load_obj_mtl_file(
+    const std::string& filename, 
+    Scene* scene
+    //std::vector<Triangle>& triangles
+    )
 {
     std::filesystem::path filePath(filename);
     std::string basePath(filePath.parent_path().string());
@@ -341,6 +346,8 @@ bool load_obj_mtl_file(const std::string& filename, std::vector<Triangle>& trian
         }
     }
     */
+
+    std::vector<Triangle>& triangles = scene->m_cpu_triangles;
 
     // For each shape
     for (size_t i = 0; i < shapes.size(); i++) {

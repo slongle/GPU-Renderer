@@ -12,8 +12,7 @@
 
 void load_mitsuba_file(
     const std::string& filename, 
-    std::vector<Triangle>& triangles,
-    Camera& camera);
+    Scene* scene);
 
 enum ETag {
     EHide,
@@ -50,14 +49,15 @@ class ParseRecord {
 public:
     ParseRecord(
         const std::string filename, 
-        std::vector<Triangle>* triangles,
-        Camera* camera);
+        Scene* scene);
 
 public:
     const std::string m_filename;
     Transform m_transform;
     std::map<std::string, ETag> m_tags;
     std::filesystem::path m_path;
+
+    Scene* m_scene;
     std::vector<Triangle>* m_triangles;
     Camera* m_camera;
 
