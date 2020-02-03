@@ -60,8 +60,7 @@ void WriteImage(
     const int& height,
     uint8* buffer)
 {
-
-    //stbi_flip_vertically_on_write(true);
+    stbi_flip_vertically_on_write(true);
 
     std::string ext = getFileExtension(filename);
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);

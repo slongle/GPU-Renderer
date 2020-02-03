@@ -20,7 +20,7 @@ public:
         float theta = spherical_theta(d);
         float phi = spherical_phi(d);
         float u = phi* INV_2_PI, v = theta * INV_PI;
-        int u2 = u * m_width, v2 = v * m_height;
+        int u2 = min(m_width - 1, int(u * m_width)), v2 = min(m_height - 1, int(v * m_height));
         int idx = v2 * m_width + u2;
         float3 col = m_buffer[idx];
         return col;

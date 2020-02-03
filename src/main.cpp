@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
     //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\fireplace_room\\fireplace_room.obj";     
     //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\living-room\\scene.xml";
     //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CBox\\cbox(mesh).xml";  
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CBox\\cbox(sphere).xml";
+    filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CBox\\cbox(sphere).xml";
     //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\triangle\\triangle.xml";
     //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\dragon\\dragon.obj";
     //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\bmw\\bmw.obj";

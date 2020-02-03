@@ -201,6 +201,9 @@ void Gui::initGL(int* argc, char** argv)
 
 void Gui::reshape(int w, int h)
 {    
+    bool state = start;
+    start = false;
+
     width = w;
     height = h;
     initPixelBuffer();
@@ -215,10 +218,15 @@ void Gui::reshape(int w, int h)
     glOrtho(0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
 
     renderer->resize(width, height);
+
+    start = state;
 }
 
 void Gui::motion(int x, int y)
 {
+    bool state = start;
+    start = false;
+
     float dx, dy;
     dx = (float)(x - ox);
     dy = (float)(y - oy);
@@ -248,6 +256,8 @@ void Gui::motion(int x, int y)
     ox = x;
     oy = y;
     glutPostRedisplay();
+
+    start = state;
 }
 
 void Gui::mouse(int button, int state, int x, int y)
@@ -268,6 +278,9 @@ void Gui::mouse(int button, int state, int x, int y)
 
 void Gui::keyboard(unsigned char key, int x, int y)
 {
+    //bool state = start;
+    //start = false;
+
     //std::cout << (int)key << std::endl;
     switch (key)
     {
@@ -290,6 +303,8 @@ void Gui::keyboard(unsigned char key, int x, int y)
     }
 
     glutPostRedisplay();
+
+    //start = state;
 }
 
 void Gui::idle()

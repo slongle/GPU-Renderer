@@ -3,7 +3,7 @@
 #include "renderer/rayqueue.h"
 
 PathTracer::PathTracer(const std::string& filename)
-    :m_scene(filename), m_frame_buffer(600, 800), m_sample_num(0)
+    :m_scene(filename), m_frame_buffer(600, 800), m_sample_num(0), m_reset(false)
 {
 }
 
@@ -37,6 +37,12 @@ void PathTracer::initQueue()
 
 void PathTracer::render(uint32* output)
 {
+    if (m_reset)
+    {
+        reset();
+    }
+    m_reset = false;
+
     const size_t pixels_num = m_frame_buffer.size();
 
     MemoryArena arena(m_memory_pool.data());
@@ -62,6 +68,8 @@ void PathTracer::render(uint32* output)
          context.m_bounce < m_options.m_max_path_length; 
          context.m_bounce++)
     {
+        //printf("%u\n", context.m_bounce);
+
         uint32 in_queue_size;
         CUDA_CHECK( cudaMemcpy(&in_queue_size, context.m_in_queue.m_size, sizeof(uint32), cudaMemcpyDeviceToHost) );
         if (in_queue_size == 0) 
@@ -106,6 +114,7 @@ void PathTracer::render(uint32* output)
         filter(output, frame_buffer_view);
         CUDA_CHECK(cudaDeviceSynchronize());
     }
+
 }
 
 void PathTracer::render(uint32 num)
@@ -116,7 +125,7 @@ void PathTracer::render(uint32 num)
         fprintf(stderr, "\r%f%%", 100.f * (i + 1) / num);
         render();
     }
-    output("CB_2_100spp.png");
+    output(std::to_string(num) + "spp.png");
     exit(0);    
 }
 
@@ -128,19 +137,19 @@ void PathTracer::output(const std::string& filename)
 void PathTracer::zoom(float d)
 {
     m_scene.m_camera.zoom(d);
-    reset();
+    m_reset = true;
 }
 
 void PathTracer::translate(float x, float y)
 {
     m_scene.m_camera.translate(x, y);
-    reset();
+    m_reset = true;
 }
 
 void PathTracer::rotate(float yaw, float pitch)
 {
     m_scene.m_camera.rotate(yaw, pitch);
-    reset();
+    m_reset = true;
 }
 
 void PathTracer::reset()
@@ -151,8 +160,8 @@ void PathTracer::reset()
 void PathTracer::resize(uint32 width, uint32 height)
 {
     m_frame_buffer.resize(width, height);
-    m_scene.m_camera.updateAspectRation((float)(width) / height);
-    reset(); 
+    m_scene.m_camera.updateAspectRation((float)(width) / height);    
     initQueue();
+    m_reset = true;
 }
 

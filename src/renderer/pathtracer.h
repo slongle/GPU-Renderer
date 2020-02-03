@@ -39,4 +39,6 @@ private:
     Scene m_scene;
     FrameBuffer m_frame_buffer;
     Buffer<DEVICE_BUFFER, uint8> m_memory_pool;
+
+    bool m_reset;
 };
