@@ -46,7 +46,7 @@ void ReadImage(
     const std::string& filename,
     int* width,
     int* height,
-    std::vector<uint8>& buffer)
+    std::vector<float>& buffer)
 {
     int nchannels;
     float* ptr = stbi_loadf(filename.c_str(), width, height, &nchannels, 3);
