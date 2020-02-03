@@ -103,8 +103,6 @@ void calc_union_bound_kernel(
     }
     
     tmp[idx] = AABB(tri_info[idx].m_centroid);
-
-
 }
 
 inline
@@ -194,19 +192,17 @@ LBVH_build(
     AABB box;
     for (int i = 0; i < tri_num; i++) {
         box = Union(box, triangles[i].worldBound().centroid());
-    }
+    }    
 
     std::vector<MortonInfo> mortons(tri_num);
     for (int i = 0; i < tri_num; i++) {
         mortons[i].m_tri_idx = i;
-        mortons[i].m_morton = EncodeMorton3((triangles[i].worldBound().centroid() - box.m_min) / (box.m_max - box.m_min) * 1024);
+        mortons[i].m_morton = 
+            EncodeMorton3((triangles[i].worldBound().centroid() - box.m_min) / (box.m_max - box.m_min) * 1024);
     }
 
-    std::sort(mortons.begin(), mortons.end(), [](const MortonInfo& m1, const MortonInfo& m2) {return m1.m_morton < m2.m_morton; });
-
-    /*for (int i = 0; i < tri_num; i++) {
-        std::cout << mortons[i].m_morton << std::endl;
-    }*/
+    std::sort(mortons.begin(), mortons.end(), 
+        [](const MortonInfo& m1, const MortonInfo& m2) {return m1.m_morton < m2.m_morton; });
 
     std::vector<BVHBuildNode> build_nodes(2 * tri_num - 1);
     uint32 build_nodes_num = 0;

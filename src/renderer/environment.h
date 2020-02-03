@@ -44,7 +44,7 @@ public:
 
 public:
     bool m_has;
-    Buffer<HOST_BUFFER, float3> m_cpu_buffer;
+    std::vector<float3> m_cpu_buffer;
     Buffer<DEVICE_BUFFER, float3> m_gpu_buffer;
     int m_width, m_height;
     Transform m_o2w, m_w2o;

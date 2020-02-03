@@ -204,5 +204,5 @@ public:
     }
 };
 
-template class BufferBase<float3>;
+//template class BufferBase<float3>;
 //template class BufferBase<HOST_BUFFER, float3>;

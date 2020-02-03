@@ -102,9 +102,12 @@ set(sources
 	src/renderer/scene.cpp
 	src/renderer/scene.h
 	src/renderer/spectrum.h
+	src/renderer/texture.cpp
+	src/renderer/texture.h
 	src/renderer/transform.cpp
 	src/renderer/transform.h
 	src/renderer/triangle.h
+	src/renderer/triangle.cpp
 	src/renderer/vertex.h
 
     src/main.cpp    

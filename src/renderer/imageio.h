@@ -18,13 +18,13 @@ void ReadImage(
     const std::string& filename,
     int* width,
     int* height,
-    Buffer<HOST_BUFFER, uint8>& buffer);
+    std::vector<uint8>& buffer);
 
 void ReadImage(
     const std::string& filename,
     int* width,
     int* height,
-    Buffer<HOST_BUFFER, float>& buffer);
+    std::vector<float>& buffer);
 
 void WriteImage(
     const std::string& filename,

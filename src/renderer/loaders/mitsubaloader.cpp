@@ -4,16 +4,11 @@
 
 void load_mitsuba_file(
     const std::string& filename, 
-    Scene* scene
-    //std::vector<Triangle>& triangles,
-    //Camera& camera
-    )
+    Scene* scene)
 {
     ParseRecord record(
         filename, 
-        scene
-        //&triangles, &camera
-        );
+        scene);
     Parse(record);
 }
 
@@ -55,12 +50,15 @@ Spectrum toColor(const std::string& str) {
     return ret;
 }
 
-void create_cube_triangles(const PropertyList& list, std::vector<Triangle>& triangles)
+void create_cube_triangles(
+    const PropertyList& list, 
+    TriangleMesh* mesh)
 {
     std::vector<float3> p;
     std::vector<float3> n;
-    
-    p.push_back(make_float3(0.));
+    std::vector<float2> uv;
+    std::vector<int3> index;
+
     p.push_back(make_float3(1.000000 , 1.000000 , -1.000000));        
     p.push_back(make_float3(1.000000 , -1.000000, -1.000000));
     p.push_back(make_float3(1.000000 , 1.000000 , 1.000000 ));
@@ -69,8 +67,7 @@ void create_cube_triangles(const PropertyList& list, std::vector<Triangle>& tria
     p.push_back(make_float3(-1.000000, -1.000000, -1.000000));
     p.push_back(make_float3(-1.000000, 1.000000 , 1.000000 ));
     p.push_back(make_float3(-1.000000, -1.000000, 1.000000 ));
-
-    n.push_back(make_float3(0.));
+    
     n.push_back(make_float3(0.0000 , 1.0000 , 0.0000 ));
     n.push_back(make_float3(0.0000 , 0.0000 , 1.0000 ));
     n.push_back(make_float3(-1.0000, 0.0000 , 0.0000 ));
@@ -78,34 +75,85 @@ void create_cube_triangles(const PropertyList& list, std::vector<Triangle>& tria
     n.push_back(make_float3(1.0000 , 0.0000 , 0.0000 ));
     n.push_back(make_float3(0.0000 , 0.0000 , -1.0000));
     
-    triangles.emplace_back(p[1], p[5], p[7], n[1], n[1], n[1]); 
-    triangles.emplace_back(p[1], p[7], p[3], n[1], n[1], n[1]);
-    triangles.emplace_back(p[4], p[3], p[7], n[2], n[2], n[2]); 
-    triangles.emplace_back(p[4], p[7], p[8], n[2], n[2], n[2]);
-    triangles.emplace_back(p[8], p[7], p[5], n[3], n[3], n[3]); 
-    triangles.emplace_back(p[8], p[5], p[6], n[3], n[3], n[3]);
-    triangles.emplace_back(p[6], p[2], p[4], n[4], n[4], n[4]); 
-    triangles.emplace_back(p[6], p[4], p[8], n[4], n[4], n[4]);
-    triangles.emplace_back(p[2], p[1], p[3], n[5], n[5], n[5]); 
-    triangles.emplace_back(p[2], p[3], p[4], n[5], n[5], n[5]);
-    triangles.emplace_back(p[6], p[5], p[1], n[6], n[6], n[6]); 
-    triangles.emplace_back(p[6], p[1], p[2], n[6], n[6], n[6]);
+    uv.push_back(make_float2(0.625000, 0.500000));
+    uv.push_back(make_float2(0.875000, 0.500000));
+    uv.push_back(make_float2(0.875000, 0.750000));
+    uv.push_back(make_float2(0.625000, 0.750000));
+    uv.push_back(make_float2(0.375000, 0.750000));
+    uv.push_back(make_float2(0.625000, 1.000000));
+    uv.push_back(make_float2(0.375000, 1.000000));
+    uv.push_back(make_float2(0.375000, 0.000000));
+    uv.push_back(make_float2(0.625000, 0.000000));
+    uv.push_back(make_float2(0.625000, 0.250000));
+    uv.push_back(make_float2(0.375000, 0.250000));
+    uv.push_back(make_float2(0.125000, 0.500000));
+    uv.push_back(make_float2(0.375000, 0.500000));
+    uv.push_back(make_float2(0.125000, 0.750000));
+
+    int x[] = { 0, 0, 0, 4, 1, 0, 6, 2, 0, 2, 3, 0, 3, 4, 1, 2, 3, 1, 6, 5, 1, 7, 6, 1, 7, 7, 2, 6, 8, 2, 4, 9, 2, 5, 10, 2, 5, 11, 3, 1, 12, 3, 3, 4, 3, 7, 13, 3, 1, 12, 4, 0, 0, 4, 2, 3, 4, 3, 4, 4, 5, 10, 5, 4, 9, 5, 0, 0, 5, 1, 12, 5 };
+    for (uint32 i = 0; i < 6; i++)
+    {
+        int3 quad[4];
+        for (uint32 j = 0; j < 4; j++) 
+        {
+            uint32 idx = i * 12 + j * 3;
+            quad[j] = make_int3(x[idx + 0], x[idx + 1], x[idx + 2]);
+        }
+        index.push_back(quad[0]);
+        index.push_back(quad[1]);
+        index.push_back(quad[2]);
+        index.push_back(quad[0]);
+        index.push_back(quad[2]);
+        index.push_back(quad[3]);
+    }
+
+    mesh->m_triangle_num = 12;
+    mesh->m_cpu_p = p;
+    mesh->m_cpu_n = n;
+    mesh->m_cpu_uv = uv;
+    mesh->m_cpu_index = index;
 }
 
-void create_rectangle_triangles(const PropertyList& list, std::vector<Triangle>& triangles)
-{
-    float3 p0 = make_float3(-1, -1, 0);
-    float3 p1 = make_float3( 1, -1, 0);
-    float3 p2 = make_float3( 1,  1, 0);
-    float3 p3 = make_float3(-1,  1, 0);
-    triangles.emplace_back(p0, p1, p2);
-    triangles.emplace_back(p2, p3, p0); 
-}
-
-void create_sphere_triangles(const PropertyList& list, std::vector<Triangle>& triangles)
+void create_rectangle_triangles(
+    const PropertyList& list, 
+    TriangleMesh* mesh)
 {
     std::vector<float3> p;
-    std::vector<float3> n;    
+    std::vector<float3> n;
+    std::vector<float2> uv;
+    std::vector<int3> index;
+
+    p.push_back(make_float3(-1.000000, 0.000000, 1.000000));
+    p.push_back(make_float3(1.000000, 0.000000, 1.000000));
+    p.push_back(make_float3(-1.000000, 0.000000, -1.000000));
+    p.push_back(make_float3(1.000000, 0.000000, -1.000000));
+    uv.push_back(make_float2(0.000000, 0.000000));
+    uv.push_back(make_float2(1.000000, 0.000000));
+    uv.push_back(make_float2(1.000000, 1.000000));
+    uv.push_back(make_float2(0.000000, 1.000000));
+    n.push_back(make_float3(0.0000, 1.0000, 0.0000));
+    index.push_back(make_int3(0, 0, 0));
+    index.push_back(make_int3(1, 1, 0));
+    index.push_back(make_int3(3, 2, 0));
+    index.push_back(make_int3(0, 0, 0));
+    index.push_back(make_int3(3, 2, 0));
+    index.push_back(make_int3(2, 3, 0));
+
+    mesh->m_triangle_num = 2;
+    mesh->m_cpu_p = p;
+    mesh->m_cpu_n = n;
+    mesh->m_cpu_uv = uv;
+    mesh->m_cpu_index = index;
+}
+
+void create_sphere_triangles(
+    const PropertyList& list, 
+    TriangleMesh* mesh)
+{
+    std::vector<float3> p;
+    std::vector<float3> n;   
+    std::vector<float2> uv;
+    std::vector<int3> index;
 
     float radius = list.getFloat("radius", 1);
 
@@ -134,26 +182,38 @@ void create_sphere_triangles(const PropertyList& list, std::vector<Triangle>& tr
     for (int i = 0; i < nLongitude; i++) {
         int a = i + 1, b = a + 1;
         if (i == nLongitude - 1) b = 1;
-        triangles.push_back(Triangle(p[a], p[b], p[0], n[a], n[b], n[0]));
+        index.push_back(make_int3(a, a, -1));
+        index.push_back(make_int3(b, b, -1));
+        index.push_back(make_int3(0, 0, -1));
     }
-
     
     for (int i = 2; i < nLatitude; i++) {
         for (int j = 0; j < nLongitude; j++) {
             int a = (i - 1) * nLongitude + j + 1, b = a + 1, c = a - nLongitude, d = c + 1;
             if (j == nLongitude - 1) b = (i - 1) * nLongitude + 1, d = b - nLongitude;
-            triangles.push_back(Triangle(p[a], p[b], p[c], n[a], n[b], n[c]));
-            triangles.push_back(Triangle(p[c], p[b], p[d], n[c], n[b], n[d]));
+            index.push_back(make_int3(a, a, -1));
+            index.push_back(make_int3(b, b, -1));
+            index.push_back(make_int3(c, c, -1));
+            index.push_back(make_int3(c, c, -1));
+            index.push_back(make_int3(b, b, -1));
+            index.push_back(make_int3(d, d, -1));
         }
     }
     
-
     int bottomIdx = nLongitude * (nLatitude - 1) + 1;
     for (int i = 0; i < nLongitude; i++) {
         int a = (nLatitude - 2) * nLongitude + i + 1, b = a + 1;
         if (i == nLongitude - 1) b = (nLatitude - 2) * nLongitude + 1;
-        triangles.push_back(Triangle(p[a], p[bottomIdx], p[b], n[a], n[bottomIdx], n[b]));
+        index.push_back(make_int3(a, a, -1));
+        index.push_back(make_int3(bottomIdx, bottomIdx, -1));
+        index.push_back(make_int3(b, b, -1));
     }
+
+    mesh->m_triangle_num = nLatitude * nLongitude;
+    mesh->m_cpu_p = p;
+    mesh->m_cpu_n = n;
+    mesh->m_cpu_uv = uv;
+    mesh->m_cpu_index = index;
 }
 
 ParseRecord::ParseRecord(
@@ -278,48 +338,44 @@ void ParseRecord::createShape(const std::string& type, const PropertyList& list)
 {
     assert(type == "obj" || type == "sphere" || type == "rectangle" || type == "cube");
     m_current_material.m_emission = m_current_light;
+    
+    TriangleMesh mesh;
 
-    std::vector<Triangle> triangles;
     if (type == "obj")
     {
         std::string filename = list.getString("filename");
+        std::cout << filename << std::endl;
         filename = (m_path / filename).string();
-        load_obj_file(filename, triangles);
+        load_obj_file(filename, &mesh);        
     }
     else if (type == "sphere")
     {
-        create_sphere_triangles(list, triangles);
+        create_sphere_triangles(list, &mesh);
     }
     else if (type == "rectangle")
     {
-        create_rectangle_triangles(list, triangles);
+        create_rectangle_triangles(list, &mesh);
     }
     else if (type == "cube")
     {
-        create_cube_triangles(list, triangles);
+        create_cube_triangles(list, &mesh);
     }
 
-    Transform transform = list.getTransform("toWorld", Transform());
-
-    for (auto& triangle : triangles)
+    Transform o2w = list.getTransform("toWorld", Transform());
+    for (uint32 i = 0; i < mesh.m_cpu_p.size(); i++)
     {
-        triangle.m_p0 = transform.transformPoint(triangle.m_p0);
-        triangle.m_p1 = transform.transformPoint(triangle.m_p1);
-        triangle.m_p2 = transform.transformPoint(triangle.m_p2);
-
-        if (triangle.m_has_n)
-        {
-            triangle.m_n0 = transform.transformNormal(triangle.m_n0);
-            triangle.m_n1 = transform.transformNormal(triangle.m_n1);
-            triangle.m_n2 = transform.transformNormal(triangle.m_n2);
-        }
-
-        triangle.m_material = m_current_material;
-        m_triangles->push_back(triangle);
+        mesh.m_cpu_p[i] = o2w.transformPoint(mesh.m_cpu_p[i]);
     }
-    
+    for (uint32 i = 0; i < mesh.m_cpu_n.size(); i++)
+    {
+        mesh.m_cpu_n[i] = o2w.transformNormal(mesh.m_cpu_n[i]);
+    }
+    mesh.m_material = m_current_material;    
+
+    m_scene->m_meshes.push_back(mesh);
+
     m_current_material.setZero();
-    m_current_light = make_float3(0.f);
+    m_current_light = make_float3(0.f);    
 }
 
 void ParseRecord::createReference(const std::string& name, const std::string& id)

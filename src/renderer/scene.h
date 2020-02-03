@@ -32,7 +32,7 @@ class Scene {
 public:
     Scene() {}
     Scene(const std::string& filename);
-    ~Scene() { }
+    ~Scene() {}
 
     void createDeviceData();
     SceneView view() const { return SceneView(this); }
@@ -44,6 +44,8 @@ public:
     std::vector<Triangle> m_cpu_lights;
     Buffer<DEVICE_BUFFER, Triangle> m_gpu_triangles;
     Buffer<DEVICE_BUFFER, Triangle> m_gpu_lights;
+
+    std::vector<TriangleMesh> m_meshes;
 
     EnvironmentLight m_environment_light;
 

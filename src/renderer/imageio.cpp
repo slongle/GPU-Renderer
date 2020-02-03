@@ -34,11 +34,11 @@ void ReadImage(
     const std::string& filename,
     int* width,
     int* height,
-    Buffer<HOST_BUFFER, uint8>& buffer)
+    std::vector<uint8>& buffer)
 {
     int nchannels;
     uint8* ptr= stbi_load(filename.c_str(), width, height, &nchannels, 3);
-    buffer.copyFrom((*width) * (*height) * 3, HOST_BUFFER, ptr);
+    buffer.assign(ptr, ptr + (*width) * (*height) * 3);
     stbi_image_free(ptr);
 }
 
@@ -46,11 +46,11 @@ void ReadImage(
     const std::string& filename,
     int* width,
     int* height,
-    Buffer<HOST_BUFFER, float>& buffer)
+    std::vector<uint8>& buffer)
 {
     int nchannels;
     float* ptr = stbi_loadf(filename.c_str(), width, height, &nchannels, 3);
-    buffer.copyFrom((*width) * (*height) * 3, HOST_BUFFER, ptr);
+    buffer.assign(ptr, ptr + (*width) * (*height) * 3);
     stbi_image_free(ptr);
 }
 

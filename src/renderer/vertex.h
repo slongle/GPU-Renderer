@@ -22,16 +22,17 @@ public:
 
         const int tri_ID = hit.triangle_id;
         Triangle* triangle = &scene.m_triangles[tri_ID];
-        const float3 p0 = triangle->m_p0;
-        const float3 p1 = triangle->m_p1;
-        const float3 p2 = triangle->m_p2;
+        float3 p0, p1, p2;
+        triangle->getVertices(p0, p1, p2);
 
         const float3 dp_du = p0 - p2;
         const float3 dp_dv = p1 - p2;
         m_normal_g = normalize(cross(dp_du, dp_dv));
-        if (triangle->m_has_n)
+        if (triangle->m_mesh.m_index[triangle->m_index].y != -1)
         {
-            m_normal_s = triangle->m_n0 * (1 - hit.u - hit.v) + triangle->m_n1 * hit.u + triangle->m_n2 * hit.v;
+            float3 n0, n1, n2;
+            triangle->getNormals(n0, n1, n2);
+            m_normal_s = n0 * (1 - hit.u - hit.v) + n1 * hit.u + n2 * hit.v;
         }
         else
         {
@@ -41,7 +42,7 @@ public:
 
         m_wo = -normalize(ray.d);
 
-        const Material& material = triangle->m_material;
+        const Material& material = triangle->m_mesh.m_material;
         m_bsdf = BSDF(m_normal_g, m_normal_s, material);
     }
 

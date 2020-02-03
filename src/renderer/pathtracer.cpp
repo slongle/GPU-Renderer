@@ -32,7 +32,7 @@ void PathTracer::initQueue()
 
     alloc_queues(pixels_num, input_queue, scatter_queue, shadow_queue, arena);
 
-    m_memory_pool.alloc(arena.size());    
+    m_memory_pool.alloc(arena.size()); 
 }
 
 void PathTracer::render(uint32* output)

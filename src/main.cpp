@@ -6,8 +6,8 @@
 #include <iostream>
 using std::cout;
 using std::endl;
- 
-int main(int argc, char** argv) {     
+
+int main(int argc, char** argv) {
     std::string filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CornellBox\\CornellBox-Original.obj";
     //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CornellBox\\CornellBox-Sphere.obj";
     //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CornellBox\\CornellBox-Mirror.obj";

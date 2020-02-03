@@ -65,7 +65,7 @@ public:
     {
         float3 local_wo = worldToLocal(bsdf_record.m_wo);
         float3 local_wi = worldToLocal(bsdf_record.m_wi);
-        bool reflect = local_wo.z * local_wi.z > 0;
+        bool reflect = local_wo.z * local_wi.z > 0;        
         if ((m_type & BSDF_SPECULAR) != 0)
         {
             return m_specular.f(s, local_wo, local_wi);

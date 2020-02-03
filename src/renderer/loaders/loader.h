@@ -16,6 +16,7 @@ void load_scene(
     std::string ext = getFileExtension(filename);
     if (ext == ".obj")
     {
+        assert(false);
         load_obj_mtl_file(filename, scene);
     }
     else if (ext == ".xml")

@@ -13,7 +13,7 @@ EnvironmentLight::EnvironmentLight(
     Transform o2w)
     : m_has(true), m_o2w(o2w), m_w2o(Inverse(o2w))
 {
-    Buffer<HOST_BUFFER, float> buffer;
+    std::vector<float> buffer;
     ReadImage(filename, &m_width, &m_height, buffer);
     m_cpu_buffer.resize(m_width * m_height);
     for (int i = 0; i < m_width * m_height * 3; i += 3) {
@@ -28,7 +28,7 @@ void EnvironmentLight::setup(
 {    
     m_has = true;
     m_o2w = o2w, m_w2o = Inverse(o2w);
-    Buffer<HOST_BUFFER, float> buffer;
+    std::vector<float> buffer;
     ReadImage(filename, &m_width, &m_height, buffer);
     m_cpu_buffer.resize(m_width * m_height);
     for (int i = 0; i < m_width * m_height * 3; i += 3) {

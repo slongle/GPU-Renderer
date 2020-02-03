@@ -9,7 +9,9 @@
 #include "tiny_obj_loader.h"
 
 
-bool load_obj_file(const std::string& filename, std::vector<Triangle>& triangles)
+bool load_obj_file(
+    const std::string& filename, 
+    TriangleMesh* mesh)
 {
     std::filesystem::path filePath(filename);
     std::string basePath(filePath.parent_path().string());
@@ -42,15 +44,7 @@ bool load_obj_file(const std::string& filename, std::vector<Triangle>& triangles
 
     std::cout << "# of shapes    : " << shapes.size() << std::endl;
     std::cout << "# of materials : " << materials.size() << std::endl;
-    */
-
-    /*
-    for (size_t v = 0; v < attrib.texcoords.size() / 2; v++) {
-        printf("  uv[%ld] = (%f, %f)\n", static_cast<long>(v),
-            static_cast<const double>(attrib.texcoords[2 * v + 0]),
-            static_cast<const double>(attrib.texcoords[2 * v + 1]));
-    }
-    */
+    */     
 
     std::vector<float3> vertices;
     for (size_t v = 0; v < attrib.vertices.size() / 3; v++) {
@@ -68,6 +62,15 @@ bool load_obj_file(const std::string& filename, std::vector<Triangle>& triangles
             static_cast<const double>(attrib.normals[3 * v + 2])));
     }
 
+    std::vector<float2> uvs;
+    for (size_t v = 0; v < attrib.texcoords.size() / 2; v++) {
+            uvs.push_back(make_float2(
+                static_cast<const double>(attrib.texcoords[2 * v + 0]),
+                static_cast<const double>(attrib.texcoords[2 * v + 1])));
+    }
+    
+    std::vector<int3> indices;
+    uint32 nTriangles = 0;
     // For each shape
     for (size_t i = 0; i < shapes.size(); i++) {
 
@@ -84,23 +87,35 @@ bool load_obj_file(const std::string& filename, std::vector<Triangle>& triangles
             size_t fnum = shapes[i].mesh.num_face_vertices[f];
             assert(fnum == 3);
 
-            triangles.emplace_back();
-            triangles.back().m_p0 = vertices[shapes[i].mesh.indices[index_offset + 0].vertex_index];
-            triangles.back().m_p1 = vertices[shapes[i].mesh.indices[index_offset + 1].vertex_index];
-            triangles.back().m_p2 = vertices[shapes[i].mesh.indices[index_offset + 2].vertex_index];
-            triangles.back().m_has_n = false;
+            indices.push_back(make_int3(
+                shapes[i].mesh.indices[index_offset + 0].vertex_index,
+                shapes[i].mesh.indices[index_offset + 0].normal_index,
+                shapes[i].mesh.indices[index_offset + 0].texcoord_index));
 
-            if (shapes[i].mesh.indices[index_offset + 0].normal_index != -1)
-            {
-                triangles.back().m_n0 = normals[shapes[i].mesh.indices[index_offset + 0].normal_index];
-                triangles.back().m_n1 = normals[shapes[i].mesh.indices[index_offset + 1].normal_index];
-                triangles.back().m_n2 = normals[shapes[i].mesh.indices[index_offset + 2].normal_index];
-                triangles.back().m_has_n = true;
-            }
+            indices.push_back(make_int3(
+                shapes[i].mesh.indices[index_offset + 1].vertex_index,
+                shapes[i].mesh.indices[index_offset + 1].normal_index,
+                shapes[i].mesh.indices[index_offset + 1].texcoord_index));
 
+            indices.push_back(make_int3(
+                shapes[i].mesh.indices[index_offset + 2].vertex_index,
+                shapes[i].mesh.indices[index_offset + 2].normal_index,
+                shapes[i].mesh.indices[index_offset + 2].texcoord_index));
+
+            nTriangles++;
             index_offset += fnum;
         }
     }
+
+    mesh->m_triangle_num = nTriangles;
+    mesh->m_cpu_p = vertices;
+    mesh->m_cpu_n = normals;
+    mesh->m_cpu_uv = uvs;
+    mesh->m_cpu_index = indices;
+    //mesh->m_cpu_p.copyFrom(vertices.size(), HOST_BUFFER, vertices.data());
+    //mesh->m_cpu_n.copyFrom(normals.size(), HOST_BUFFER, normals.data());
+    //mesh->m_cpu_uv.copyFrom(uvs.size(), HOST_BUFFER, uvs.data());
+    //mesh->m_cpu_index.copyFrom(indices.size(), HOST_BUFFER, indices.data());
 
     return true;
 }
@@ -108,9 +123,7 @@ bool load_obj_file(const std::string& filename, std::vector<Triangle>& triangles
 
 bool load_obj_mtl_file(
     const std::string& filename, 
-    Scene* scene
-    //std::vector<Triangle>& triangles
-    )
+    Scene* scene)
 {
     std::filesystem::path filePath(filename);
     std::string basePath(filePath.parent_path().string());
@@ -252,22 +265,6 @@ bool load_obj_mtl_file(
     }
     */
 
-    std::vector<float3> vertices;
-    for (size_t v = 0; v < attrib.vertices.size() / 3; v++) {
-        vertices.push_back(make_float3(
-            static_cast<const float>(attrib.vertices[3 * v + 0]),
-            static_cast<const float>(attrib.vertices[3 * v + 1]),
-            static_cast<const float>(attrib.vertices[3 * v + 2])));
-    }
-
-    std::vector<float3> normals;
-    for (size_t v = 0; v < attrib.normals.size() / 3; v++) {
-        normals.push_back(make_float3(
-            static_cast<const double>(attrib.normals[3 * v + 0]),
-            static_cast<const double>(attrib.normals[3 * v + 1]),
-            static_cast<const double>(attrib.normals[3 * v + 2])));
-    }
-
     /*
     // For each shape
     for (size_t i = 0; i < shapes.size(); i++) {
@@ -347,8 +344,31 @@ bool load_obj_mtl_file(
     }
     */
 
-    std::vector<Triangle>& triangles = scene->m_cpu_triangles;
+    std::vector<float3> vertices;
+    for (size_t v = 0; v < attrib.vertices.size() / 3; v++) {
+        vertices.push_back(make_float3(
+            static_cast<const float>(attrib.vertices[3 * v + 0]),
+            static_cast<const float>(attrib.vertices[3 * v + 1]),
+            static_cast<const float>(attrib.vertices[3 * v + 2])));
+    }
 
+    std::vector<float3> normals;
+    for (size_t v = 0; v < attrib.normals.size() / 3; v++) {
+        normals.push_back(make_float3(
+            static_cast<const double>(attrib.normals[3 * v + 0]),
+            static_cast<const double>(attrib.normals[3 * v + 1]),
+            static_cast<const double>(attrib.normals[3 * v + 2])));
+    }
+
+    std::vector<float2> uvs;
+    for (size_t v = 0; v < attrib.texcoords.size() / 2; v++) {
+            uvs.push_back(make_float2(
+                static_cast<const double>(attrib.texcoords[2 * v + 0]),
+                static_cast<const double>(attrib.texcoords[2 * v + 1])));
+    }
+    
+    /*std::vector<int3> indices;
+    uint32 nTriangles = 0;
     // For each shape
     for (size_t i = 0; i < shapes.size(); i++) {
 
@@ -365,25 +385,31 @@ bool load_obj_mtl_file(
             size_t fnum = shapes[i].mesh.num_face_vertices[f];
             assert(fnum == 3);
 
-            triangles.emplace_back();
-            triangles.back().m_p0 = vertices[shapes[i].mesh.indices[index_offset + 0].vertex_index];
-            triangles.back().m_p1 = vertices[shapes[i].mesh.indices[index_offset + 1].vertex_index];
-            triangles.back().m_p2 = vertices[shapes[i].mesh.indices[index_offset + 2].vertex_index];
-            triangles.back().m_has_n = false;
+            indices.push_back(make_int3(
+                shapes[i].mesh.indices[index_offset + 0].vertex_index,
+                shapes[i].mesh.indices[index_offset + 0].normal_index,
+                shapes[i].mesh.indices[index_offset + 0].texcoord_index));
 
-            if (shapes[i].mesh.indices[index_offset + 0].normal_index != -1)
-            {
-                triangles.back().m_n0 = normals[shapes[i].mesh.indices[index_offset + 0].normal_index];
-                triangles.back().m_n1 = normals[shapes[i].mesh.indices[index_offset + 1].normal_index];
-                triangles.back().m_n2 = normals[shapes[i].mesh.indices[index_offset + 2].normal_index];
-                triangles.back().m_has_n = true;
-            }
+            indices.push_back(make_int3(
+                shapes[i].mesh.indices[index_offset + 1].vertex_index,
+                shapes[i].mesh.indices[index_offset + 1].normal_index,
+                shapes[i].mesh.indices[index_offset + 1].texcoord_index));
 
-            triangles.back().m_material = mats[shapes[i].mesh.material_ids[f]];
+            indices.push_back(make_int3(
+                shapes[i].mesh.indices[index_offset + 2].vertex_index,
+                shapes[i].mesh.indices[index_offset + 2].normal_index,
+                shapes[i].mesh.indices[index_offset + 2].texcoord_index));
 
+            nTriangles++;
             index_offset += fnum;
         }
-    }    
+    }
 
+    mesh->m_triangle_num = nTriangles;
+    mesh->m_cpu_p.copyFrom(vertices.size(), HOST_BUFFER, vertices.data());
+    mesh->m_cpu_n.copyFrom(normals.size(), HOST_BUFFER, normals.data());
+    mesh->m_cpu_uv.copyFrom(uvs.size(), HOST_BUFFER, uvs.data());
+    mesh->m_cpu_index.copyFrom(indices.size(), HOST_BUFFER, indices.data());
+    */
     return true;    
 }

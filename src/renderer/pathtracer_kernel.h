@@ -130,9 +130,11 @@ void generate_primary_rays(
 
 __device__
 bool triangle_intersect(const Triangle* triangle, const Ray ray, Hit* hit) {
+    float3 p0, p1, p2;
+    triangle->getVertices(p0, p1, p2);
     float3 D = ray.d;
-    float3 E1 = triangle->m_p1 - triangle->m_p0;
-    float3 E2 = triangle->m_p2 - triangle->m_p0;
+    float3 E1 = p1 - p0;
+    float3 E2 = p2 - p0;
     float3 P = cross(D, E2);
     double det = dot(P, E1);
 
@@ -141,7 +143,7 @@ bool triangle_intersect(const Triangle* triangle, const Ray ray, Hit* hit) {
         return false;
     }
     double invDet = 1.0 / det;
-    float3 T = ray.o - triangle->m_p0;
+    float3 T = ray.o - p0;
     double u = dot(P, T) * invDet;
     if (u < 0.0 || u > 1.0) {
         return false;
@@ -379,20 +381,20 @@ void shade_hit_kernel(
 
         if (context.m_bounce == 0 || specular)
         {
-            if (triangle.m_material.isEmission())
+            if (triangle.m_mesh.m_material.isEmission())
             {
                 Spectrum f_light = dot(vertex.m_wo, vertex.m_normal_s) > 0 ?
-                    triangle.m_material.m_emission : make_float3(0.f);
+                    triangle.m_mesh.m_material.m_emission : make_float3(0.f);
                 frame_buffer.addRadiance(pixel_idx, throughput * f_light);
             }
-        }
+        }        
 
         // Next Event Estimate
         if (!vertex.m_bsdf.isDelta() && scene.m_lights_num > 0)
         {
-            LightSample light_record;
+            LightSample light_record;            
             sample_lights(scene, &light_record, make_float3(samples[0], samples[1], samples[2]));
-
+            
             float3 wi = light_record.m_p - vertex.m_p;
             float d2 = square_length(wi);
             float d = sqrtf(d2);
@@ -401,7 +403,7 @@ void shade_hit_kernel(
             light_record.m_pdf *= d2 / fabsf(dot(wi, light_record.m_normal_s));
 
             Spectrum f_light = dot(-wi, light_record.m_normal_s) > 0 ?
-                scene.m_lights[light_record.m_light_id].m_material.m_emission : make_float3(0.f);
+                scene.m_lights[light_record.m_light_id].m_mesh.m_material.m_emission : make_float3(0.f);
 
             BSDFSample bsdf_record;
             bsdf_record.m_wo = vertex.m_wo;
@@ -421,7 +423,7 @@ void shade_hit_kernel(
                 context.m_shadow_queue.append(shadow_ray, out_weight, true, pixel_idx);
             }
         }
-
+       
         // Scatter
         {
             BSDFSample bsdf_record;

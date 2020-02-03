@@ -49,7 +49,7 @@ public:
     {
         m_resolution_x = res_x;
         m_resolution_y = res_y;
-        m_buffer.resize(size());        
+        m_buffer.resize(size());
         m_sample_num.resize(size());
         clear();
     }
