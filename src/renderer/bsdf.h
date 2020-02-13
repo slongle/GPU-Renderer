@@ -1,7 +1,6 @@
 #pragma once
 
 #include "renderer/material.h"
-
 #include "renderer/bsdfs/bxdf.h"
 
 #define MAX_BXDF_NUM 10
@@ -27,6 +26,14 @@ public:
         {
             addBxDF(CreateFresnelSpecularBxDF(material));
         }
+        else if (material.m_type == MATERIAL_ROUGH_CONDUCTOR)
+        {
+            addBxDF(CreateMicrofacetReflectBxDF(material, true));
+        }
+        else
+        {
+            assert(false);
+        }
     }
 
     HOST_DEVICE
@@ -36,8 +43,10 @@ public:
         m_bxdfs[m_bxdf_num++] = bxdf;
     }
 
-    /// evaluate eval = BSDF * cos
-    ///
+    /**
+     * \brief evaluate f = BSDF * cos
+     * \param bsdf_record 
+     */
     HOST_DEVICE
     void eval(
         BSDFSample& bsdf_record) const
@@ -49,8 +58,10 @@ public:
         m_bxdfs[0].eval(local_wo, local_wi, &bsdf_record.m_f);
     }
 
-    /// evaluate pdf
-    ///
+    /**
+     * \brief evaluate pdf
+     * \param bsdf_record 
+     */
     HOST_DEVICE
     void pdf(
         BSDFSample&  bsdf_record) const
@@ -62,8 +73,11 @@ public:
         m_bxdfs[0].pdf(local_wo, local_wi, &bsdf_record.m_pdf);
     }
 
-    /// sample wi, evaluate f and pdf
-    ///
+    /**
+     * \brief sample wi, evaluate f and pdf
+     * \param u random number
+     * \param bsdf_record 
+     */
     HOST_DEVICE
     void sample(
         const float2& u,
@@ -78,20 +92,24 @@ public:
         bsdf_record.m_wi = m_frame.localToWorld(local_wi);
     }
 
+    /**
+     * \brief for NEE and MIS
+     * \return return false iff it exists one no-specular BxDF component
+     */
     HOST_DEVICE
     bool isDelta() const 
     { 
         for (uint32 i = 0; i < m_bxdf_num; i++)
         {
-            if (m_bxdfs[i].isDelta())
+            if (!m_bxdfs[i].isDelta())
             {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
-//private:
+private:
     Frame m_frame;
 
     BxDF m_bxdfs[MAX_BXDF_NUM];

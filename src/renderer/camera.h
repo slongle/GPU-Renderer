@@ -7,8 +7,8 @@ public:
 
     Camera()         
     {        
-        m_eye = make_float3(0, 0, -1);        
-        m_dir = make_float3(0, 0, -1);
+        m_eye = make_float3(0, 2, 7);        
+        m_dir = make_float3(0, -0.2, -1);
         m_up = make_float3(0, 1, 0);
         m_fov = make_float2(degToRad(40));
         m_yaw = 0;

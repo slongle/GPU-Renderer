@@ -29,19 +29,38 @@ public:
     HOST_DEVICE
     BxDF() {}
 
-    // evaluate f = BSDF * cos, BSDF = color / PI
+    /**
+     * \brief evaluate f = BSDF * cos
+     * \param wo      out direction in local coordinate
+     * \param wi incident direction in local coordinate
+     * \param f 
+     */
     void eval(const float3& wo, const float3& wi, Spectrum* f) const;
 
-    // evaluate pdf
+    /**
+     * \brief evaluate pdf
+     * \param wo      out direction in local coordinate
+     * \param wi incident direction in local coordinate
+     * \param pdf probability of (wo, wi)
+     */
     void pdf(const float3& wo, const float3& wi, float* pdf) const;
-
-    // sample wi, evaluate f and pdf
+    
+    /**
+     * \brief sample wi, evaluate f and pdf
+     * \param u random number
+     * \param wo      out direction in local coordinate
+     * \param wi incident direction in local coordinate
+     * \param f 
+     * \param pdf probability of (wo, wi)
+     */
     void sample(const float2& u, const float3& wo, float3* wi, Spectrum* f, float* pdf) const;
 
     bool isDelta() const { return (m_property & BXDF_SPECULAR) != 0; }
 
     Spectrum m_color;
     float m_ior;
+    float m_alpha_x, m_alpha_y;
+    Fresnel m_fresnel;
     BxDFProperty m_property;
     BxDFType m_type;
 };
@@ -60,6 +79,14 @@ void BxDF::eval(
     {
         FresnelSpecularEval(wo, wi, f, m_color, m_ior);
     }
+    else if (m_type == BXDF_MICROFACET_REFLECT)
+    {
+        MicrofacetReflectEval(wo, wi, f, m_color, m_alpha_x, m_alpha_y, m_fresnel);        
+    }
+    else
+    {
+        assert(false);
+    }
 }
 
 inline HOST_DEVICE
@@ -75,6 +102,14 @@ void BxDF::pdf(
     else if (m_type == BXDF_FRESNEL_SPECULAR)
     {
         FresnelSpecularPdf(wo, wi, pdf, m_color, m_ior);
+    }
+    else if (m_type == BXDF_MICROFACET_REFLECT)
+    {
+        MicrofacetReflectPdf(wo, wi, pdf, m_color, m_alpha_x, m_alpha_y);        
+    }
+    else
+    {
+        assert(false);
     }
 }
 
@@ -93,6 +128,14 @@ void BxDF::sample(
     else if (m_type == BXDF_FRESNEL_SPECULAR)
     {
         FresnelSpecularSample(u, wo, wi, f, pdf, m_color, m_ior);
+    }
+    else if (m_type == BXDF_MICROFACET_REFLECT)
+    {
+        MicrofacetReflectSample(u, wo, wi, f, pdf, m_color, m_alpha_x, m_alpha_y, m_fresnel);        
+    }
+    else
+    {
+        assert(false);
     }
 }
 
@@ -114,5 +157,19 @@ BxDF CreateFresnelSpecularBxDF(const Material& material)
     ret.m_ior = material.m_ior;
     ret.m_property = BxDFProperty(BXDF_REFLECTION | BXDF_TRANSMISSION | BXDF_SPECULAR);
     ret.m_type = BXDF_FRESNEL_SPECULAR;
+    return ret;
+}
+
+inline HOST_DEVICE
+BxDF CreateMicrofacetReflectBxDF(const Material& material, bool conduct)
+{
+    BxDF ret;
+    ret.m_color = material.m_color;
+    ret.m_alpha_x = material.m_alpha_x;
+    ret.m_alpha_y = material.m_alpha_y;    
+    ret.m_fresnel = conduct ? Fresnel(material.m_etaI, material.m_etaT, material.m_k)
+                            : Fresnel(material.m_etaI, material.m_etaT);
+    ret.m_property = BxDFProperty(BXDF_REFLECTION | BXDF_GLOSSY);
+    ret.m_type = BXDF_MICROFACET_REFLECT;
     return ret;
 }

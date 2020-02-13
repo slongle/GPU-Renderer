@@ -86,3 +86,44 @@ Spectrum FrConductor(
 
     return (Rp + Rs) * 0.5f;
 }
+
+enum FresnelType
+{
+    FRESNEL_DIELECTRIC,
+    FRESNEL_CONDUCT,
+    FRESNEL_DISNEY,
+};
+
+class Fresnel
+{
+public:
+    HOST_DEVICE
+    Fresnel() {}
+    HOST_DEVICE
+    Fresnel(
+        const Spectrum& etaA, 
+        const Spectrum& etaB)
+        : m_etaI(etaA), m_etaT(etaB), m_type(FRESNEL_DIELECTRIC) {}
+    HOST_DEVICE
+    Fresnel(
+        const Spectrum& etaA,
+        const Spectrum& etaB,
+        const Spectrum& k)
+        : m_etaI(etaA), m_etaT(etaB), m_k(k), m_type(FRESNEL_CONDUCT) {}
+
+    HOST_DEVICE
+    Spectrum eval(float cosThetaI) const
+    {
+        if (m_type == FRESNEL_CONDUCT)
+        {
+            return FrConductor(abs(cosThetaI), m_etaI, m_etaT, m_k);
+        }
+        else if (m_type == FRESNEL_DIELECTRIC)
+        {
+            return FrDielectric(cosThetaI, m_etaI.r, m_etaT.r);
+        }
+    }
+
+    Spectrum m_etaI, m_etaT, m_k;
+    FresnelType m_type;
+};

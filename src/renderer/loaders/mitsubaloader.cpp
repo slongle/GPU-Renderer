@@ -314,17 +314,60 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
     }
     else if (type == "dielectric")
     {
-        float int_ior = list.getFloat("intIOR", 1.5f);
-        float ext_ior = list.getFloat("extIOR", 1.0f);
-        float ior = int_ior / ext_ior;
+        float ior;
+        if (list.findFloat("intIOR"))
+        {
+            float int_ior = list.getFloat("intIOR", 1.5f);
+            float ext_ior = list.getFloat("extIOR", 1.0f);
+            ior = int_ior / ext_ior;            
+        }
+        else
+        {
+            ior = list.getFloat("ior", 1.5f);
+        }
         m_current_material.m_color = Spectrum(1.f);
         m_current_material.m_ior = ior;
         m_current_material.m_type = MaterialType::MATERIAL_SPECULAR;
     }
     else if (type == "roughconductor")
     {
-        m_current_material.m_color = Spectrum(1.0f);
-        m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
+        Spectrum color = list.getColor("specularReflectance", Spectrum(1.));
+        Spectrum etaI, etaT;
+        if (list.findColor("etaI"))
+        {
+            etaI = list.getColor("etaI", Spectrum(1.f)); 
+            etaT = list.getColor("etaT", Spectrum(0.200438, 0.924033, 1.10221));
+        }
+        else
+        {
+            etaI = Spectrum(1.f);
+            etaT = list.getColor("eta", Spectrum(0.200438, 0.924033, 1.10221));            
+        }
+        Spectrum k = list.getColor("k", Spectrum(3.91295, 2.45285, 2.14219));        
+        float alphaU, alphaV;
+        if (list.findFloat("alphaU"))
+        {
+            alphaU = list.getFloat("alphaU", 0.1);
+            alphaV = list.getFloat("alphaV", 0.1);
+        }
+        else 
+        {
+            alphaU = alphaV = list.getFloat("alpha", 0.1);
+        }
+        m_current_material.m_color = color;
+        m_current_material.m_etaI = etaI;
+        m_current_material.m_etaT = etaT;
+        m_current_material.m_k = k;
+        m_current_material.m_alpha_x = alphaU;
+        m_current_material.m_alpha_y = alphaV;
+        m_current_material.m_type = MaterialType::MATERIAL_ROUGH_CONDUCTOR;
+    }
+    else if (type == "disney")
+    {
+        Spectrum color = list.getColor("color", Spectrum(0.5f));
+        float metallic = list.getFloat("metallic", 0.f);
+        float eta = list.getFloat("eta", 1.5f);
+        float roughness = list.getFloat("roughness", 0.5f);
     }
     else {
         std::cout << type << std::endl;

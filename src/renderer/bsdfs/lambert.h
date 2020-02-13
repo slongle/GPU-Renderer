@@ -9,14 +9,11 @@ void LambertReflectEval(
     Spectrum* f,
     const Spectrum& color)
 {
-    if (SameHemisphere(wo, wi))
-    {
-        *f = color * INV_PI * fabsf(wi.z);
-    }
-    else
-    {
-        *f = 0.f;
-    }
+    *f = 0.f;
+
+    if (!SameHemisphere(wo, wi)) return;    
+    *f = color * INV_PI * fabsf(wi.z);
+    
 }
 
 inline HOST_DEVICE
@@ -26,14 +23,10 @@ void LambertReflectPdf(
     float* pdf,
     const Spectrum& color)
 {
-    if (SameHemisphere(wo, wi))
-    {
-        *pdf = fabsf(wi.z) * INV_PI;
-    }
-    else
-    {
-        *pdf = 0.f;
-    }
+    *pdf = 0.f;
+
+    if (!SameHemisphere(wo, wi)) return;
+    *pdf = fabsf(wi.z) * INV_PI;
 }
 
 inline HOST_DEVICE
@@ -45,6 +38,7 @@ void LambertReflectSample(
     float* pdf,
     const Spectrum& color)
 {
+    *f = *pdf = 0.f;
     *wi = CosineSampleHemisphere(u);
     *f = color * INV_PI * fabsf(wi->z);
     *pdf = fabsf(wi->z) * INV_PI;

@@ -431,7 +431,7 @@ void shade_hit_kernel(
             bsdf_record.m_wo = vertex.m_wo;
             vertex.m_bsdf.sample(make_float2(samples[5], samples[6]), bsdf_record);
 
-            Spectrum out_weight = throughput * bsdf_record.m_f / bsdf_record.m_pdf;
+            Spectrum out_weight = bsdf_record.m_pdf == 0.f ? Spectrum(0.f) : throughput * bsdf_record.m_f / bsdf_record.m_pdf;
             bool out_specular = bsdf_record.m_specular;
 
             if (fmaxf(out_weight) < 1 && context.m_bounce > 3) {
