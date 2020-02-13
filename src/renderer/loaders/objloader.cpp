@@ -240,7 +240,7 @@ bool load_obj_mtl_file(
             static_cast<const float>(materials[i].emission[0]),
             static_cast<const float>(materials[i].emission[1]),
             static_cast<const float>(materials[i].emission[2]));
-        mats.emplace_back(diffuse, specular, emission, ior);
+        mats.emplace_back(diffuse, emission, ior);
     }
 
     /*

@@ -23,6 +23,7 @@ struct BSDFSample
     float3   m_wi;
     Spectrum m_f;
     float    m_pdf;
+    bool     m_specular;
 };
 
 inline HOST_DEVICE
@@ -116,3 +117,47 @@ float SinPhi(const float3& w) {
 }
 inline __device__ __host__
 float Sin2Phi(const float3& w) { return SinPhi(w) * SinPhi(w); }
+
+
+class Frame
+{
+public:
+    HOST_DEVICE
+    Frame() {}
+    HOST_DEVICE
+    Frame(
+        const float3& normal_g,
+        const float3& normal_s)
+        : m_normal_g(normal_g), m_normal_s(normal_s)
+    {
+        const float3 n = normal_s;
+        if (fabsf(n.x) > fabsf(n.y)) {
+            float inv_len = 1.f / sqrtf(n.x * n.x + n.z * n.z);
+            m_s = make_float3(n.z * inv_len, 0, -n.x * inv_len);
+        }
+        else {
+            float inv_len = 1.f / sqrtf(n.y * n.y + n.z * n.z);
+            m_s = make_float3(0, n.z * inv_len, -n.y * inv_len);
+        }
+        m_t = cross(m_s, n);
+    }
+
+    HOST_DEVICE
+    float3 localToWorld(
+        const float3& v) const
+    {
+        return normalize(m_s * v.x + m_t * v.y + m_normal_s * v.z);
+    }
+
+    HOST_DEVICE
+    float3 worldToLocal(
+        const float3& v) const
+    {
+        return normalize(make_float3(dot(v, m_s), dot(v, m_t), dot(v, m_normal_s)));
+    }
+
+    float3 m_normal_g;
+    float3 m_normal_s;
+    float3 m_s;
+    float3 m_t;
+};

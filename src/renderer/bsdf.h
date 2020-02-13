@@ -1,44 +1,10 @@
 #pragma once
 
-#include "renderer/fwd.h"
 #include "renderer/material.h"
 
-#include "renderer/bsdfs/lambert.h"
-#include "renderer/bsdfs/specular.h"
-#include "renderer/bsdfs/microfacet.h"
+#include "renderer/bsdfs/bxdf.h"
 
-struct BSDFData
-{
-    
-};
-
-/*
-enum BSDFProperty
-{
-    BSDF_REFLECTION = 1 << 0,
-    BSDF_TRANSMISSION = 1 << 1,
-    BSDF_DIFFUSE = 1 << 2,
-    BSDF_GLOSSY = 1 << 3,
-    BSDF_SPECULAR = 1 << 4,
-};
-*/
-
-class BXDF
-{
-public:
-
-};
-
-
-
-enum BSDFType 
-{
-    BSDF_REFLECTION = 1 << 0,
-    BSDF_TRANSMISSION = 1 << 1,
-    BSDF_DIFFUSE = 1 << 2,
-    BSDF_GLOSSY = 1 << 3,
-    BSDF_SPECULAR = 1 << 4,
-};
+#define MAX_BXDF_NUM 10
 
 class BSDF
 {
@@ -51,53 +17,36 @@ public:
         const float3& normal_g,
         const float3& normal_s,
         const Material& material)
-    : m_normal_g(normal_g), m_normal_s(normal_s)
+    : m_frame(normal_g, normal_s), m_bxdf_num(0)
     { 
-        // Build Local Coordinate
-        const float3 n = normal_s;
-        if (fabsf(n.x) > fabsf(n.y)) {
-            float inv_len = 1.f / sqrtf(n.x * n.x + n.z * n.z);
-            m_s = make_float3(n.z * inv_len, 0, -n.x * inv_len);
+        if (material.m_type == MATERIAL_DIFFUSE)
+        {
+            addBxDF(CreateLambertReflectBxDF(material));
         }
-        else {
-            float inv_len = 1.f / sqrtf(n.y * n.y + n.z * n.z);
-            m_s = make_float3(0, n.z * inv_len, -n.y * inv_len);
+        else if (material.m_type == MATERIAL_SPECULAR)
+        {
+            addBxDF(CreateFresnelSpecularBxDF(material));
         }
-        m_t = cross(m_s, n);
+    }
 
-        // Initialize BSDF
-        m_material_type = material.m_type;
-        if (material.m_ior == 0)
-        {
-            m_lambert_reflect = LambertReflect(material.m_diffuse);
-            m_type = BSDFType(BSDF_REFLECTION | BSDF_DIFFUSE);
-        }
-        else
-        {
-            //printf("%f\n", material.m_ior);
-            //m_lambert_reflect = LambertReflect(material.m_diffuse);
-            m_specular = FresnelSpecular(material.m_specular, material.m_specular, 1.f, material.m_ior);
-            m_type = BSDFType(BSDF_REFLECTION | BSDF_TRANSMISSION | BSDF_SPECULAR);
-        }
+    HOST_DEVICE
+    void addBxDF(const BxDF& bxdf)
+    {
+        assert(m_bxdf_num < MAX_BXDF_NUM);
+        m_bxdfs[m_bxdf_num++] = bxdf;
     }
 
     /// evaluate eval = BSDF * cos
     ///
     HOST_DEVICE
-    Spectrum eval(
+    void eval(
         BSDFSample& bsdf_record) const
     {
-        float3 local_wo = worldToLocal(bsdf_record.m_wo);
-        float3 local_wi = worldToLocal(bsdf_record.m_wi);
-        bool reflect = local_wo.z * local_wi.z > 0;        
-        if ((m_type & BSDF_SPECULAR) != 0)
-        {
-            return m_specular.eval(local_wo, local_wi);
-        }
-        else
-        {
-            return reflect ? m_lambert_reflect.eval(local_wo, local_wi) : Spectrum(0.f);
-        }        
+        float3 local_wo = m_frame.worldToLocal(bsdf_record.m_wo);
+        float3 local_wi = m_frame.worldToLocal(bsdf_record.m_wi);
+        bool reflect = local_wo.z * local_wi.z > 0;    
+
+        m_bxdfs[0].eval(local_wo, local_wi, &bsdf_record.m_f);
     }
 
     /// evaluate pdf
@@ -106,76 +55,45 @@ public:
     void pdf(
         BSDFSample&  bsdf_record) const
     {
-        float3 local_wo = worldToLocal(bsdf_record.m_wo);
-        float3 local_wi = worldToLocal(bsdf_record.m_wi);
+        float3 local_wo = m_frame.worldToLocal(bsdf_record.m_wo);
+        float3 local_wi = m_frame.worldToLocal(bsdf_record.m_wi);
         bool reflect = local_wo.z * local_wi.z > 0;
-        if ((m_type & BSDF_SPECULAR) != 0)
-        {
-            m_specular.pdf(local_wo, local_wi, &bsdf_record.m_pdf);
-        }
-        else
-        {
-            if (reflect)
-            {
-                m_lambert_reflect.pdf(local_wo, local_wi, &bsdf_record.m_pdf);
-            }
-            else
-            {
-                bsdf_record.m_pdf = 0;
-            }
-        }        
+
+        m_bxdfs[0].pdf(local_wo, local_wi, &bsdf_record.m_pdf);
     }
 
     /// sample wi, evaluate f and pdf
     ///
     HOST_DEVICE
     void sample(
-        BSDFSample&   bsdf_record,
-        const float2  s) const
+        const float2& u,
+        BSDFSample&   bsdf_record) const
     {
-        float3 local_wo = worldToLocal(bsdf_record.m_wo);
+        float3 local_wo = m_frame.worldToLocal(bsdf_record.m_wo);
         float3 local_wi;
         
-        if ((m_type & BSDF_SPECULAR) != 0)
-        {
-            m_specular.sample(s, local_wo, &local_wi, &bsdf_record.m_f, &bsdf_record.m_pdf);
-        }
-        else 
-        {
-            m_lambert_reflect.sample(s, local_wo, &local_wi, &bsdf_record.m_f, &bsdf_record.m_pdf);
-        }
-        
-        bsdf_record.m_wi = localToWorld(local_wi);
+        m_bxdfs[0].sample(u, local_wo, &local_wi, &bsdf_record.m_f, &bsdf_record.m_pdf);
+        bsdf_record.m_specular = m_bxdfs[0].isDelta();
+
+        bsdf_record.m_wi = m_frame.localToWorld(local_wi);
     }
 
     HOST_DEVICE
-    bool isDelta() const { return (m_type & BSDF_SPECULAR) != 0; }
+    bool isDelta() const 
+    { 
+        for (uint32 i = 0; i < m_bxdf_num; i++)
+        {
+            if (m_bxdfs[i].isDelta())
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
 //private:
+    Frame m_frame;
 
-    HOST_DEVICE
-    float3 localToWorld(
-        const float3& v) const
-    {
-        return normalize(m_s * v.x + m_t * v.y + m_normal_s * v.z);
-    }
-
-    HOST_DEVICE
-    float3 worldToLocal(
-        const float3& v) const 
-    {
-        return normalize(make_float3(dot(v, m_s), dot(v, m_t), dot(v, m_normal_s)));
-    }
-
-    float3 m_normal_g;
-    float3 m_normal_s;
-    float3 m_s;
-    float3 m_t;
-
-    BSDFType m_type;
-    MaterialType m_material_type;
-
-    LambertReflect m_lambert_reflect;
-    FresnelSpecular m_specular;
-    MicrofacetConductor m_conductor;
+    BxDF m_bxdfs[MAX_BXDF_NUM];
+    uint32 m_bxdf_num;
 };

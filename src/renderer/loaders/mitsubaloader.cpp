@@ -297,39 +297,39 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
     m_current_material.setZero();
     if (type == "diffuse")
     {
-        m_current_material.m_diffuse = list.getColor("reflectance", Spectrum(0.5f));
+        m_current_material.m_color = list.getColor("reflectance", Spectrum(0.5f));
         m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
     else if (type == "mirror")
     {
-        m_current_material.m_specular = list.getColor("reflectance", Spectrum(1.f));
+        m_current_material.m_color = list.getColor("reflectance", Spectrum(1.f));
         m_current_material.m_ior = 100.f;
-        m_current_material.m_type = MaterialType::MATERIAL_MIRROR;
+        m_current_material.m_type = MaterialType::MATERIAL_SPECULAR;
     }
     else if (type == "glass")
     {
-        m_current_material.m_specular = list.getColor("reflectance", Spectrum(1.f));
+        m_current_material.m_color = list.getColor("reflectance", Spectrum(1.f));
         m_current_material.m_ior = 1.5f;
-        m_current_material.m_type = MaterialType::MATERIAL_GLASS;
+        m_current_material.m_type = MaterialType::MATERIAL_SPECULAR;
     }
     else if (type == "dielectric")
     {
         float int_ior = list.getFloat("intIOR", 1.5f);
         float ext_ior = list.getFloat("extIOR", 1.0f);
         float ior = int_ior / ext_ior;
-        std::cout << ior << std::endl;
-        m_current_material.m_specular = Spectrum(1.f);
+        m_current_material.m_color = Spectrum(1.f);
         m_current_material.m_ior = ior;
-        m_current_material.m_type = MaterialType::MATERIAL_GLASS;
+        m_current_material.m_type = MaterialType::MATERIAL_SPECULAR;
     }
     else if (type == "roughconductor")
     {
-        m_current_material.m_diffuse = Spectrum(1.0f);
+        m_current_material.m_color = Spectrum(1.0f);
         m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
     else {
         std::cout << type << std::endl;
-        m_current_material.m_diffuse = Spectrum(1.0f);
+        m_current_material.m_color = Spectrum(1.0f);
+        m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
 }
 

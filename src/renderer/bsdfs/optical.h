@@ -1,16 +1,7 @@
 #pragma once
 
-#include "renderer/fwd.h"
 #include "renderer/spectrum.h"
 #include "renderer/sampling.h"
-
-template<typename T>
-inline __device__ __host__
-void Swap(T& a, T& b) {
-    T c(a);
-    a = b;
-    b = c;
-}
 
 inline HOST_DEVICE
 float3 Reflect(float3 wo, float3 n) {
@@ -38,12 +29,16 @@ bool Refract(
 
 inline HOST_DEVICE
 float FrDielectric(float cosThetaI, float etaI, float etaT) {
-    cosThetaI = Clamp(cosThetaI, -1.f, 1.f);
+    cosThetaI = clamp(cosThetaI, -1.f, 1.f);
     // Potentially swap indices of refraction
     bool entering = cosThetaI > 0.f;
 
     if (!entering) {
-        Swap(etaI, etaT);
+        // swap etaT and etaI
+        float tmp = etaT;
+        etaT = etaI;
+        etaI = tmp;
+
         cosThetaI = abs(cosThetaI);
     }
 
@@ -69,7 +64,7 @@ Spectrum FrConductor(
     const Spectrum& etat,
     const Spectrum& k)
 {
-    cosThetaI = Clamp(cosThetaI, -1.f, 1.f);
+    cosThetaI = clamp(cosThetaI, -1.f, 1.f);
     Spectrum eta = etat / etai;
     Spectrum etak = k / etai;
 

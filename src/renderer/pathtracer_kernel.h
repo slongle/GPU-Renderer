@@ -408,7 +408,8 @@ void shade_hit_kernel(
             BSDFSample bsdf_record;
             bsdf_record.m_wo = vertex.m_wo;
             bsdf_record.m_wi = wi;
-            Spectrum f_bsdf = vertex.m_bsdf.eval(bsdf_record);
+            vertex.m_bsdf.eval(bsdf_record);
+            Spectrum f_bsdf = bsdf_record.m_f; 
 
             Spectrum out_weight = throughput * f_light * f_bsdf / light_record.m_pdf;
 
@@ -428,10 +429,10 @@ void shade_hit_kernel(
         {
             BSDFSample bsdf_record;
             bsdf_record.m_wo = vertex.m_wo;
-            vertex.m_bsdf.sample(bsdf_record, make_float2(samples[5], samples[6]));
+            vertex.m_bsdf.sample(make_float2(samples[5], samples[6]), bsdf_record);
 
             Spectrum out_weight = throughput * bsdf_record.m_f / bsdf_record.m_pdf;
-            bool out_specular = (vertex.m_bsdf.m_type & BSDF_SPECULAR) != 0;
+            bool out_specular = bsdf_record.m_specular;
 
             if (fmaxf(out_weight) < 1 && context.m_bounce > 3) {
                 float q = fmaxf(0.05f, 1 - fmaxf(throughput));

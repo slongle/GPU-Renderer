@@ -5,19 +5,17 @@
 enum MaterialType
 {
     MATERIAL_DIFFUSE,
-    MATERIAL_MIRROR,
-    MATERIAL_GLASS,
+    MATERIAL_SPECULAR,
 };
 
 class Material {
 public:
     Material() {}
     Material(
-        const Spectrum& diffuse, 
-        const Spectrum& specular, 
+        const Spectrum& color, 
         const Spectrum& emission,
         const float&    ior) :
-        m_diffuse(diffuse), m_specular(specular), m_emission(emission), m_ior(ior) {}
+        m_color(color), m_emission(emission), m_ior(ior) {}
 
     HOST_DEVICE
     bool isEmission() const 
@@ -27,14 +25,12 @@ public:
 
     void setZero()
     {
-        m_diffuse  = Spectrum(0.f);
-        m_specular = Spectrum(0.f);
+        m_color    = Spectrum(0.f);
         m_emission = Spectrum(0.f);
         m_ior = 0.f;
     }
 
-    Spectrum m_diffuse;
-    Spectrum m_specular;
+    Spectrum m_color;
     Spectrum m_emission;
     float    m_ior;
 

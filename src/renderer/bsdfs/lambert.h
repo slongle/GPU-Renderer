@@ -1,53 +1,51 @@
 #pragma once
 
-#include "renderer/fwd.h"
-#include "renderer/sampling.h"
-#include "renderer/spectrum.h"
+#include "renderer/bsdfs/optical.h"
 
-class LambertReflect
+inline HOST_DEVICE
+void LambertReflectEval(
+    const float3& wo,
+    const float3& wi,
+    Spectrum* f,
+    const Spectrum& color)
 {
-public:
-    HOST_DEVICE
-    LambertReflect() {}
-    HOST_DEVICE
-    LambertReflect(Spectrum color):m_color(color) {}
-
-    /// evaluate f = BSDF * cos, BSDF = color / PI
-    ///
-    HOST_DEVICE
-    Spectrum eval(
-        const float3    wo,
-        const float3    wi) const
+    if (SameHemisphere(wo, wi))
     {
-        return m_color * INV_PI * fabsf(wi.z);
+        *f = color * INV_PI * fabsf(wi.z);
     }
+    else
+    {
+        *f = 0.f;
+    }
+}
 
-    /// evaluate pdf
-    ///
-    HOST_DEVICE
-    void pdf(
-        const float3    wo,
-        const float3    wi,
-              float*    pdf) const
+inline HOST_DEVICE
+void LambertReflectPdf(
+    const float3& wo,
+    const float3& wi,
+    float* pdf,
+    const Spectrum& color)
+{
+    if (SameHemisphere(wo, wi))
     {
         *pdf = fabsf(wi.z) * INV_PI;
     }
-
-    /// sample wi, evaluate f and pdf
-    ///
-    HOST_DEVICE
-    void sample(
-        const float2    s,
-        const float3    wo,
-              float3*   wi,
-              Spectrum* f,
-              float*    pdf) const
+    else
     {
-        *wi = CosineSampleHemisphere(s);
-        *f = m_color * INV_PI * fabsf(wi->z);
-        *pdf = fabsf(wi->z) * INV_PI;
+        *pdf = 0.f;
     }
+}
 
-//private:
-    Spectrum m_color;
-};
+inline HOST_DEVICE
+void LambertReflectSample(
+    const float2& u,
+    const float3& wo,
+    float3* wi,
+    Spectrum* f,
+    float* pdf,
+    const Spectrum& color)
+{
+    *wi = CosineSampleHemisphere(u);
+    *f = color * INV_PI * fabsf(wi->z);
+    *pdf = fabsf(wi->z) * INV_PI;
+}
