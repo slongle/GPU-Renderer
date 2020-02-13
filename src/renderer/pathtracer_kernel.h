@@ -105,7 +105,7 @@ void generate_primary_rays_kernel(
     const Ray ray = generate_primary_ray(context, scene, frame_buffer, pixel, idx);
 
     context.m_in_queue.m_rays[idx] = ray;
-    context.m_in_queue.m_weight[idx] = make_float3(1.f);
+    context.m_in_queue.m_weight[idx] = Spectrum(1.f);
     context.m_in_queue.m_specular[idx] = false;
     context.m_in_queue.m_idx[idx] = idx;
 
@@ -376,7 +376,7 @@ void shade_hit_kernel(
         Vertex vertex;
         vertex.setup(ray, hit, scene);
        
-        //frame_buffer.addRadiance(pixel_idx, fabs(vertex.m_normal_g));
+        //frame_buffer.addRadiance(pixel_idx, Spectrum(vertex.m_normal_g));
         //return;
 
         if (context.m_bounce == 0 || specular)
@@ -384,7 +384,7 @@ void shade_hit_kernel(
             if (triangle.m_mesh.m_material.isEmission())
             {
                 Spectrum f_light = dot(vertex.m_wo, vertex.m_normal_s) > 0 ?
-                    triangle.m_mesh.m_material.m_emission : make_float3(0.f);
+                    triangle.m_mesh.m_material.m_emission : Spectrum(0.f);
                 frame_buffer.addRadiance(pixel_idx, throughput * f_light);
             }
         }        
@@ -403,12 +403,12 @@ void shade_hit_kernel(
             light_record.m_pdf *= d2 / fabsf(dot(wi, light_record.m_normal_s));
 
             Spectrum f_light = dot(-wi, light_record.m_normal_s) > 0 ?
-                scene.m_lights[light_record.m_light_id].m_mesh.m_material.m_emission : make_float3(0.f);
+                scene.m_lights[light_record.m_light_id].m_mesh.m_material.m_emission : Spectrum(0.f);
 
             BSDFSample bsdf_record;
             bsdf_record.m_wo = vertex.m_wo;
             bsdf_record.m_wi = wi;
-            Spectrum f_bsdf = vertex.m_bsdf.f(bsdf_record, make_float2(samples[3], samples[4]));
+            Spectrum f_bsdf = vertex.m_bsdf.eval(bsdf_record);
 
             Spectrum out_weight = throughput * f_light * f_bsdf / light_record.m_pdf;
 
@@ -437,7 +437,7 @@ void shade_hit_kernel(
                 float q = fmaxf(0.05f, 1 - fmaxf(throughput));
                 if (samples[7] < q)
                 {
-                    out_weight = make_float3(0);
+                    out_weight = Spectrum(0);
                 }
                 out_weight /= 1 - q;
             }
@@ -556,9 +556,9 @@ void filter_kernel(
 
     Spectrum color = frame_buffer.m_buffer[idx] / frame_buffer.m_sample_num[idx];
     uint8* ptr_uc = (uint8*)(output + idx);
-    ptr_uc[0] = (uint8)clamp(255.f * GammaCorrect(color.x) + 0.5f, 0.f, 255.f);
-    ptr_uc[1] = (uint8)clamp(255.f * GammaCorrect(color.y) + 0.5f, 0.f, 255.f);
-    ptr_uc[2] = (uint8)clamp(255.f * GammaCorrect(color.z) + 0.5f, 0.f, 255.f);
+    ptr_uc[0] = (uint8)clamp(255.f * GammaCorrect(color.r) + 0.5f, 0.f, 255.f);
+    ptr_uc[1] = (uint8)clamp(255.f * GammaCorrect(color.g) + 0.5f, 0.f, 255.f);
+    ptr_uc[2] = (uint8)clamp(255.f * GammaCorrect(color.b) + 0.5f, 0.f, 255.f);
     ptr_uc[3] = (uint8)clamp(255.f * GammaCorrect(1) + 0.5f, 0.f, 255.f);
 }
 

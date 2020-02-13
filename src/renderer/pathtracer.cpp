@@ -3,7 +3,8 @@
 #include "renderer/rayqueue.h"
 
 PathTracer::PathTracer(const std::string& filename)
-    :m_scene(filename), m_frame_buffer(600, 800), m_sample_num(0), m_reset(false)
+    : m_scene(filename), m_frame_buffer(600, 800), 
+      m_sample_num(0), m_reset(false), m_iteration_num(0)
 {
 }
 
@@ -114,7 +115,6 @@ void PathTracer::render(uint32* output)
         filter(output, frame_buffer_view);
         CUDA_CHECK(cudaDeviceSynchronize());
     }
-
 }
 
 void PathTracer::render(uint32 num)
@@ -125,7 +125,7 @@ void PathTracer::render(uint32 num)
         fprintf(stderr, "\r%f%%", 100.f * (i + 1) / num);
         render();
     }
-    output(std::to_string(num) + "spp.png");
+    output(std::to_string(m_iteration_num + num) + "spp.png");
     exit(0);    
 }
 
@@ -154,6 +154,7 @@ void PathTracer::rotate(float yaw, float pitch)
 
 void PathTracer::reset()
 {
+    m_iteration_num = 0;
     m_frame_buffer.clear();    
 }
 

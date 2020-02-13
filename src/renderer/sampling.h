@@ -65,3 +65,54 @@ float3 CosineSampleHemisphere(const float2 u)
     float z = sqrt(max(0.f, 1 - u.x));
     return make_float3(a * cos(b), a * sin(b), z);
 }
+
+inline HOST_DEVICE
+bool SameHemisphere(const float3& w, const float3& wp) {
+    return w.z * wp.z > 0;
+}
+
+inline __device__ __host__
+float Clamp(float a, float l, float r) {
+    if (a > r) return r;
+    else if (a < l) return l;
+    else return a;
+}
+
+inline __device__ __host__
+float CosTheta(const float3& v) { return v.z; }
+inline __device__ __host__
+float AbsCosTheta(const float3& v) { return abs(v.z); }
+inline __device__ __host__
+float Cos2Theta(const float3& v) { return v.z * v.z; }
+
+inline __device__ __host__
+float Sin2Theta(const float3& w) {
+    return max((float)0, (float)1 - Cos2Theta(w));
+}
+inline __device__ __host__
+float SinTheta(const float3& w) { return sqrt(Sin2Theta(w)); }
+
+inline __device__ __host__
+float TanTheta(const float3& w) { return SinTheta(w) / CosTheta(w); }
+inline __device__ __host__
+float Tan2Theta(const float3& w) {
+    return Sin2Theta(w) / Cos2Theta(w);
+}
+
+inline __device__ __host__
+float CosPhi(const float3& w) {
+    float sinTheta = SinTheta(w);
+    if (sinTheta == 0) return 1;
+    else return Clamp(w.x / sinTheta, -1, 1);
+}
+inline __device__ __host__
+float Cos2Phi(const float3& w) { return CosPhi(w) * CosPhi(w); }
+
+inline __device__ __host__
+float SinPhi(const float3& w) {
+    float sinTheta = SinTheta(w);
+    if (sinTheta == 0) return 0;
+    else return Clamp(w.y / sinTheta, -1, 1);
+}
+inline __device__ __host__
+float Sin2Phi(const float3& w) { return SinPhi(w) * SinPhi(w); }

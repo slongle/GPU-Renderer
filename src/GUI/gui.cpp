@@ -41,6 +41,7 @@ namespace Gui {
 
     // Renderer
     std::shared_ptr<PathTracer> renderer;
+    uint32 nIteration = 0;
 
     // Pixel Buffer
     GLuint pbo = 0;     // OpenGL pixel buffer object
@@ -127,6 +128,7 @@ void Gui::render()
     // render
     if (start) {
         renderer->render(d_output);
+        nIteration++;
     }
 
     getLastCudaError("kernel failed");
@@ -143,7 +145,7 @@ void Gui::computeFPS()
     {
         char fps[256];
         float ifps = 1.f / (sdkGetAverageTimerValue(&timer) / 1000.f);
-        sprintf(fps, "Render: %3.1f fps", ifps);
+        sprintf(fps, "Render: %3.1f fps, %u iterations", ifps, nIteration);
 
         glutSetWindowTitle(fps);
         fpsCount = 0;
@@ -219,6 +221,7 @@ void Gui::reshape(int w, int h)
 
     renderer->resize(width, height);
 
+    nIteration = 0;
     start = state;
 }
 
@@ -252,6 +255,7 @@ void Gui::motion(int x, int y)
         //viewRotation.y += dx / 5.0f;
         renderer->rotate(dx / 500.0f, -dy / 500.0f);
     }
+    nIteration = 0;
 
     ox = x;
     oy = y;

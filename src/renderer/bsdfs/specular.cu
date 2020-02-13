@@ -24,7 +24,7 @@ Spectrum SpecularReflect::f(
     const float3 wo, 
     const float3 wi) const
 {
-    return make_float3(0.f);
+    return Spectrum(0.f);
 }
 
 void SpecularReflect::pdf(
@@ -50,7 +50,7 @@ void SpecularReflect::sample(
         F = FrConductor(fabsf(wi->z), m_conductorEtaI, m_conductorEtaT, m_conductorK);
     }
     else {
-        F = make_float3(FrDielectric(wi->z, m_dielectricEtaI, m_dielectricEtaT));
+        F = Spectrum(FrDielectric(wi->z, m_dielectricEtaI, m_dielectricEtaT));
     }
     *f = F * m_r / fabsf(wi->z);
 }

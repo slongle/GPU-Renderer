@@ -17,7 +17,7 @@ EnvironmentLight::EnvironmentLight(
     ReadImage(filename, &m_width, &m_height, buffer);
     m_cpu_buffer.resize(m_width * m_height);
     for (int i = 0; i < m_width * m_height * 3; i += 3) {
-        m_cpu_buffer[i / 3] = make_float3(buffer[i + 0], buffer[i + 1], buffer[i + 2]);
+        m_cpu_buffer[i / 3] = Spectrum(buffer[i + 0], buffer[i + 1], buffer[i + 2]);
     }
     m_gpu_buffer.copyFrom(m_cpu_buffer.size(), HOST_BUFFER, m_cpu_buffer.data());
 }
@@ -32,7 +32,7 @@ void EnvironmentLight::setup(
     ReadImage(filename, &m_width, &m_height, buffer);
     m_cpu_buffer.resize(m_width * m_height);
     for (int i = 0; i < m_width * m_height * 3; i += 3) {
-        m_cpu_buffer[i / 3] = make_float3(buffer[i + 0], buffer[i + 1], buffer[i + 2]);
+        m_cpu_buffer[i / 3] = Spectrum(buffer[i + 0], buffer[i + 1], buffer[i + 2]);
     }
     m_gpu_buffer.copyFrom(m_cpu_buffer.size(), HOST_BUFFER, m_cpu_buffer.data());        
 }

@@ -71,10 +71,11 @@ set(sources
     src/utility/timer.h    
 	src/utility/types.h
 
-	src/renderer/bsdfs/fresnel.h
+	src/renderer/bsdfs/optical.h
 	src/renderer/bsdfs/lambert.h
 	src/renderer/bsdfs/specular.h
 	src/renderer/bsdfs/specular.cu
+	src/renderer/bsdfs/microfacet.h
 	src/renderer/loaders/loader.h
 	src/renderer/loaders/mitsubaloader.h
 	src/renderer/loaders/mitsubaloader.cpp

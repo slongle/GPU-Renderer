@@ -12,19 +12,15 @@ struct FrameBufferView
     HOST_DEVICE
     void addRadiance(uint32 idx, Spectrum col)
     {
-        //printf("%u\n", idx);
         Spectrum lst = m_buffer[idx];
         lst += col;
         m_buffer[idx] = lst;
-        //printf("%u Over\n", idx);
     }
 
     HOST_DEVICE
         void addSampleNum(uint32 idx)
     {
-        //if printf("%u\n", idx);
         m_sample_num[idx] ++;
-        //printf("%u Over\n", idx);
     }
 
     HOST_DEVICE

@@ -27,9 +27,9 @@ public:
 
     void setZero()
     {
-        m_diffuse  = make_float3(0.f);
-        m_specular = make_float3(0.f);
-        m_emission = make_float3(0.f);
+        m_diffuse  = Spectrum(0.f);
+        m_specular = Spectrum(0.f);
+        m_emission = Spectrum(0.f);
         m_ior = 0.f;
     }
 

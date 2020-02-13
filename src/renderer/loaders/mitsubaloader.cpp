@@ -44,9 +44,9 @@ float3 toVector(const std::string& str) {
 Spectrum toColor(const std::string& str) {
     Spectrum ret;
     char* endptr;
-    ret.x = strtof(str.c_str(), &endptr); endptr++;
-    ret.y = strtof(endptr, &endptr); endptr++;
-    ret.z = strtof(endptr, &endptr);
+    ret.r = strtof(str.c_str(), &endptr); endptr++;
+    ret.g = strtof(endptr, &endptr); endptr++;
+    ret.b = strtof(endptr, &endptr);
     return ret;
 }
 
@@ -123,6 +123,7 @@ void create_rectangle_triangles(
     std::vector<float2> uv;
     std::vector<int3> index;
 
+    /*
     p.push_back(make_float3(-1.000000, 0.000000, 1.000000));
     p.push_back(make_float3(1.000000, 0.000000, 1.000000));
     p.push_back(make_float3(-1.000000, 0.000000, -1.000000));
@@ -138,6 +139,26 @@ void create_rectangle_triangles(
     index.push_back(make_int3(0, 0, 0));
     index.push_back(make_int3(3, 2, 0));
     index.push_back(make_int3(2, 3, 0));
+    */
+
+    p.push_back(make_float3(-1, -1, 0));
+    p.push_back(make_float3(1, -1, 0));
+    p.push_back(make_float3(1, 1, 0));
+    p.push_back(make_float3(-1, 1, 0));
+
+    uv.push_back(make_float2(0, 0));
+    uv.push_back(make_float2(1, 0));
+    uv.push_back(make_float2(1, 1));
+    uv.push_back(make_float2(0, 1));
+
+    n.push_back(make_float3(0, 0, 1));
+
+    index.push_back(make_int3(0, 0, 0));
+    index.push_back(make_int3(1, 1, 0));
+    index.push_back(make_int3(2, 2, 0));
+    index.push_back(make_int3(2, 2, 0));
+    index.push_back(make_int3(3, 3, 0));
+    index.push_back(make_int3(0, 0, 0));
 
     mesh->m_triangle_num = 2;
     mesh->m_cpu_p = p;
@@ -229,7 +250,7 @@ ParseRecord::ParseRecord(
     m_path = p.parent_path();
 
     m_current_material.setZero();
-    m_current_light = make_float3(0.f);
+    m_current_light = Spectrum(0.f);
 
     m_tags["hide"] = EHide;
     m_tags["mode"] = EMode;
@@ -276,18 +297,18 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
     m_current_material.setZero();
     if (type == "diffuse")
     {
-        m_current_material.m_diffuse = list.getColor("reflectance", make_float3(0.5f));       
+        m_current_material.m_diffuse = list.getColor("reflectance", Spectrum(0.5f));
         m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
     else if (type == "mirror")
     {
-        m_current_material.m_specular = list.getColor("reflectance", make_float3(1.f));
+        m_current_material.m_specular = list.getColor("reflectance", Spectrum(1.f));
         m_current_material.m_ior = 100.f;
         m_current_material.m_type = MaterialType::MATERIAL_MIRROR;
     }
     else if (type == "glass")
     {
-        m_current_material.m_specular = list.getColor("reflectance", make_float3(1.f));
+        m_current_material.m_specular = list.getColor("reflectance", Spectrum(1.f));
         m_current_material.m_ior = 1.5f;
         m_current_material.m_type = MaterialType::MATERIAL_GLASS;
     }
@@ -297,18 +318,18 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
         float ext_ior = list.getFloat("extIOR", 1.0f);
         float ior = int_ior / ext_ior;
         std::cout << ior << std::endl;
-        m_current_material.m_specular = make_float3(1.f);
+        m_current_material.m_specular = Spectrum(1.f);
         m_current_material.m_ior = ior;
         m_current_material.m_type = MaterialType::MATERIAL_GLASS;
     }
     else if (type == "roughconductor")
     {
-        m_current_material.m_diffuse = make_float3(1.0f);
+        m_current_material.m_diffuse = Spectrum(1.0f);
         m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
     else {
         std::cout << type << std::endl;
-        m_current_material.m_diffuse = make_float3(1.0f);
+        m_current_material.m_diffuse = Spectrum(1.0f);
     }
 }
 
@@ -323,7 +344,7 @@ void ParseRecord::createLight(const std::string& type, const PropertyList& list)
     assert(type == "area" || type == "envmap");
     if (type == "area")
     {
-        m_current_light = list.getColor("radiance", make_float3(1.f));
+        m_current_light = list.getColor("radiance", Spectrum(1.f));
     }
     else
     {
@@ -375,7 +396,7 @@ void ParseRecord::createShape(const std::string& type, const PropertyList& list)
     m_scene->m_meshes.push_back(mesh);
 
     m_current_material.setZero();
-    m_current_light = make_float3(0.f);    
+    m_current_light = Spectrum(0.f);
 }
 
 void ParseRecord::createReference(const std::string& name, const std::string& id)

@@ -6,7 +6,7 @@
 
 struct PTOptions
 {
-    PTOptions(const uint32 max_path_length = 33)
+    PTOptions(const uint32 max_path_length = 7)
         :m_max_path_length(max_path_length)
     {}
 
@@ -41,4 +41,5 @@ private:
     Buffer<DEVICE_BUFFER, uint8> m_memory_pool;
 
     bool m_reset;
+    uint32 m_iteration_num;
 };

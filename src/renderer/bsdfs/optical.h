@@ -2,6 +2,7 @@
 
 #include "renderer/fwd.h"
 #include "renderer/spectrum.h"
+#include "renderer/sampling.h"
 
 template<typename T>
 inline __device__ __host__
@@ -11,11 +12,28 @@ void Swap(T& a, T& b) {
     b = c;
 }
 
-inline __device__ __host__
-float Clamp(float a, float l, float r) {
-    if (a > r) return r;
-    else if (a < l) return l;
-    else return a;
+inline HOST_DEVICE
+float3 Reflect(float3 wo, float3 n) {
+    return -wo + n * 2 * dot(wo, n);
+}
+
+inline HOST_DEVICE
+bool Refract(
+    float3 wi,
+    float3 n,
+    float eta,
+    float3* wt)
+{
+    // Compute $\cos \theta_\roman{t}$ using Snell's law
+    float cosThetaI = dot(n, wi);
+    float sin2ThetaI = max(0.f, 1 - cosThetaI * cosThetaI);
+    float sin2ThetaT = eta * eta * sin2ThetaI;
+
+    // Handle total internal reflection for transmission
+    if (sin2ThetaT >= 1) return false;
+    float cosThetaT = sqrt(1 - sin2ThetaT);
+    *wt = -wi * eta + float3(n) * (eta * cosThetaI - cosThetaT);
+    return true;
 }
 
 inline HOST_DEVICE

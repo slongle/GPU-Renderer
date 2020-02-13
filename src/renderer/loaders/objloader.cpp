@@ -228,15 +228,15 @@ bool load_obj_mtl_file(
         if (materials[i].illum >= 5) {
             ior = materials[i].ior;
         }
-        Spectrum diffuse = make_float3(
+        Spectrum diffuse = Spectrum(
             static_cast<const float>(materials[i].diffuse[0]),
             static_cast<const float>(materials[i].diffuse[1]),
             static_cast<const float>(materials[i].diffuse[2]));
-        Spectrum specular = make_float3(
+        Spectrum specular = Spectrum(
             static_cast<const float>(materials[i].specular[0]),
             static_cast<const float>(materials[i].specular[1]),
             static_cast<const float>(materials[i].specular[2]));
-        Spectrum emission = make_float3(
+        Spectrum emission = Spectrum(
             static_cast<const float>(materials[i].emission[0]),
             static_cast<const float>(materials[i].emission[1]),
             static_cast<const float>(materials[i].emission[2]));

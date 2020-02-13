@@ -15,8 +15,7 @@ public:
     /// evaluate f = BSDF * cos, BSDF = color / PI
     ///
     HOST_DEVICE
-    Spectrum f(
-        const float2    s,
+    Spectrum eval(
         const float3    wo,
         const float3    wi) const
     {
@@ -27,7 +26,6 @@ public:
     ///
     HOST_DEVICE
     void pdf(
-        const float2    s,
         const float3    wo,
         const float3    wi,
               float*    pdf) const

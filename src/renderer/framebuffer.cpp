@@ -17,9 +17,9 @@ void FrameBuffer::output(const std::string& filename)
     for (int i = 0; i < buffer.size(); i++) {
         Spectrum color = buffer[i] / sample_num[i];
         uint8* ptr_uc = out.data() + i * 3;
-        ptr_uc[0] = (uint8)clamp(255.f * GammaCorrect(color.x) + 0.5f, 0.f, 255.f);
-        ptr_uc[1] = (uint8)clamp(255.f * GammaCorrect(color.y) + 0.5f, 0.f, 255.f);
-        ptr_uc[2] = (uint8)clamp(255.f * GammaCorrect(color.z) + 0.5f, 0.f, 255.f);
+        ptr_uc[0] = (uint8)clamp(255.f * GammaCorrect(color.r) + 0.5f, 0.f, 255.f);
+        ptr_uc[1] = (uint8)clamp(255.f * GammaCorrect(color.g) + 0.5f, 0.f, 255.f);
+        ptr_uc[2] = (uint8)clamp(255.f * GammaCorrect(color.b) + 0.5f, 0.f, 255.f);
     }
 
     WriteImage(filename, m_resolution_x, m_resolution_y, out.data());

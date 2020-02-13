@@ -22,13 +22,13 @@ public:
         float u = phi* INV_2_PI, v = theta * INV_PI;
         int u2 = min(m_width - 1, int(u * m_width)), v2 = min(m_height - 1, int(v * m_height));
         int idx = v2 * m_width + u2;
-        float3 col = m_buffer[idx];
+        Spectrum col = m_buffer[idx];
         return col;
     }
 
 public:
     bool m_has;
-    float3* m_buffer;
+    Spectrum* m_buffer;
     int m_width, m_height;
     Transform m_o2w, m_w2o;
     float3 m_world_center;
@@ -44,8 +44,8 @@ public:
 
 public:
     bool m_has;
-    std::vector<float3> m_cpu_buffer;
-    Buffer<DEVICE_BUFFER, float3> m_gpu_buffer;
+    std::vector<Spectrum> m_cpu_buffer;
+    Buffer<DEVICE_BUFFER, Spectrum> m_gpu_buffer;
     int m_width, m_height;
     Transform m_o2w, m_w2o;
     float3 m_world_center;

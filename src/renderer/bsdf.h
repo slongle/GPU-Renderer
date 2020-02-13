@@ -5,6 +5,31 @@
 
 #include "renderer/bsdfs/lambert.h"
 #include "renderer/bsdfs/specular.h"
+#include "renderer/bsdfs/microfacet.h"
+
+struct BSDFData
+{
+    
+};
+
+/*
+enum BSDFProperty
+{
+    BSDF_REFLECTION = 1 << 0,
+    BSDF_TRANSMISSION = 1 << 1,
+    BSDF_DIFFUSE = 1 << 2,
+    BSDF_GLOSSY = 1 << 3,
+    BSDF_SPECULAR = 1 << 4,
+};
+*/
+
+class BXDF
+{
+public:
+
+};
+
+
 
 enum BSDFType 
 {
@@ -56,23 +81,22 @@ public:
         }
     }
 
-    /// evaluate f = BSDF * cos
+    /// evaluate eval = BSDF * cos
     ///
     HOST_DEVICE
-    Spectrum f(
-        BSDFSample&   bsdf_record,
-        const float2  s) const
+    Spectrum eval(
+        BSDFSample& bsdf_record) const
     {
         float3 local_wo = worldToLocal(bsdf_record.m_wo);
         float3 local_wi = worldToLocal(bsdf_record.m_wi);
         bool reflect = local_wo.z * local_wi.z > 0;        
         if ((m_type & BSDF_SPECULAR) != 0)
         {
-            return m_specular.f(s, local_wo, local_wi);
+            return m_specular.eval(local_wo, local_wi);
         }
         else
         {
-            return reflect ? m_lambert_reflect.f(s, local_wo, local_wi) : make_float3(0.f);
+            return reflect ? m_lambert_reflect.eval(local_wo, local_wi) : Spectrum(0.f);
         }        
     }
 
@@ -80,21 +104,20 @@ public:
     ///
     HOST_DEVICE
     void pdf(
-        BSDFSample&  bsdf_record,
-        const float2 s) const
+        BSDFSample&  bsdf_record) const
     {
         float3 local_wo = worldToLocal(bsdf_record.m_wo);
         float3 local_wi = worldToLocal(bsdf_record.m_wi);
         bool reflect = local_wo.z * local_wi.z > 0;
         if ((m_type & BSDF_SPECULAR) != 0)
         {
-            m_specular.pdf(s, local_wo, local_wi, &bsdf_record.m_pdf);
+            m_specular.pdf(local_wo, local_wi, &bsdf_record.m_pdf);
         }
         else
         {
             if (reflect)
             {
-                m_lambert_reflect.pdf(s, local_wo, local_wi, &bsdf_record.m_pdf);
+                m_lambert_reflect.pdf(local_wo, local_wi, &bsdf_record.m_pdf);
             }
             else
             {
@@ -154,4 +177,5 @@ public:
 
     LambertReflect m_lambert_reflect;
     FresnelSpecular m_specular;
+    MicrofacetConductor m_conductor;
 };
