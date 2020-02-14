@@ -33,11 +33,12 @@ public:
     void reset();
     void resize(uint32 width, uint32 height);
 
+    int2 getResolution() const;
+
 private:
     uint32 m_sample_num;
     PTOptions m_options;
     Scene m_scene;
-    FrameBuffer m_frame_buffer;
     Buffer<DEVICE_BUFFER, uint8> m_memory_pool;
 
     bool m_reset;

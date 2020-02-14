@@ -3,8 +3,7 @@
 #include "renderer/rayqueue.h"
 
 PathTracer::PathTracer(const std::string& filename)
-    : m_scene(filename), m_frame_buffer(600, 800), 
-      m_sample_num(0), m_reset(false), m_iteration_num(0)
+    : m_scene(filename), m_sample_num(0), m_reset(false), m_iteration_num(0)
 {
 }
 
@@ -25,7 +24,7 @@ void PathTracer::initScene()
 
 void PathTracer::initQueue()
 {
-    const size_t pixels_num = m_frame_buffer.size();   
+    const size_t pixels_num = m_scene.m_frame_buffer.size();   
     MemoryArena arena;
     RayQueue input_queue;
     RayQueue scatter_queue;
@@ -44,7 +43,7 @@ void PathTracer::render(uint32* output)
     }
     m_reset = false;
 
-    const size_t pixels_num = m_frame_buffer.size();
+    const size_t pixels_num = m_scene.m_frame_buffer.size();
 
     MemoryArena arena(m_memory_pool.data());
     RayQueue input_queue;
@@ -54,7 +53,7 @@ void PathTracer::render(uint32* output)
     alloc_queues(pixels_num, input_queue, scatter_queue, shadow_queue, arena);
     
     SceneView scene_view = m_scene.view();
-    FrameBufferView frame_buffer_view = m_frame_buffer.view();
+    FrameBufferView frame_buffer_view = m_scene.m_frame_buffer.view();
     PTContext context;
     context.m_bounce = 0;
     context.m_sample_num = m_sample_num ++;
@@ -112,9 +111,9 @@ void PathTracer::render(uint32* output)
 
     if (output)
     {
-        filter(output, frame_buffer_view);
-        CUDA_CHECK(cudaDeviceSynchronize());
+        filter(output, frame_buffer_view);        
     }
+    CUDA_CHECK(cudaDeviceSynchronize());    
 }
 
 void PathTracer::render(uint32 num)
@@ -131,7 +130,7 @@ void PathTracer::render(uint32 num)
 
 void PathTracer::output(const std::string& filename)
 {
-    m_frame_buffer.output(filename);
+    m_scene.m_frame_buffer.output(filename);
 }
 
 void PathTracer::zoom(float d)
@@ -155,14 +154,18 @@ void PathTracer::rotate(float yaw, float pitch)
 void PathTracer::reset()
 {
     m_iteration_num = 0;
-    m_frame_buffer.clear();    
+    m_scene.m_frame_buffer.clear();
 }
 
 void PathTracer::resize(uint32 width, uint32 height)
 {
-    m_frame_buffer.resize(width, height);
+    m_scene.m_frame_buffer.resize(width, height);
     m_scene.m_camera.updateAspectRation((float)(width) / height);    
     initQueue();
     m_reset = true;
 }
 
+int2 PathTracer::getResolution() const
+{
+    return m_scene.m_frame_buffer.getResolution();
+}

@@ -6,6 +6,7 @@
 #include "renderer/triangle.h"
 #include "renderer/material.h"
 #include "renderer/camera.h"
+#include "renderer/framebuffer.h"
 #include "renderer/loaders/propertylist.h"
 
 #include "ext/pugixml/pugixml.hpp"
@@ -60,6 +61,7 @@ public:
     Scene* m_scene;
     std::vector<Triangle>* m_triangles;
     Camera* m_camera;
+    FrameBuffer* m_frame_buffer;
 
 public:
     Material m_current_material;
@@ -67,6 +69,7 @@ public:
     Spectrum m_current_light;
 
     void createCamera(const std::string& type, const PropertyList& list);
+    void createFilm(const std::string& type, const PropertyList& list);
     void createMaterial(const std::string& type, const PropertyList& list);
     void createNamedMaterial(const std::string& id, const std::string& type, const PropertyList& list);
     void createLight(const std::string& type, const PropertyList& list);

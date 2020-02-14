@@ -61,27 +61,10 @@ Ray generate_primary_ray(
     uint2 pixel,
     uint32 idx)
 {
-    float3 dir = normalize(scene.m_camera.m_dir);
-    float3 horizontal_axis = cross(dir, scene.m_camera.m_up);
-    horizontal_axis = normalize(horizontal_axis);
-    float3 vertical_axis = cross(horizontal_axis, dir);
-    vertical_axis = normalize(vertical_axis);
-
-    float3 middle = scene.m_camera.m_eye + dir;
-    float3 horizontal = horizontal_axis * tan(scene.m_camera.m_fov.x * 0.5f);
-    float3 vertical = vertical_axis * tan(scene.m_camera.m_fov.y * 0.5f);
-
     float jitter_x = NextRandom(context.m_in_queue.m_seed[idx]);
     float jitter_y = NextRandom(context.m_in_queue.m_seed[idx]);
-    float3 point_on_film = middle + (2.f * ((pixel.x + jitter_x) / frame_buffer.m_resolution_x) - 1.f) * horizontal +
-        (2.f * ((pixel.y + jitter_y) / frame_buffer.m_resolution_y) - 1.f) * vertical;
 
-
-    Ray ray;
-    ray.o = scene.m_camera.m_eye;
-    ray.d = normalize(point_on_film - scene.m_camera.m_eye);
-    ray.tMin = 0.f;
-    ray.tMax = 1e34f;
+    Ray ray = scene.m_camera.generateRay(pixel.x + jitter_x, frame_buffer.m_resolution_y - 1 - pixel.y + jitter_y);
 
     return ray;
 }

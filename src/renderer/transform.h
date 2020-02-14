@@ -49,6 +49,26 @@ public:
         return ret;
     }
 
+    std::string toString() const {
+        return tfm::format(
+            "[\n"
+            "    [%.3f, %.3f, %.3f, %.3f],\n"
+            "    [%.3f, %.3f, %.3f, %.3f],\n"
+            "    [%.3f, %.3f, %.3f, %.3f],\n"
+            "    [%.3f, %.3f, %.3f, %.3f],\n"
+            "]"
+            , m[0][0], m[0][1], m[0][2], m[0][3]
+            , m[1][0], m[1][1], m[1][2], m[1][3]
+            , m[2][0], m[2][1], m[2][2], m[2][3]
+            , m[3][0], m[3][1], m[3][2], m[3][3]
+        );
+    }
+
+    friend std::ostream& operator << (std::ostream& os, const Matrix4x4& m1) {
+        os << m1.toString();
+        return os;
+    }
+
     friend Matrix4x4 Transpose(const Matrix4x4& m1);
     friend Matrix4x4 Inverse(const Matrix4x4& m1);
 
@@ -98,6 +118,22 @@ public:
     float3 transformVector(const float3& p) const;
     float3 transformNormal(const float3& p) const;
 
+    std::string toString() const {
+        return tfm::format(
+            "Transform[\n"
+            "    M    : %s,\n"
+            "    MInv : %s,\n"
+            "]"
+            , m.toString()
+            , mInv.toString()
+        );
+    }
+
+    friend std::ostream& operator << (std::ostream& os, const Transform& mat) {
+        os << mat.toString();
+        return os;
+    }
+
     friend Transform Inverse(const Transform& t) {
         return Transform(t.mInv, t.m);
     }
@@ -140,9 +176,9 @@ float3 Transform::transformPoint(const float3& p) const
 inline HOST_DEVICE
 float3 Transform::transformVector(const float3& v) const
 {
-    float x = m.m[0][0] * v.x + m.m[0][1] * v.y + m.m[0][2] * v.z + m.m[0][3];
-    float y = m.m[1][0] * v.x + m.m[1][1] * v.y + m.m[1][2] * v.z + m.m[1][3];
-    float z = m.m[2][0] * v.x + m.m[2][1] * v.y + m.m[2][2] * v.z + m.m[2][3];
+    float x = m.m[0][0] * v.x + m.m[0][1] * v.y + m.m[0][2] * v.z;
+    float y = m.m[1][0] * v.x + m.m[1][1] * v.y + m.m[1][2] * v.z;
+    float z = m.m[2][0] * v.x + m.m[2][1] * v.y + m.m[2][2] * v.z;
     return make_float3(x, y, z);
 }
 

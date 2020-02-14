@@ -35,6 +35,7 @@ public:
      * \param wi incident direction in local coordinate
      * \param f 
      */
+    HOST_DEVICE
     void eval(const float3& wo, const float3& wi, Spectrum* f) const;
 
     /**
@@ -43,6 +44,7 @@ public:
      * \param wi incident direction in local coordinate
      * \param pdf probability of (wo, wi)
      */
+    HOST_DEVICE
     void pdf(const float3& wo, const float3& wi, float* pdf) const;
     
     /**
@@ -53,8 +55,9 @@ public:
      * \param f 
      * \param pdf probability of (wo, wi)
      */
+    HOST_DEVICE
     void sample(const float2& u, const float3& wo, float3* wi, Spectrum* f, float* pdf) const;
-
+    HOST_DEVICE
     bool isDelta() const { return (m_property & BXDF_SPECULAR) != 0; }
 
     Spectrum m_color;

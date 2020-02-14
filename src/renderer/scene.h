@@ -8,6 +8,7 @@
 #include "renderer/ray.h"
 #include "renderer/bvh.h"
 #include "renderer/environment.h"
+#include "renderer/framebuffer.h"
 
 class Scene;
 
@@ -51,4 +52,6 @@ public:
 
     std::vector<BVHLinearNode> m_cpu_bvh;
     Buffer<DEVICE_BUFFER, BVHLinearNode> m_gpu_bvh;
+
+    FrameBuffer m_frame_buffer;
 };

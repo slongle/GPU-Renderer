@@ -64,6 +64,7 @@ public:
 
     FrameBufferView view() const { return FrameBufferView(this); }
     size_t size() const { return m_resolution_x * m_resolution_y; }
+    int2 getResolution() const { return make_int2(m_resolution_x, m_resolution_y); }
 
     uint32 m_resolution_x;
     uint32 m_resolution_y;

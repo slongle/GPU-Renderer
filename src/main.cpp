@@ -8,23 +8,17 @@ using std::cout;
 using std::endl;
 
 int main(int argc, char** argv) {
-    std::string filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CornellBox\\CornellBox-Original.obj";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CornellBox\\CornellBox-Sphere.obj";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CornellBox\\CornellBox-Mirror.obj";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CornellBox\\CornellBox-Water.obj";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\mori_knob\\testObj.obj";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\fireplace_room\\fireplace_room.obj";     
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\living-room\\scene.xml";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CBox\\cbox(mesh).xml";  
-    filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\CBox\\cbox(sphere).xml";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\triangle\\triangle.xml";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\dragon\\dragon.obj";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\bmw\\bmw.obj";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\veach-ajar\\scene.xml";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\glass-of-water\\scene.xml";
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\water-caustic\\scene.xml";
-    filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\material-testball\\scene.xml";    
-    //filename = "E:\\Document\\Graphics\\code\\GPU-Renderer\\scene\\veach-bidir\\scene.xml";
+    std::string solutionDir("E:/Document/Graphics/code/GPU-Renderer/scene/");
+    std::vector<std::string> scenes(100);
+    scenes[0] = "CBox/cbox(sphere).xml";
+    scenes[1] = "cornell-box/scene.xml";
+    scenes[2] = "veach-bidir/scene.xml";
+    scenes[3] = "water-caustic/scene.xml";
+    scenes[4] = "glass-of-water/scene.xml";
+    scenes[5] = "material-testball/scene.xml";
+    scenes[6] = "living-room/scene.xml";
+    const std::string filename(solutionDir + scenes[0]);
+    cout << filename << endl;
     std::shared_ptr<PathTracer> pathTracer(new PathTracer(filename));
 
     Gui::init(pathTracer);               

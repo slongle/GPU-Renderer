@@ -70,6 +70,11 @@ void Gui::init(std::shared_ptr<PathTracer> pathTracer)
     renderer = pathTracer;
     renderer->init();
 
+    // Copy resolution
+    int2 resolution = renderer->getResolution();
+    width = resolution.x;
+    height = resolution.y;
+
 #if defined(__linux__)
     setenv("DISPLAY", ":0", 0);
 #endif

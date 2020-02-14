@@ -245,6 +245,7 @@ ParseRecord::ParseRecord(
 {
     m_triangles = &m_scene->m_cpu_triangles;
     m_camera = &m_scene->m_camera;
+    m_frame_buffer = &m_scene->m_frame_buffer;
 
     std::filesystem::path p(filename);
     m_path = p.parent_path();
@@ -289,7 +290,17 @@ ParseRecord::ParseRecord(
 
 void ParseRecord::createCamera(const std::string& type, const PropertyList& list)
 {
-    //m_camera->
+    Transform c2w = list.getTransform("toWorld", Transform());
+    float fov = list.getFloat("fov", 30.f);
+    bool free = list.getBoolean("free", false);
+    m_camera->setup(c2w, fov, m_frame_buffer->m_resolution_x, m_frame_buffer->m_resolution_y, free);            
+}
+
+void ParseRecord::createFilm(const std::string& type, const PropertyList& list)
+{
+    uint32 width = list.getInteger("width", 256);
+    uint32 height = list.getInteger("height", 256);
+    m_frame_buffer->resize(width, height);
 }
 
 void ParseRecord::createMaterial(const std::string& type, const PropertyList& list)
@@ -527,7 +538,7 @@ void HandleTag(
             //RainbowSampler(type, myList);
             break;
         case EFilm:
-            //RainbowFilm(type, myList);
+            record.createFilm(type, myList);
             break;
         case EShape:
             record.createShape(type, myList);
