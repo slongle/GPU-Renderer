@@ -64,7 +64,9 @@ Ray generate_primary_ray(
     float jitter_x = NextRandom(context.m_in_queue.m_seed[idx]);
     float jitter_y = NextRandom(context.m_in_queue.m_seed[idx]);
 
-    Ray ray = scene.m_camera.generateRay(pixel.x + jitter_x, frame_buffer.m_resolution_y - 1 - pixel.y + jitter_y);
+    float x = pixel.x + jitter_x;
+    float y = scene.m_camera.m_free ? pixel.y + jitter_y : frame_buffer.m_resolution_y - 1 - pixel.y + jitter_y;
+    Ray ray = scene.m_camera.generateRay(x, y);
 
     return ray;
 }
@@ -403,6 +405,11 @@ void shade_hit_kernel(
                 shadow_ray.d = light_record.m_p - shadow_ray.o;
                 shadow_ray.tMin = 0.f;
                 shadow_ray.tMax = 0.9999f;
+                //float dist = length(light_record.m_p - vertex.m_p);
+                //shadow_ray.o = vertex.m_p;
+                //shadow_ray.d = normalize(light_record.m_p - vertex.m_p);
+                //shadow_ray.tMin = 1e-4f;
+                //shadow_ray.tMax = dist * (1 - 1e-3f);
 
                 context.m_shadow_queue.append(shadow_ray, out_weight, true, pixel_idx);
             }
@@ -431,8 +438,8 @@ void shade_hit_kernel(
                 Ray scatter_ray;
                 scatter_ray.o = vertex.m_p;
                 scatter_ray.d = bsdf_record.m_wi;
-                scatter_ray.tMin = 1.0e-4f;
-                scatter_ray.tMax = 1e8f;
+                scatter_ray.tMin = 1e-4f;
+                scatter_ray.tMax = 1e18f;
 
                 context.m_scatter_queue.append(scatter_ray, out_weight, out_specular, pixel_idx);
             }            
