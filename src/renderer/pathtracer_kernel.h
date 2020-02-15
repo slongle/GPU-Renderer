@@ -396,20 +396,21 @@ void shade_hit_kernel(
             vertex.m_bsdf.eval(bsdf_record);
             Spectrum f_bsdf = bsdf_record.m_f; 
 
-            Spectrum out_weight = throughput * f_light * f_bsdf / light_record.m_pdf;
+            Spectrum out_weight = light_record.m_pdf == 0.f ? 
+                Spectrum(0.f) : throughput * f_light * f_bsdf / light_record.m_pdf;
 
             if (!isBlack(out_weight))
             {
                 Ray shadow_ray;
-                shadow_ray.o = vertex.m_p - ray.d * 1.0e-4f;
-                shadow_ray.d = light_record.m_p - shadow_ray.o;
-                shadow_ray.tMin = 0.f;
-                shadow_ray.tMax = 0.9999f;
-                //float dist = length(light_record.m_p - vertex.m_p);
-                //shadow_ray.o = vertex.m_p;
-                //shadow_ray.d = normalize(light_record.m_p - vertex.m_p);
-                //shadow_ray.tMin = 1e-4f;
-                //shadow_ray.tMax = dist * (1 - 1e-3f);
+                //shadow_ray.o = vertex.m_p - ray.d * 1.0e-4f;
+                //shadow_ray.d = light_record.m_p - shadow_ray.o;
+                //shadow_ray.tMin = 0.f;
+                //shadow_ray.tMax = 0.9999f;
+                float dist = length(light_record.m_p - vertex.m_p);
+                shadow_ray.o = vertex.m_p;
+                shadow_ray.d = normalize(light_record.m_p - vertex.m_p);
+                shadow_ray.tMin = 1e-4f;
+                shadow_ray.tMax = dist * (1 - 1e-3f);
 
                 context.m_shadow_queue.append(shadow_ray, out_weight, true, pixel_idx);
             }
@@ -421,7 +422,8 @@ void shade_hit_kernel(
             bsdf_record.m_wo = vertex.m_wo;
             vertex.m_bsdf.sample(make_float2(samples[5], samples[6]), bsdf_record);
 
-            Spectrum out_weight = bsdf_record.m_pdf == 0.f ? Spectrum(0.f) : throughput * bsdf_record.m_f / bsdf_record.m_pdf;
+            Spectrum out_weight = bsdf_record.m_pdf == 0.f ? 
+                Spectrum(0.f) : throughput * bsdf_record.m_f / bsdf_record.m_pdf;
             bool out_specular = bsdf_record.m_specular;
 
             if (fmaxf(out_weight) < 1 && context.m_bounce > 3) {

@@ -6,7 +6,7 @@
 
 struct PTOptions
 {
-    PTOptions(const uint32 max_path_length = 7)
+    PTOptions(const uint32 max_path_length = 65)
         :m_max_path_length(max_path_length)
     {}
 
@@ -36,11 +36,11 @@ public:
     int2 getResolution() const;
 
 private:
-    uint32 m_sample_num;
     PTOptions m_options;
     Scene m_scene;
     Buffer<DEVICE_BUFFER, uint8> m_memory_pool;
 
     bool m_reset;
-    uint32 m_iteration_num;
+    uint32 m_sample_num;
+    uint64 m_sum_bounce;
 };

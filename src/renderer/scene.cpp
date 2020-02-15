@@ -12,6 +12,7 @@ Scene::Scene(const std::string& filename)
             m_cpu_triangles.emplace_back(j * 3, mesh_view);
         }
     }
+
     for (int i = 0; i < m_cpu_triangles.size(); i++) {
         if (m_cpu_triangles[i].m_mesh.m_material.isEmission()) {
             m_cpu_lights.push_back(m_cpu_triangles[i]);

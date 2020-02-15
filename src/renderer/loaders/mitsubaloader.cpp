@@ -159,6 +159,7 @@ void create_rectangle_triangles(
     index.push_back(make_int3(2, 2, 0));
     index.push_back(make_int3(3, 3, 0));
     index.push_back(make_int3(0, 0, 0));
+    
 
     mesh->m_triangle_num = 2;
     mesh->m_cpu_p = p;
@@ -178,7 +179,7 @@ void create_sphere_triangles(
 
     float radius = list.getFloat("radius", 1);
 
-    int subdiv = list.getInteger("subdiv", 10);
+    int subdiv = list.getInteger("subdiv", 30);
     int nLatitude = subdiv;
     int nLongitude = 2 * subdiv;
     float latitudeDeltaAngle = PI / nLatitude;
@@ -203,21 +204,21 @@ void create_sphere_triangles(
     for (int i = 0; i < nLongitude; i++) {
         int a = i + 1, b = a + 1;
         if (i == nLongitude - 1) b = 1;
-        index.push_back(make_int3(a, a, -1));
-        index.push_back(make_int3(b, b, -1));
-        index.push_back(make_int3(0, 0, -1));
+        index.push_back(make_int3(a, -1, a));
+        index.push_back(make_int3(b, -1, b));
+        index.push_back(make_int3(0, -1, 0));
     }
     
     for (int i = 2; i < nLatitude; i++) {
         for (int j = 0; j < nLongitude; j++) {
             int a = (i - 1) * nLongitude + j + 1, b = a + 1, c = a - nLongitude, d = c + 1;
             if (j == nLongitude - 1) b = (i - 1) * nLongitude + 1, d = b - nLongitude;
-            index.push_back(make_int3(a, a, -1));
-            index.push_back(make_int3(b, b, -1));
-            index.push_back(make_int3(c, c, -1));
-            index.push_back(make_int3(c, c, -1));
-            index.push_back(make_int3(b, b, -1));
-            index.push_back(make_int3(d, d, -1));
+            index.push_back(make_int3(a, -1, a));
+            index.push_back(make_int3(b, -1, b));
+            index.push_back(make_int3(c, -1, c));
+            index.push_back(make_int3(c, -1, c));
+            index.push_back(make_int3(b, -1, b));
+            index.push_back(make_int3(d, -1, d));
         }
     }
     
@@ -225,12 +226,12 @@ void create_sphere_triangles(
     for (int i = 0; i < nLongitude; i++) {
         int a = (nLatitude - 2) * nLongitude + i + 1, b = a + 1;
         if (i == nLongitude - 1) b = (nLatitude - 2) * nLongitude + 1;
-        index.push_back(make_int3(a, a, -1));
-        index.push_back(make_int3(bottomIdx, bottomIdx, -1));
-        index.push_back(make_int3(b, b, -1));
+        index.push_back(make_int3(a, -1, a));
+        index.push_back(make_int3(bottomIdx, -1, bottomIdx));
+        index.push_back(make_int3(b, -1, b));
     }
 
-    mesh->m_triangle_num = nLatitude * nLongitude;
+    mesh->m_triangle_num = (nLatitude - 1) * nLongitude * 2; 
     mesh->m_cpu_p = p;
     mesh->m_cpu_n = n;
     mesh->m_cpu_uv = uv;
@@ -443,7 +444,7 @@ void ParseRecord::createShape(const std::string& type, const PropertyList& list)
     }
     for (uint32 i = 0; i < mesh.m_cpu_n.size(); i++)
     {
-        mesh.m_cpu_n[i] = o2w.transformNormal(mesh.m_cpu_n[i]);
+        mesh.m_cpu_n[i] = normalize(o2w.transformNormal(mesh.m_cpu_n[i]));
     }
     mesh.m_material = m_current_material;    
 

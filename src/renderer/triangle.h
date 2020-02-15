@@ -58,9 +58,9 @@ public:
     HOST_DEVICE
     void getNormals(float3& n0, float3& n1, float3& n2) const
     {
-        n0 = m_mesh.m_n[m_mesh.m_index[m_index + 0].y];
-        n1 = m_mesh.m_n[m_mesh.m_index[m_index + 1].y];
-        n2 = m_mesh.m_n[m_mesh.m_index[m_index + 2].y];
+        n0 = m_mesh.m_n[m_mesh.m_index[m_index + 0].z];
+        n1 = m_mesh.m_n[m_mesh.m_index[m_index + 1].z];
+        n2 = m_mesh.m_n[m_mesh.m_index[m_index + 2].z];
     }
 
     HOST_DEVICE
@@ -91,11 +91,11 @@ public:
 
         float3 n = cross(p1 - p0, p2 - p0);
         record->m_normal_g = normalize(n);
-        if (m_mesh.m_index[m_index].y != -1)
+        if (m_mesh.m_index[m_index].z != -1)
         {
             float3 n0, n1, n2;
             getNormals(n0, n1, n2);
-            record->m_normal_s = n0 * (1 - uv.x - uv.y) + n1 * uv.x + n2 * uv.y;
+            record->m_normal_s = normalize(n0 * (1 - uv.x - uv.y) + n1 * uv.x + n2 * uv.y);
         }
         else
         {

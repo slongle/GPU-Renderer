@@ -39,7 +39,9 @@ void LambertReflectSample(
     const Spectrum& color)
 {
     *f = *pdf = 0.f;
+
     *wi = CosineSampleHemisphere(u);
+    if (wo.z < 0) wi->z *= -1;
     *f = color * INV_PI * fabsf(wi->z);
     *pdf = fabsf(wi->z) * INV_PI;
 }

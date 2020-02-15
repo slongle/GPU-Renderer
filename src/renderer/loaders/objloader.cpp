@@ -89,18 +89,18 @@ bool load_obj_file(
 
             indices.push_back(make_int3(
                 shapes[i].mesh.indices[index_offset + 0].vertex_index,
-                shapes[i].mesh.indices[index_offset + 0].normal_index,
-                shapes[i].mesh.indices[index_offset + 0].texcoord_index));
+                shapes[i].mesh.indices[index_offset + 0].texcoord_index,
+                shapes[i].mesh.indices[index_offset + 0].normal_index));
 
             indices.push_back(make_int3(
                 shapes[i].mesh.indices[index_offset + 1].vertex_index,
-                shapes[i].mesh.indices[index_offset + 1].normal_index,
-                shapes[i].mesh.indices[index_offset + 1].texcoord_index));
+                shapes[i].mesh.indices[index_offset + 1].texcoord_index,
+                shapes[i].mesh.indices[index_offset + 1].normal_index));
 
             indices.push_back(make_int3(
                 shapes[i].mesh.indices[index_offset + 2].vertex_index,
-                shapes[i].mesh.indices[index_offset + 2].normal_index,
-                shapes[i].mesh.indices[index_offset + 2].texcoord_index));
+                shapes[i].mesh.indices[index_offset + 2].texcoord_index,
+                shapes[i].mesh.indices[index_offset + 2].normal_index));
 
             nTriangles++;
             index_offset += fnum;

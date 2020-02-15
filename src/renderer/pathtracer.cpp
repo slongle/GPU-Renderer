@@ -3,7 +3,7 @@
 #include "renderer/rayqueue.h"
 
 PathTracer::PathTracer(const std::string& filename)
-    : m_scene(filename), m_sample_num(0), m_reset(false), m_iteration_num(0)
+    : m_scene(filename), m_sample_num(0), m_sum_bounce(0), m_reset(false)
 {
 }
 
@@ -71,7 +71,8 @@ void PathTracer::render(uint32* output)
         //printf("%u\n", context.m_bounce);
 
         uint32 in_queue_size;
-        CUDA_CHECK( cudaMemcpy(&in_queue_size, context.m_in_queue.m_size, sizeof(uint32), cudaMemcpyDeviceToHost) );
+        CUDA_CHECK( cudaMemcpy(&in_queue_size, context.m_in_queue.m_size, sizeof(uint32), cudaMemcpyDeviceToHost) );        
+        m_sum_bounce += in_queue_size;
         if (in_queue_size == 0) 
         {
             break;
@@ -95,7 +96,7 @@ void PathTracer::render(uint32* output)
 
 
         uint32 shadow_queue_size;
-        CUDA_CHECK(cudaMemcpy(&shadow_queue_size, context.m_shadow_queue.m_size, sizeof(uint32), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(&shadow_queue_size, context.m_shadow_queue.m_size, sizeof(uint32), cudaMemcpyDeviceToHost));        
         // Solve occlude and Accumulate radiance
         {
             trace_shadow(scene_view, shadow_queue_size, context.m_shadow_queue.m_rays, context.m_shadow_queue.m_hits);
@@ -113,7 +114,9 @@ void PathTracer::render(uint32* output)
     {
         filter(output, frame_buffer_view);        
     }
-    CUDA_CHECK(cudaDeviceSynchronize());    
+    CUDA_CHECK(cudaDeviceSynchronize());
+
+    //std::cout << (float)m_sum_bounce / (m_scene.m_frame_buffer.size() * m_sample_num) << std::endl;
 }
 
 void PathTracer::render(uint32 num)
@@ -124,7 +127,7 @@ void PathTracer::render(uint32 num)
         fprintf(stderr, "\r%f%%", 100.f * (i + 1) / num);
         render();
     }
-    output(std::to_string(m_iteration_num + num) + "spp.png");
+    output(std::to_string(m_sample_num + num) + "spp.png");
     exit(0);    
 }
 
@@ -153,7 +156,8 @@ void PathTracer::rotate(float yaw, float pitch)
 
 void PathTracer::reset()
 {
-    m_iteration_num = 0;
+    m_sample_num = 0;
+    m_sum_bounce = 0;
     m_scene.m_frame_buffer.clear();
 }
 

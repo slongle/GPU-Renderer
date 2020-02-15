@@ -28,18 +28,18 @@ public:
         const float3 dp_du = p0 - p2;
         const float3 dp_dv = p1 - p2;
         m_normal_g = normalize(cross(dp_du, dp_dv));
-        if (triangle->m_mesh.m_index[triangle->m_index].y != -1)
+        if (triangle->m_mesh.m_index[triangle->m_index].z != -1)
         {
             float3 n0, n1, n2;
             triangle->getNormals(n0, n1, n2);
-            m_normal_s = n0 * (1 - hit.u - hit.v) + n1 * hit.u + n2 * hit.v;
+            m_normal_s = normalize(n0 * (1 - hit.u - hit.v) + n1 * hit.u + n2 * hit.v);
         }
         else
         {
             m_normal_s = m_normal_g;
         }
         //m_normal_s = m_normal_g;
-
+        
         m_wo = -normalize(ray.d);
 
         const Material& material = triangle->m_mesh.m_material;

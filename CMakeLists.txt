@@ -87,6 +87,7 @@ set(sources
 	src/renderer/bsdf.h
 	src/renderer/bvh.h
 	src/renderer/camera.h
+	src/renderer/environment.cpp
 	src/renderer/environment.h
 	src/renderer/framebuffer.cpp
 	src/renderer/framebuffer.h

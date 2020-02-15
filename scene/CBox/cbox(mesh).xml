@@ -6,6 +6,7 @@
         <integer name="delta" value="1"/>
 	</integrator>
 	<sensor type="perspective">
+        <bool name="free" value="true"/>
         <float name="fov" value="27.7856"/>
 		<transform name="toWorld">
             <lookat target="0, 0.893051, 4.41198" origin="0, 0.919769, 5.41159" up="0, 1, 0"/>
