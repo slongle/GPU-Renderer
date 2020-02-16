@@ -8,6 +8,7 @@ struct LightSample
     LightSample() {}
 
     uint32 m_light_id;
+    float2 m_uv;
     float3 m_p;
     float3 m_normal_s;
     float3 m_normal_g;

@@ -56,6 +56,7 @@ public:
         bool reflect = local_wo.z * local_wi.z > 0;    
 
         m_bxdfs[0].eval(local_wo, local_wi, &bsdf_record.m_f);
+        bsdf_record.m_specular = m_bxdfs[0].isDelta();
     }
 
     /**
@@ -71,6 +72,7 @@ public:
         bool reflect = local_wo.z * local_wi.z > 0;
 
         m_bxdfs[0].pdf(local_wo, local_wi, &bsdf_record.m_pdf);
+        bsdf_record.m_specular = m_bxdfs[0].isDelta();
     }
 
     /**

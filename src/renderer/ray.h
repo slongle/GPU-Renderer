@@ -14,5 +14,6 @@ struct Hit
 {
     float t;
     int triangle_id;
-    float u, v;
+    float u;
+    float v;
 };
