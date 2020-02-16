@@ -41,5 +41,11 @@
 
 ![](images/dragon_1000spp_denoise.png)
 
+![](images/veach-mis_2410spp.png)
 
+![](images/glass_1000spp.png)
+
+![](images/gold_1000spp.png)
+
+![](images/roughconduct_0.10_1000spp.png)
 
