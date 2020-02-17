@@ -1,6 +1,7 @@
 #pragma once
 
 #include "fwd.h"
+#include "ray.h"
 
 struct LightSample
 {
@@ -127,11 +128,10 @@ public:
     Frame() {}
     HOST_DEVICE
     Frame(
-        const float3& normal_g,
-        const float3& normal_s)
-        : m_normal_g(normal_g), m_normal_s(normal_s)
+        const Differential& geom)
+        : m_normal_g(geom.normal_g), m_normal_s(geom.normal_s)
     {
-        const float3 n = normal_s;
+        const float3 n = m_normal_s;
         if (fabsf(n.x) > fabsf(n.y)) {
             float inv_len = 1.f / sqrtf(n.x * n.x + n.z * n.z);
             m_s = make_float3(n.z * inv_len, 0, -n.x * inv_len);

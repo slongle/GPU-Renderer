@@ -385,7 +385,7 @@ void shade_hit_without_MIS_kernel(
         {
             if (triangle.m_mesh.m_material.isEmission())
             {
-                Spectrum f_light = dot(vertex.m_wo, vertex.m_normal_s) > 0 ?
+                Spectrum f_light = dot(vertex.m_wo, vertex.m_geom.normal_s) > 0 ?
                     triangle.m_mesh.m_material.m_emission : Spectrum(0.f);
                 frame_buffer.addRadiance(pixel_idx, throughput * f_light);
             }
@@ -397,7 +397,7 @@ void shade_hit_without_MIS_kernel(
             LightSample light_record;
             sample_lights(scene, &light_record, make_float3(samples[0], samples[1], samples[2]));
 
-            float3 wi = light_record.m_p - vertex.m_p;
+            float3 wi = light_record.m_p - vertex.m_geom.p;
             float d2 = square_length(wi);
             float d = sqrtf(d2);
             wi /= d;
@@ -419,7 +419,7 @@ void shade_hit_without_MIS_kernel(
             if (!isBlack(out_weight))
             {
                 Ray shadow_ray;
-                shadow_ray.o = vertex.m_p - ray.d * 1.0e-4f;
+                shadow_ray.o = vertex.m_geom.p - ray.d * 1.0e-4f;
                 shadow_ray.d = light_record.m_p - shadow_ray.o;
                 shadow_ray.tMin = 0.f;
                 shadow_ray.tMax = 0.9999f;
@@ -455,7 +455,7 @@ void shade_hit_without_MIS_kernel(
             if (!isBlack(out_weight))
             {
                 Ray scatter_ray;
-                scatter_ray.o = vertex.m_p;
+                scatter_ray.o = vertex.m_geom.p;
                 scatter_ray.d = bsdf_record.m_wi;
                 scatter_ray.tMin = 1e-4f;
                 scatter_ray.tMax = 1e18f;
@@ -526,7 +526,7 @@ void shade_hit_with_MIS_kernel(
         {
             if (triangle.isLight())
             {
-                Spectrum f_light = dot(vertex.m_wo, vertex.m_normal_s) > 0 ?
+                Spectrum f_light = dot(vertex.m_wo, vertex.m_geom.normal_s) > 0 ?
                     triangle.m_mesh.m_material.m_emission : Spectrum(0.f);
                 frame_buffer.addRadiance(pixel_idx, throughput * f_light);
             }
@@ -540,7 +540,7 @@ void shade_hit_with_MIS_kernel(
             LightSample light_record;
             sample_lights(scene, &light_record, make_float3(samples[0], samples[1], samples[2]));
             // Calculate wi and pdf
-            float3 wi = light_record.m_p - vertex.m_p;
+            float3 wi = light_record.m_p - vertex.m_geom.p;
             float d2 = square_length(wi);
             float d = sqrtf(d2);
             wi /= d;
@@ -578,7 +578,7 @@ void shade_hit_with_MIS_kernel(
                 {
                     // Add shadow ray
                     Ray shadow_ray;
-                    shadow_ray.o = vertex.m_p - ray.d * 1.0e-4f;
+                    shadow_ray.o = vertex.m_geom.p - ray.d * 1.0e-4f;
                     shadow_ray.d = light_record.m_p - shadow_ray.o;
                     shadow_ray.tMin = 0.f;
                     shadow_ray.tMax = 0.9999f;
@@ -605,7 +605,7 @@ void shade_hit_with_MIS_kernel(
             {
                 // Add Bounce ray
                 Ray scatter_ray;
-                scatter_ray.o = vertex.m_p;
+                scatter_ray.o = vertex.m_geom.p;
                 scatter_ray.d = bsdf_record.m_wi;
                 scatter_ray.tMin = 1e-4f;
                 scatter_ray.tMax = 1e38f;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "renderer/ray.h"
 #include "renderer/material.h"
 #include "renderer/bsdfs/bxdf.h"
 
@@ -13,10 +14,9 @@ public:
 
     HOST_DEVICE
     BSDF(
-        const float3& normal_g,
-        const float3& normal_s,
+        const Differential& geom,
         const Material& material)
-    : m_frame(normal_g, normal_s), m_bxdf_num(0)
+    : m_frame(geom), m_bxdf_num(0)
     { 
         if (material.m_type == MATERIAL_DIFFUSE)
         {

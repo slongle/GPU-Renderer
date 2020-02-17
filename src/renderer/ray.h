@@ -17,3 +17,11 @@ struct Hit
     float u;
     float v;
 };
+
+struct Differential
+{
+    float3 p;
+    float3 normal_s;
+    float3 normal_g;
+    float3 dpdu, dpdv;
+};

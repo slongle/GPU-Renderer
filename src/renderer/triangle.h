@@ -4,6 +4,7 @@
 #include "renderer/material.h"
 #include "renderer/sampling.h"
 #include "renderer/aabb.h"
+#include "renderer/ray.h"
 
 class TriangleMesh;
 
@@ -80,55 +81,56 @@ public:
     }
 
     HOST_DEVICE
-    void sample(
-        LightSample* record,
-        const float2 s) const
+    void setupDifferential(
+        const float2& uv,
+        Differential* geom) const
     {
         float3 p0, p1, p2;
         getVertices(p0, p1, p2);
-        float2 uv = UniformSampleTriangle(s);
-        record->m_p = p0 * (1 - uv.x - uv.y) + p1 * uv.x + p2 * uv.y;
+        geom->p = p0 * (1 - uv.x - uv.y) + p1 * uv.x + p2 * uv.y;
 
-        float3 n = cross(p1 - p0, p2 - p0);
-        record->m_normal_g = normalize(n);
+        geom->dpdu = p0 - p2;
+        geom->dpdv = p1 - p2;
+        geom->normal_g = normalize(cross(geom->dpdu, geom->dpdv));
         if (m_mesh.m_index[m_index].z != -1)
         {
             float3 n0, n1, n2;
             getNormals(n0, n1, n2);
-            record->m_normal_s = normalize(n0 * (1 - uv.x - uv.y) + n1 * uv.x + n2 * uv.y);
+            geom->normal_s = normalize(n0 * (1 - uv.x - uv.y) + n1 * uv.x + n2 * uv.y);
         }
         else
         {
-            record->m_normal_s = record->m_normal_g;
+            geom->normal_s = geom->normal_g;
         }
-        //record->m_normal_s = record->m_normal_g;
+        //geom->normal_s = geom->normal_g;
+    }
 
-        record->m_pdf = 2.f / length(n);
+    HOST_DEVICE
+    void sample(
+        LightSample* record,
+        const float2 s) const
+    {
+        Differential geom;
+        float2 uv = UniformSampleTriangle(s);
+        setupDifferential(uv, &geom);
+
+        record->m_uv = uv;
+        record->m_p = geom.p;
+        record->m_normal_g = geom.normal_g;
+        record->m_normal_s = geom.normal_s;
+        record->m_pdf = 1.f / area();
     }
 
     HOST_DEVICE
     void pdf(LightSample& record) const
     {
-        float3 p0, p1, p2;
-        getVertices(p0, p1, p2);
-        float2 uv = record.m_uv;
-        record.m_p = p0 * (1 - uv.x - uv.y) + p1 * uv.x + p2 * uv.y;
+        Differential geom;
+        setupDifferential(record.m_uv, &geom);
 
-        float3 n = cross(p1 - p0, p2 - p0);
-        record.m_normal_g = normalize(n);
-        if (m_mesh.m_index[m_index].z != -1)
-        {
-            float3 n0, n1, n2;
-            getNormals(n0, n1, n2);
-            record.m_normal_s = normalize(n0 * (1 - uv.x - uv.y) + n1 * uv.x + n2 * uv.y);
-        }
-        else
-        {
-            record.m_normal_s = record.m_normal_g;
-        }
-        //record->m_normal_s = record->m_normal_g;
-
-        record.m_pdf = 2.f / length(n);
+        record.m_p = geom.p;
+        record.m_normal_g = geom.normal_g;
+        record.m_normal_s = geom.normal_s;
+        record.m_pdf = 1.f / area();
     }
 
     HOST_DEVICE
