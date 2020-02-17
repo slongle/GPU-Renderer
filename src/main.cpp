@@ -20,9 +20,11 @@ int main(int argc, char** argv) {
     scenes[7] = "material-testball/scene.xml";
     scenes[8] = "living-room/scene.xml";
     scenes[9] = "staircase/scene.xml";
-    const std::string filename(solutionDir + scenes[7]);
+    const std::string filename(solutionDir + scenes[0]);
     cout << filename << endl;
     std::shared_ptr<PathTracer> pathTracer(new PathTracer(filename));
+
+    pathTracer->render(1000);
 
     Gui::init(pathTracer);               
     Gui::mainLoop();

@@ -37,23 +37,28 @@ void PathTracer::initQueue()
 
 void PathTracer::render(uint32* output)
 {
+    // Reset Renderer
     if (m_reset)
     {
         reset();
     }
     m_reset = false;
 
+    // Calculate queue size
     const size_t pixels_num = m_scene.m_frame_buffer.size();
 
+    // Allocate queues
     MemoryArena arena(m_memory_pool.data());
     RayQueue input_queue;
     RayQueue scatter_queue;
     RayQueue shadow_queue;
-
     alloc_queues(pixels_num, input_queue, scatter_queue, shadow_queue, arena);
 
+    // Initialize data view
     SceneView scene_view = m_scene.view();
     FrameBufferView frame_buffer_view = m_scene.m_frame_buffer.view();
+
+    // Initialize context
     PTContext context;
     context.m_bounce = 0;
     context.m_sample_num = m_sample_num++;
@@ -61,6 +66,7 @@ void PathTracer::render(uint32* output)
     context.m_scatter_queue = scatter_queue;
     context.m_shadow_queue = shadow_queue;
 
+    // Generate primary rays
     generate_primary_rays(context, scene_view, frame_buffer_view);
     CUDA_CHECK(cudaDeviceSynchronize());
 
@@ -73,12 +79,15 @@ void PathTracer::render(uint32* output)
             CUDA_CHECK(cudaDeviceSynchronize());
         }
     }
+
+    // Bounce loop
     for (context.m_bounce = 0;
         context.m_bounce < m_options.m_max_path_length;
         context.m_bounce++)
     {
         //printf("%u\n", context.m_bounce);
 
+        // Check exist ray number
         uint32 in_queue_size;
         CUDA_CHECK(cudaMemcpy(&in_queue_size, context.m_in_queue.m_size, sizeof(uint32), cudaMemcpyDeviceToHost));
         m_sum_bounce += in_queue_size;
@@ -87,7 +96,7 @@ void PathTracer::render(uint32* output)
             break;
         }
 
-        // Reset
+        // Reset scatter and shadow queue size
         cudaMemset(context.m_scatter_queue.m_size, 0, sizeof(uint32));
         cudaMemset(context.m_shadow_queue.m_size, 0, sizeof(uint32));
 
@@ -101,28 +110,35 @@ void PathTracer::render(uint32* output)
         uint32 shadow_queue_size;
         CUDA_CHECK(cudaMemcpy(&shadow_queue_size, context.m_shadow_queue.m_size, sizeof(uint32), cudaMemcpyDeviceToHost));
         {
+            // Trace shadow ray
             trace_shadow(scene_view, shadow_queue_size, context.m_shadow_queue.m_rays, context.m_shadow_queue.m_hits);
             CUDA_CHECK(cudaDeviceSynchronize());
+            // Accumulate light sampling contribution
             accumulate_light_sampling_contribution(shadow_queue_size, context, scene_view, frame_buffer_view);
             CUDA_CHECK(cudaDeviceSynchronize());
         }
 
-        // Sovle intersect and Accumulate BSDF sampling contribution
+        // Solve intersect and Accumulate BSDF sampling contribution
         uint32 scatter_queue_size;
         CUDA_CHECK(cudaMemcpy(&scatter_queue_size, context.m_scatter_queue.m_size, sizeof(uint32), cudaMemcpyDeviceToHost));
         {
+            // Trace ray
             trace(scene_view, scatter_queue_size, context.m_scatter_queue.m_rays, context.m_scatter_queue.m_hits);
             CUDA_CHECK(cudaDeviceSynchronize());
-            // Accumulate
+            // Accumulate BSDF sampling contribution
             accumulate_BSDF_sampling_contribution(scatter_queue_size, context, scene_view, frame_buffer_view);
             CUDA_CHECK(cudaDeviceSynchronize());
         }
 
+        // Swap scatter and in queue
         std::swap(context.m_scatter_queue, context.m_in_queue);
     }
 
+    // Add sample number
     finish_sample(frame_buffer_view);
+    CUDA_CHECK(cudaDeviceSynchronize());
 
+    // Filter for output
     if (output)
     {
         filter(output, frame_buffer_view);
@@ -133,12 +149,12 @@ void PathTracer::render(uint32* output)
 void PathTracer::render(uint32 num)
 {
     init();
-    for (int i = 0; i < num; i++)
+    for (uint32 i = 0; i < num; i++)
     {
         fprintf(stderr, "\r%f%%", 100.f * (i + 1) / num);
         render();
     }
-    output(std::to_string(m_sample_num + num) + "spp.png");
+    output(std::to_string(m_sample_num) + "spp.png");
     exit(0);
 }
 

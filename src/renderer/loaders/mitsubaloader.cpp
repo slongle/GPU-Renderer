@@ -123,24 +123,6 @@ void create_rectangle_triangles(
     std::vector<float2> uv;
     std::vector<int3> index;
 
-    /*
-    p.push_back(make_float3(-1.000000, 0.000000, 1.000000));
-    p.push_back(make_float3(1.000000, 0.000000, 1.000000));
-    p.push_back(make_float3(-1.000000, 0.000000, -1.000000));
-    p.push_back(make_float3(1.000000, 0.000000, -1.000000));
-    uv.push_back(make_float2(0.000000, 0.000000));
-    uv.push_back(make_float2(1.000000, 0.000000));
-    uv.push_back(make_float2(1.000000, 1.000000));
-    uv.push_back(make_float2(0.000000, 1.000000));
-    n.push_back(make_float3(0.0000, 1.0000, 0.0000));
-    index.push_back(make_int3(0, 0, 0));
-    index.push_back(make_int3(1, 1, 0));
-    index.push_back(make_int3(3, 2, 0));
-    index.push_back(make_int3(0, 0, 0));
-    index.push_back(make_int3(3, 2, 0));
-    index.push_back(make_int3(2, 3, 0));
-    */
-
     p.push_back(make_float3(-1, -1, 0));
     p.push_back(make_float3(1, -1, 0));
     p.push_back(make_float3(1, 1, 0));
@@ -287,6 +269,7 @@ ParseRecord::ParseRecord(
     m_tags["scale"] = EScale;
     m_tags["rotate"] = ERotate;
     m_tags["matrix"] = EMatrix;
+    m_tags["texture"] = ETexture;
 }
 
 void ParseRecord::createCamera(const std::string& type, const PropertyList& list)
@@ -309,7 +292,7 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
     m_current_material.setZero();
     if (type == "diffuse")
     {
-        m_current_material.m_color = list.getColor("reflectance", Spectrum(0.5f));
+        m_current_material.m_color = list.getColor("reflectance", Spectrum(0.3f));
         m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
     else if (type == "mirror")
@@ -343,7 +326,7 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
     }
     else if (type == "roughconductor")
     {
-        Spectrum color = list.getColor("specularReflectance", Spectrum(1.));
+        Spectrum color = list.getColor("specularReflectance", Spectrum(0.3));
         Spectrum etaI, etaT;
         if (list.findColor("etaI"))
         {
@@ -399,7 +382,9 @@ void ParseRecord::createLight(const std::string& type, const PropertyList& list)
     assert(type == "area" || type == "envmap");
     if (type == "area")
     {
-        m_current_light = list.getColor("radiance", Spectrum(1.f));
+        float scale = list.getFloat("scale", 1.f);
+        Spectrum radiance = list.getColor("radiance", Spectrum(1.f));
+        m_current_light = radiance * scale;
     }
     else
     {
@@ -656,6 +641,10 @@ void HandleTag(
         case EMatrix: {
             const Matrix4x4 mat = toMatrix(value);
             m_transform *= Transform(mat);
+            break;
+        }
+        case ETexture: {
+            //parentList.setTexture
             break;
         }
         }

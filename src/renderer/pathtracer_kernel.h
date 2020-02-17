@@ -519,9 +519,12 @@ void shade_hit_with_MIS_kernel(
         //frame_buffer.addRadiance(pixel_idx, Spectrum(vertex.m_normal_s));
         //return;
 
+        // Handle the situation when
+        // 1. hit emitter at the first bounce
+        // 2. hit specular material
         if (context.m_bounce == 0 || specular)
         {
-            if (triangle.m_mesh.m_material.isEmission())
+            if (triangle.isLight())
             {
                 Spectrum f_light = dot(vertex.m_wo, vertex.m_normal_s) > 0 ?
                     triangle.m_mesh.m_material.m_emission : Spectrum(0.f);
@@ -530,45 +533,50 @@ void shade_hit_with_MIS_kernel(
         }
 
         // Next Event Estimate with Multiple Importance Sampling
-        // Sampling Lights
+        // Sample Lights
         if (!vertex.m_bsdf.isDelta() && scene.m_lights_num > 0)
         {
+            // Sample light
             LightSample light_record;
             sample_lights(scene, &light_record, make_float3(samples[0], samples[1], samples[2]));
-
+            // Calculate wi and pdf
             float3 wi = light_record.m_p - vertex.m_p;
             float d2 = square_length(wi);
             float d = sqrtf(d2);
             wi /= d;
-
-            float a = light_record.m_pdf;
-            float b = fabsf(dot(wi, light_record.m_normal_s));
+            // Add G term in pdf
             light_record.m_pdf *= d2 / fabsf(dot(wi, light_record.m_normal_s));
+            // If dot term is zero, terminate light sampling
             if (isinf(light_record.m_pdf))
             {
                 light_record.m_pdf = 0.f;
             }
-
+            // Evaluate Le
             Spectrum f_light = dot(-wi, light_record.m_normal_s) > 0 ?
-                scene.m_lights[light_record.m_light_id].m_mesh.m_material.m_emission : Spectrum(0.f);
+                scene.m_lights[light_record.m_light_id].Le() : Spectrum(0.f);
 
+            // Evaluate BSDF's f
             BSDFSample bsdf_record;
             bsdf_record.m_wo = vertex.m_wo;
             bsdf_record.m_wi = wi;
             vertex.m_bsdf.eval(bsdf_record);
             Spectrum f_bsdf = bsdf_record.m_f;
-
+            // Evaluate BSDF's pdf
             vertex.m_bsdf.pdf(bsdf_record);
+
+            // Calculate MIS weight
             float light_pdf = light_record.m_pdf;
             float BSDF_pdf = bsdf_record.m_pdf;
             float weight = PowerHeuristic(light_pdf, BSDF_pdf);
 
+            // Avoid divide zero
             if (light_pdf > 0.f)
-            {                    
+            {
+                // Light sampling contribution
                 Spectrum out_weight = throughput * f_light * f_bsdf * weight / light_pdf;
-
                 if (!isBlack(out_weight))
                 {
+                    // Add shadow ray
                     Ray shadow_ray;
                     shadow_ray.o = vertex.m_p - ray.d * 1.0e-4f;
                     shadow_ray.d = light_record.m_p - shadow_ray.o;
@@ -582,16 +590,20 @@ void shade_hit_with_MIS_kernel(
 
         // Sampling BSDF and Scatter
         {
+            // Sample BSDF
             BSDFSample bsdf_record;
             bsdf_record.m_wo = vertex.m_wo;
             vertex.m_bsdf.sample(make_float2(samples[5], samples[6]), bsdf_record);
-
+            // Calculate throughput
             Spectrum out_weight = bsdf_record.m_pdf == 0.f ?
                 Spectrum(0.f) : throughput * bsdf_record.m_f / bsdf_record.m_pdf;
+            // Specular
             bool out_specular = bsdf_record.m_specular;
 
+            // Terminate iff throughput is zero
             if (!isBlack(out_weight))
             {
+                // Add Bounce ray
                 Ray scatter_ray;
                 scatter_ray.o = vertex.m_p;
                 scatter_ray.d = bsdf_record.m_wi;
@@ -644,6 +656,7 @@ void accumulate_light_sampling_contribution_kernel(
     const uint32& pixel_idx = context.m_shadow_queue.m_idx[idx];
     const Spectrum& L = context.m_shadow_queue.m_weight[idx];
 
+    // Hit
     if (hit.triangle_id == -1)
     {
         frame_buffer.addRadiance(pixel_idx, L);
@@ -689,38 +702,46 @@ void accumulate_BSDF_sampling_contribution_kernel(
     bool specular = context.m_scatter_queue.m_specular[idx];
     uint32& seed = context.m_scatter_queue.m_seed[idx];
 
+    // Russian roulette sample
     float sample = NextRandom(seed);
 
+    // Hit and no-specular
     if (hit.triangle_id != -1 && !specular)
     {
+        // Hit light
         if (scene.m_triangles[hit.triangle_id].isLight())
         {
+            // Evaluate light pdf
             LightSample light_record;
             light_record.m_light_id = hit.triangle_id;
             light_record.m_uv = make_float2(hit.u, hit.v);
             pdf_lights(scene, light_record);
-
+            // Add G term to pdf
             float3 wi = ray.d;            
             float d = hit.t;
-
             light_record.m_pdf *= d * d / fabsf(dot(wi, light_record.m_normal_s));
-
+            // Evaluate Le
             Spectrum f_light = dot(-ray.d, light_record.m_normal_s) > 0 ?
                 scene.m_triangles[light_record.m_light_id].Le() : Spectrum(0.f);
 
+            // Calculate MIS weight
             float light_pdf = light_record.m_pdf;
             float weight = PowerHeuristic(BSDF_pdf, light_pdf);
 
+            // BSDF sampling contribution
             Spectrum L = throughput * f_light * weight;
 
             frame_buffer.addRadiance(pixel_idx, L);
         }
     }
 
+    // Russian roulette
     if (fmaxf(throughput) < 1 && context.m_bounce > 3) {
         float q = fmaxf(0.05f, 1 - fmaxf(throughput));
+        // Terminate 
         if (sample < q)
         {
+            // No hit for terminate
             hit.triangle_id = -1;
         }
         throughput /= 1 - q;

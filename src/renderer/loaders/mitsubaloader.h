@@ -43,7 +43,8 @@ enum ETag {
     ETranslate,
     EScale,
     ERotate,
-    EMatrix
+    EMatrix,
+    ETexture,
 };
 
 class ParseRecord {
