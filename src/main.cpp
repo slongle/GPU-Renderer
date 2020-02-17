@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
     cout << filename << endl;
     std::shared_ptr<PathTracer> pathTracer(new PathTracer(filename));
 
-    pathTracer->render(1000);
+    //pathTracer->render(1000);
 
     Gui::init(pathTracer);               
     Gui::mainLoop();

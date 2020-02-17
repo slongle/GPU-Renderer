@@ -191,6 +191,7 @@ void PathTracer::reset()
 void PathTracer::resize(uint32 width, uint32 height)
 {
     m_scene.m_frame_buffer.resize(width, height);
+    m_scene.m_camera.resize(width, height);
     m_scene.m_camera.updateAspectRation((float)(width) / height);
     initQueue();
     m_reset = true;

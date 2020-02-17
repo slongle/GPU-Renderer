@@ -26,14 +26,13 @@ public:
         m_resolution_y = height;
         m_aspect_ratio = float(m_resolution_x) / m_resolution_y;
         m_free = free;
-        //m_free = true;
         if (!m_free)
         {
             Transform CameraToRaster =
                 Scale(m_resolution_x, m_resolution_y, 1) *
-                Scale(-0.5, -0.5 * m_aspect_ratio, 1) *
-                Translate(-1, -1. / m_aspect_ratio, 0) *
-                Perspective(fov, 1e-4f, 10000.f);
+                Scale(-0.5, 0.5 * m_aspect_ratio, 1) *
+                Translate(-1, 1. / m_aspect_ratio, 0) *
+                Perspective(m_fov.x, 1e-4f, 10000.f);
             m_rasterToCamera = Inverse(CameraToRaster);
         }
     }
@@ -65,6 +64,22 @@ public:
     {
         m_aspect_ratio = aspect;
         m_fov.y = atan(tan(m_fov.x * 0.5) / aspect) * 2.0;
+    }
+
+    void resize(uint32 width, uint32 height)
+    {
+        m_resolution_x = width;
+        m_resolution_y = height;
+        m_aspect_ratio = float(m_resolution_x) / m_resolution_y;
+        if (!m_free)
+        {
+            Transform CameraToRaster =
+                Scale(m_resolution_x, m_resolution_y, 1) *
+                Scale(-0.5, 0.5 * m_aspect_ratio, 1) *
+                Translate(-1, 1. / m_aspect_ratio, 0) *
+                Perspective(m_fov.x, 1e-4f, 10000.f);
+            m_rasterToCamera = Inverse(CameraToRaster);
+        }
     }
 
     HOST_DEVICE

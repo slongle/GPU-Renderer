@@ -68,7 +68,7 @@ Ray generate_primary_ray(
     float jitter_y = NextRandom(context.m_in_queue.m_seed[idx]);
 
     float x = pixel.x + jitter_x;
-    float y = scene.m_camera.m_free ? pixel.y + jitter_y : frame_buffer.m_resolution_y - 1 - pixel.y + jitter_y;
+    float y = pixel.y + jitter_y;
     Ray ray = scene.m_camera.generateRay(x, y);
 
     return ray;

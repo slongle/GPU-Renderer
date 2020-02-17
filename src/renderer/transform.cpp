@@ -247,8 +247,9 @@ Transform LookAt(const float3& to, const float3& from, const float3& up) {
     return Transform(cameraToWorld, Inverse(cameraToWorld));
 }
 
+// fov is in rad
 Transform Perspective(const float& fov, const float& n, const float& f) {
-    float invTanAng = 1. / std::tan(degToRad(fov * 0.5f));
+    float invTanAng = 1. / std::tan(fov * 0.5f);
     Matrix4x4 perspective(
         invTanAng, 0, 0, 0,
         0, invTanAng, 0, 0,
