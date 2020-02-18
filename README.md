@@ -33,6 +33,8 @@
 
 ## Selected images
 
+![](images/veach-ajar_1494spp.png)
+
 ![](images/CornellBox_Box_1000spp.png)
 
 ![](images/CornellBox_Sphere_2_1000spp.png)
@@ -43,9 +45,9 @@
 
 ![](images/veach-mis_2410spp.png)
 
-![](images/glass_1000spp.png)
+![](images/roughconduct_0.01_1268spp.png)
 
-![](images/gold_1000spp.png)
+![](images/glass_1143spp.png)
 
-![](images/roughconduct_0.10_1000spp.png)
+![](images/gold_1023spp.png)
 
