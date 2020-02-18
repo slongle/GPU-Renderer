@@ -472,19 +472,27 @@ void ParseRecord::createReference(const std::string& name, const std::string& id
 
 std::shared_ptr<Texture>
 ParseRecord::createTexture(const std::string& type, const PropertyList& list)
-{
-    assert(type == "bitmap");
-    //assert(type == "bitmap" || type == "checkerboard");
+{    
+    assert(type == "bitmap" || type == "checkerboard");
+    float uoffset = list.getFloat("uoffset", 0.f);
+    float voffset = list.getFloat("voffset", 0.f);
+    float uscale = list.getFloat("uscale", 1.f);
+    float vscale = list.getFloat("vscale", 1.f);
+    float2 uvoffset = make_float2(uoffset, voffset);
+    float2 uvscale = make_float2(uscale, vscale);
+
     Texture* ptr = nullptr;
     if (type == "bitmap")
     {        
         std::string filename = list.getString("filename");
         filename = (m_path / filename).string();
-        ptr = new Texture(filename);
+        ptr = new Texture(filename, uvoffset, uvscale);
     }
     else
     {
-        
+        Spectrum color0 = list.getColor("color0", Spectrum(0.4f));
+        Spectrum color1 = list.getColor("color1", Spectrum(0.2f));
+        ptr = new Texture(color0, color1, uvoffset, uvscale);
     }
     return std::shared_ptr<Texture>(ptr);
 }
