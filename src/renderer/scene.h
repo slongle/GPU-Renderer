@@ -48,6 +48,7 @@ public:
 
     std::vector<TriangleMesh> m_meshes;
 
+    std::vector<std::shared_ptr<Texture>> m_textures;
     EnvironmentLight m_environment_light;
 
     std::vector<BVHLinearNode> m_cpu_bvh;

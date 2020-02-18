@@ -1,7 +1,7 @@
 #include "GUI/gui.h"
 #include "renderer/pathtracer.h"
 
-#include "renderer/bvh.h"
+#include "renderer/imageio.h"
 
 #include <iostream>
 using std::cout;

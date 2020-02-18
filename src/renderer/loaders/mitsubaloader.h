@@ -76,6 +76,7 @@ public:
     void createLight(const std::string& type, const PropertyList& list);
     void createShape(const std::string& type, const PropertyList& list);
     void createReference(const std::string& name, const std::string& id);
+    std::shared_ptr<Texture> createTexture(const std::string& type, const PropertyList& list);
 };
 
 bool HasAttribute(const pugi::xml_node& node, const std::string& name);

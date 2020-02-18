@@ -57,6 +57,26 @@ public:
         TriangleMeshView mesh);
 
     HOST_DEVICE
+    bool hasTexcoords() const
+    {
+        return m_mesh.m_index[m_index].y != -1;
+    }
+
+    HOST_DEVICE
+    bool hasNormal() const
+    {
+        return m_mesh.m_index[m_index].z != -1;
+    }
+
+    HOST_DEVICE
+    void getTexcoords(float2& t0, float2& t1,float2& t2) const
+    {
+        t0 = m_mesh.m_uv[m_mesh.m_index[m_index + 0].y];
+        t1 = m_mesh.m_uv[m_mesh.m_index[m_index + 1].y];
+        t2 = m_mesh.m_uv[m_mesh.m_index[m_index + 2].y];
+    }
+
+    HOST_DEVICE
     void getNormals(float3& n0, float3& n1, float3& n2) const
     {
         n0 = m_mesh.m_n[m_mesh.m_index[m_index + 0].z];
@@ -92,7 +112,7 @@ public:
         geom->dpdu = p0 - p2;
         geom->dpdv = p1 - p2;
         geom->normal_g = normalize(cross(geom->dpdu, geom->dpdv));
-        if (m_mesh.m_index[m_index].z != -1)
+        if (hasNormal())
         {
             float3 n0, n1, n2;
             getNormals(n0, n1, n2);
@@ -102,6 +122,18 @@ public:
         {
             geom->normal_s = geom->normal_g;
         }
+
+        if (hasTexcoords())
+        {
+            float2 t0, t1, t2;
+            getTexcoords(t0, t1, t2);
+            geom->uv = t0 * (1 - uv.x - uv.y) + t1 * uv.x + t2 * uv.y;
+        }
+        else
+        {
+            geom->uv = uv;
+        }
+
         //geom->normal_s = geom->normal_g;
     }
 

@@ -22,8 +22,7 @@ public:
         const int tri_ID = hit.triangle_id;
         Triangle& triangle = scene.m_triangles[tri_ID];
 
-        triangle.setupDifferential(make_float2(hit.u, hit.v), &m_geom);        
-        
+        triangle.setupDifferential(make_float2(hit.u, hit.v), &m_geom);                
         m_wo = -normalize(ray.d);
 
         const Material& material = triangle.m_mesh.m_material;

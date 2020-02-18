@@ -20,15 +20,15 @@ public:
     { 
         if (material.m_type == MATERIAL_DIFFUSE)
         {
-            addBxDF(CreateLambertReflectBxDF(material));
+            addBxDF(CreateLambertReflectBxDF(geom, material));
         }
         else if (material.m_type == MATERIAL_SPECULAR)
         {
-            addBxDF(CreateFresnelSpecularBxDF(material));
+            addBxDF(CreateFresnelSpecularBxDF(geom, material));
         }
         else if (material.m_type == MATERIAL_ROUGH_CONDUCTOR)
         {
-            addBxDF(CreateMicrofacetReflectBxDF(material, true));
+            addBxDF(CreateMicrofacetReflectBxDF(geom, material, true));
         }
         else
         {

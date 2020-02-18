@@ -233,7 +233,6 @@ ParseRecord::ParseRecord(
     std::filesystem::path p(filename);
     m_path = p.parent_path();
 
-    m_current_material.setZero();
     m_current_light = Spectrum(0.f);
 
     m_tags["hide"] = EHide;
@@ -289,26 +288,40 @@ void ParseRecord::createFilm(const std::string& type, const PropertyList& list)
 
 void ParseRecord::createMaterial(const std::string& type, const PropertyList& list)
 {
-    m_current_material.setZero();
+    //m_current_material.setZero();
     if (type == "diffuse")
     {
-        m_current_material.m_color = list.getColor("reflectance", Spectrum(0.3f));
+        std::shared_ptr<Texture> color = list.getTexture("reflectance", Spectrum(0.3f));
+        m_scene->m_textures.push_back(color);
+
+        m_current_material.m_color = color->view();
         m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
     else if (type == "mirror")
     {
-        m_current_material.m_color = list.getColor("reflectance", Spectrum(1.f));
-        m_current_material.m_ior = 100.f;
+        std::shared_ptr<Texture> color = list.getTexture("reflectance", Spectrum(1.0f));
+        std::shared_ptr<Texture> ior = list.getTexture("ior", 100.f);
+        m_scene->m_textures.push_back(color);
+        m_scene->m_textures.push_back(ior);
+
+        m_current_material.m_color = color->view();
+        m_current_material.m_ior = ior->view();
         m_current_material.m_type = MaterialType::MATERIAL_SPECULAR;
     }
     else if (type == "glass")
     {
-        m_current_material.m_color = list.getColor("reflectance", Spectrum(1.f));
-        m_current_material.m_ior = 1.5f;
+        std::shared_ptr<Texture> color = list.getTexture("reflectance", Spectrum(1.0f));
+        std::shared_ptr<Texture> ior = list.getTexture("ior", 1.5f);
+        m_scene->m_textures.push_back(color);
+        m_scene->m_textures.push_back(ior);
+
+        m_current_material.m_color = color->view();
+        m_current_material.m_ior = ior->view();
         m_current_material.m_type = MaterialType::MATERIAL_SPECULAR;
     }
     else if (type == "dielectric")
     {
+        std::shared_ptr<Texture> color = list.getTexture("reflectance", Spectrum(1.0f));
         float ior;
         if (list.findFloat("intIOR"))
         {
@@ -320,25 +333,29 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
         {
             ior = list.getFloat("ior", 1.5f);
         }
-        m_current_material.m_color = Spectrum(1.f);
-        m_current_material.m_ior = ior;
+        std::shared_ptr<Texture> ior_texture = list.getTexture("ior", 1.5f);
+        m_scene->m_textures.push_back(color);
+        m_scene->m_textures.push_back(ior_texture);
+
+        m_current_material.m_color = color->view();
+        m_current_material.m_ior = ior_texture->view();
         m_current_material.m_type = MaterialType::MATERIAL_SPECULAR;
     }
     else if (type == "roughconductor")
     {
-        Spectrum color = list.getColor("specularReflectance", Spectrum(0.3));
-        Spectrum etaI, etaT;
+        std::shared_ptr<Texture> color = list.getTexture("specularReflectance", Spectrum(0.3f));
+        std::shared_ptr<Texture> etaI, etaT;
         if (list.findColor("etaI"))
         {
-            etaI = list.getColor("etaI", Spectrum(1.f)); 
-            etaT = list.getColor("etaT", Spectrum(0.200438, 0.924033, 1.10221));
+            etaI = list.getTexture("etaI", Spectrum(1.f)); 
+            etaT = list.getTexture("etaT", Spectrum(0.200438, 0.924033, 1.10221));
         }
         else
         {
-            etaI = Spectrum(1.f);
-            etaT = list.getColor("eta", Spectrum(0.200438, 0.924033, 1.10221));            
+            etaI = list.getTexture("etaI", Spectrum(1.f));
+            etaT = list.getTexture("eta", Spectrum(0.200438, 0.924033, 1.10221));            
         }
-        Spectrum k = list.getColor("k", Spectrum(3.91295, 2.45285, 2.14219));        
+        std::shared_ptr<Texture> k = list.getTexture("k", Spectrum(3.91295, 2.45285, 2.14219));
         float alphaU, alphaV;
         if (list.findFloat("alphaU"))
         {
@@ -349,12 +366,22 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
         {
             alphaU = alphaV = list.getFloat("alpha", 0.1);
         }
-        m_current_material.m_color = color;
-        m_current_material.m_etaI = etaI;
-        m_current_material.m_etaT = etaT;
-        m_current_material.m_k = k;
-        m_current_material.m_alpha_x = alphaU;
-        m_current_material.m_alpha_y = alphaV;
+        std::shared_ptr<Texture> alphaU_texture = list.getTexture("alphaU", alphaU);
+        std::shared_ptr<Texture> alphaV_texture = list.getTexture("alphaU", alphaV);
+
+        m_scene->m_textures.push_back(color);
+        m_scene->m_textures.push_back(etaI);
+        m_scene->m_textures.push_back(etaT);
+        m_scene->m_textures.push_back(k);
+        m_scene->m_textures.push_back(alphaU_texture);
+        m_scene->m_textures.push_back(alphaV_texture);
+
+        m_current_material.m_color = color->view();
+        m_current_material.m_etaI = etaI->view();
+        m_current_material.m_etaT = etaT->view();
+        m_current_material.m_k = k->view();
+        m_current_material.m_alpha_x = alphaU_texture->view();
+        m_current_material.m_alpha_y = alphaV_texture->view();
         m_current_material.m_type = MaterialType::MATERIAL_ROUGH_CONDUCTOR;
     }
     else if (type == "disney")
@@ -366,7 +393,7 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
     }
     else {
         std::cout << type << std::endl;
-        m_current_material.m_color = Spectrum(1.0f);
+        m_current_material.m_color = list.getTexture("Unknown", Spectrum(0.5f))->view();
         m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
 }
@@ -435,13 +462,31 @@ void ParseRecord::createShape(const std::string& type, const PropertyList& list)
 
     m_scene->m_meshes.push_back(mesh);
 
-    m_current_material.setZero();
     m_current_light = Spectrum(0.f);
 }
 
 void ParseRecord::createReference(const std::string& name, const std::string& id)
 {
     m_current_material = m_named_material[id];
+}
+
+std::shared_ptr<Texture>
+ParseRecord::createTexture(const std::string& type, const PropertyList& list)
+{
+    assert(type == "bitmap");
+    //assert(type == "bitmap" || type == "checkerboard");
+    Texture* ptr = nullptr;
+    if (type == "bitmap")
+    {        
+        std::string filename = list.getString("filename");
+        filename = (m_path / filename).string();
+        ptr = new Texture(filename);
+    }
+    else
+    {
+        
+    }
+    return std::shared_ptr<Texture>(ptr);
 }
 
 bool HasAttribute(const pugi::xml_node& node, const std::string& name) {
@@ -644,7 +689,7 @@ void HandleTag(
             break;
         }
         case ETexture: {
-            //parentList.setTexture
+            parentList.setTexture(name, record.createTexture(type, myList));
             break;
         }
         }

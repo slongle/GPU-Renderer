@@ -239,8 +239,8 @@ bool load_obj_mtl_file(
         Spectrum emission = Spectrum(
             static_cast<const float>(materials[i].emission[0]),
             static_cast<const float>(materials[i].emission[1]),
-            static_cast<const float>(materials[i].emission[2]));
-        mats.emplace_back(diffuse, emission, ior);
+            static_cast<const float>(materials[i].emission[2]));                
+        //mats.push_back(Material(diffuse, emission, ior));
     }
 
     /*

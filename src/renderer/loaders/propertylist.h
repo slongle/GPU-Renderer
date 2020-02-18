@@ -3,6 +3,7 @@
 #include "renderer/fwd.h"
 #include "renderer/spectrum.h"
 #include "renderer/transform.h"
+#include "renderer/texture.h"
 
 struct Property {
     Property() {}
@@ -14,7 +15,8 @@ struct Property {
         EPString,
         EPVector,
         EPColor,
-        EPTransform
+        EPTransform,
+        EPTexture,
     } type;
 
     struct Value {
@@ -27,6 +29,7 @@ struct Property {
         float3      vector_value;
         Spectrum    color_value;
         Transform   transform_value;
+        std::shared_ptr<Texture> texture_value;
     } value;
 };
 
@@ -67,7 +70,11 @@ public:
     Transform getTransform(const std::string& name, const Transform& defaultValue) const;
     bool findTransform(const std::string& name) const;
 
+    void setTexture(const std::string& name, std::shared_ptr<Texture> value);
+    std::shared_ptr<Texture> getTexture(const std::string& name) const;
+    std::shared_ptr<Texture> getTexture(const std::string& name, const float& defaultValue) const;
+    std::shared_ptr<Texture> getTexture(const std::string& name, const Spectrum& defaultValue) const;
+    bool findTexture(const std::string& name) const;
 private:
     std::map<std::string, Property> list;
-
 };

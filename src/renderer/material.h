@@ -1,6 +1,7 @@
 #pragma once
 
-#include "spectrum.h"
+#include "renderer/spectrum.h"
+#include "renderer/texture.h"
 
 enum MaterialType
 {
@@ -13,11 +14,6 @@ enum MaterialType
 class Material {
 public:
     Material() {}
-    Material(
-        const Spectrum& color, 
-        const Spectrum& emission,
-        const float&    ior) :
-        m_color(color), m_emission(emission), m_ior(ior) {}
 
     HOST_DEVICE
     bool isEmission() const 
@@ -25,18 +21,14 @@ public:
         return !isBlack(m_emission);
     }
 
-    void setZero()
-    {
-        m_color    = Spectrum(0.f);
-        m_emission = Spectrum(0.f);
-        m_ior = 0.f;
-    }
-
-    Spectrum m_color;
-    Spectrum m_etaI, m_etaT, m_k;
-    float    m_ior;
-    float    m_alpha_x, m_alpha_y;
+public:
+    // Spectrum
     Spectrum m_emission;
+    TextureView m_color;
+    TextureView m_etaI, m_etaT, m_k;
+    // Float
+    TextureView m_ior;
+    TextureView m_alpha_x, m_alpha_y;
 
     MaterialType m_type;
 };

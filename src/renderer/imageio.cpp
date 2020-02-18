@@ -48,6 +48,8 @@ void ReadImage(
     int* height,
     std::vector<float>& buffer)
 {
+    stbi_set_flip_vertically_on_load(true);
+
     int nchannels;
     float* ptr = stbi_loadf(filename.c_str(), width, height, &nchannels, 3);
     buffer.assign(ptr, ptr + (*width) * (*height) * 3);

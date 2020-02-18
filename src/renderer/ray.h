@@ -23,5 +23,6 @@ struct Differential
     float3 p;
     float3 normal_s;
     float3 normal_g;
+    float2 uv;
     float3 dpdu, dpdv;
 };

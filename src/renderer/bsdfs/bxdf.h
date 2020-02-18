@@ -143,35 +143,46 @@ void BxDF::sample(
 }
 
 inline HOST_DEVICE
-BxDF CreateLambertReflectBxDF(const Material& material)
+BxDF CreateLambertReflectBxDF(
+    const Differential& geom,
+    const Material& material)
 {
     BxDF ret;
-    ret.m_color = material.m_color;
+    ret.m_color = material.m_color.evalSpectrum(geom.uv);
     ret.m_property = BxDFProperty(BXDF_REFLECTION | BXDF_DIFFUSE);
     ret.m_type = BXDF_LAMBERT_REFLECT;
     return ret;
 }
 
 inline HOST_DEVICE
-BxDF CreateFresnelSpecularBxDF(const Material& material)
+BxDF CreateFresnelSpecularBxDF(
+    const Differential& geom, 
+    const Material& material)
 {
     BxDF ret;
-    ret.m_color = material.m_color;
-    ret.m_ior = material.m_ior;
+    ret.m_color = material.m_color.evalSpectrum(geom.uv);
+    ret.m_ior = material.m_ior.evalFloat(geom.uv);
     ret.m_property = BxDFProperty(BXDF_REFLECTION | BXDF_TRANSMISSION | BXDF_SPECULAR);
     ret.m_type = BXDF_FRESNEL_SPECULAR;
     return ret;
 }
 
 inline HOST_DEVICE
-BxDF CreateMicrofacetReflectBxDF(const Material& material, bool conduct)
+BxDF CreateMicrofacetReflectBxDF(
+    const Differential& geom, 
+    const Material& material, bool conduct)
 {
     BxDF ret;
-    ret.m_color = material.m_color;
-    ret.m_alpha_x = material.m_alpha_x;
-    ret.m_alpha_y = material.m_alpha_y;    
-    ret.m_fresnel = conduct ? Fresnel(material.m_etaI, material.m_etaT, material.m_k)
-                            : Fresnel(material.m_etaI, material.m_etaT);
+    ret.m_color = material.m_color.evalSpectrum(geom.uv);
+    ret.m_alpha_x = material.m_alpha_x.evalFloat(geom.uv);
+    ret.m_alpha_y = material.m_alpha_y.evalFloat(geom.uv);
+    ret.m_fresnel = conduct ? 
+        Fresnel(material.m_etaI.evalSpectrum(geom.uv), 
+                material.m_etaT.evalSpectrum(geom.uv), 
+                material.m_k.evalSpectrum(geom.uv)) :
+        Fresnel(material.m_etaI.evalSpectrum(geom.uv), 
+                material.m_etaT.evalSpectrum(geom.uv));
+
     ret.m_property = BxDFProperty(BXDF_REFLECTION | BXDF_GLOSSY);
     ret.m_type = BXDF_MICROFACET_REFLECT;
     return ret;
