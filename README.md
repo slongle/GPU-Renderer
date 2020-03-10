@@ -8,7 +8,7 @@
 
 ## Performance
 
-4-13x speedup compared CPU unidirectional Path Tracing.
+4-13x speedup compared with CPU unidirectional Path Tracing.
 
 ![](images/Performance.png)
 
