@@ -2,6 +2,9 @@
 #include "renderer/pathtracer_kernel.h"
 #include "renderer/rayqueue.h"
 
+#include <chrono>
+
+
 PathTracer::PathTracer(const std::string& filename)
     : m_scene(filename), m_sample_num(0), m_sum_bounce(0), m_reset(false)
 {
@@ -148,12 +151,20 @@ void PathTracer::render(uint32* output)
 
 void PathTracer::render(uint32 num)
 {
+    auto _curTimePoint = std::chrono::steady_clock::now();
+    
     init();
     for (uint32 i = 0; i < num; i++)
     {
         fprintf(stderr, "\r%f%%", 100.f * (i + 1) / num);
         render();
     }
+
+
+    auto curTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(curTime - _curTimePoint);
+    std::cout << "SpendTime = " << duration.count() / 1000 << "s" << std::endl;
+
     output(std::to_string(m_sample_num) + "spp.png");
     exit(0);
 }

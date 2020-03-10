@@ -30,6 +30,7 @@ enum ETag {
     EBSDF,
     EVolume,
     EMedium,
+    ETwoside,
     ERef,
 
     EBoolean,
@@ -72,6 +73,7 @@ public:
     void createCamera(const std::string& type, const PropertyList& list);
     void createFilm(const std::string& type, const PropertyList& list);
     void createMaterial(const std::string& type, const PropertyList& list);
+    void createNamedMaterial(const std::string& id);
     void createNamedMaterial(const std::string& id, const std::string& type, const PropertyList& list);
     void createLight(const std::string& type, const PropertyList& list);
     void createShape(const std::string& type, const PropertyList& list);

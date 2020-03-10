@@ -6,7 +6,7 @@
 
 struct PTOptions
 {
-    PTOptions(const uint32 max_path_length = 65)
+    PTOptions(const uint32 max_path_length = 33)
         :m_max_path_length(max_path_length)
     {}
 

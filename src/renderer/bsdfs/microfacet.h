@@ -197,7 +197,7 @@ void MicrofacetReflectPdf(
     if (!SameHemisphere(wo, wi)) return;
     float3 wh = normalize(wo + wi);
     *pdf = D(wh, alpha_x, alpha_y)* G1(wi, alpha_x, alpha_y) / (4.0f * wi.z);
-    //*pdf = Pdf(wo, wh, alpha_x, alpha_y) / (4 * dot(wo, wh));
+    *pdf = Pdf(wo, wh, alpha_x, alpha_y) / (4 * dot(wo, wh));
 }
 
 inline HOST_DEVICE
@@ -221,6 +221,6 @@ void MicrofacetReflectSample(
     *wi = Reflect(wo, wh);
     if (!SameHemisphere(wo, *wi)) return;
     *pdf = D(wh, alpha_x, alpha_y) * G1(*wi, alpha_x, alpha_y) / (4.0f * wi->z);
-    //*pdf = Pdf(wo, wh, alpha_x, alpha_y) / (4 * dot(wo, wh));
+    *pdf = Pdf(wo, wh, alpha_x, alpha_y) / (4 * dot(wo, wh));
     MicrofacetReflectEval(wo, *wi, f, color, alpha_x, alpha_y, fresnel);
 }

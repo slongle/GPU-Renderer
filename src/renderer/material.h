@@ -8,7 +8,8 @@ enum MaterialType
     MATERIAL_DIFFUSE,
     MATERIAL_SPECULAR,
     MATERIAL_ROUGH_CONDUCTOR,
-    MATERIAL_ROUGH_DIELECTRIC,    
+    MATERIAL_ROUGH_DIELECTRIC,   
+    MATERIAL_ROUGH_PLASTIC,
 };
 
 class Material {
@@ -24,7 +25,7 @@ public:
 public:
     // Spectrum
     Spectrum m_emission;
-    TextureView m_color;
+    TextureView m_color, m_color1;
     TextureView m_etaI, m_etaT, m_k;
     // Float
     TextureView m_ior;

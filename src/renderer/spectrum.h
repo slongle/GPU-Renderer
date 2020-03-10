@@ -42,6 +42,9 @@ public:
 };
 
 inline HOST_DEVICE
+RGBSpectrum operator * (const float& a, const RGBSpectrum& b)
+{ return RGBSpectrum(a * b.r, a * b.g, a * b.b); }
+inline HOST_DEVICE
 RGBSpectrum sqrt(const RGBSpectrum& s) { return RGBSpectrum(sqrt(s.r), sqrt(s.g), sqrt(s.b)); }
 inline HOST_DEVICE
 float fmaxf(const RGBSpectrum& s) { return max(s.r, max(s.g, s.b)); }

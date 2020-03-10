@@ -34,5 +34,13 @@ void EnvironmentLight::setup(
     for (int i = 0; i < m_width * m_height * 3; i += 3) {
         m_cpu_buffer[i / 3] = Spectrum(buffer[i + 0], buffer[i + 1], buffer[i + 2]);
     }
-    m_gpu_buffer.copyFrom(m_cpu_buffer.size(), HOST_BUFFER, m_cpu_buffer.data());        
+    m_gpu_buffer.copyFrom(m_cpu_buffer.size(), HOST_BUFFER, m_cpu_buffer.data());
+}
+
+void EnvironmentLight::setup(const Spectrum& r)
+{
+    m_has = true;
+    m_width = m_height = 1;
+    m_cpu_buffer.push_back(r);
+    m_gpu_buffer.copyFrom(m_cpu_buffer.size(), HOST_BUFFER, m_cpu_buffer.data());
 }

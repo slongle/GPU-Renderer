@@ -188,12 +188,14 @@ LBVH_build(
     const std::vector<Triangle>& triangles
 )
 {
+    std::cout << triangles.size() << std::endl;
     uint32 tri_num = triangles.size();
     AABB box;
-    for (int i = 0; i < tri_num; i++) {
+    for (uint32 i = 0; i < tri_num; i++) {
         box = Union(box, triangles[i].worldBound().centroid());
     }    
 
+    std::cout << "Construct Morton Code\n";
     std::vector<MortonInfo> mortons(tri_num);
     for (int i = 0; i < tri_num; i++) {
         mortons[i].m_tri_idx = i;
@@ -201,13 +203,16 @@ LBVH_build(
             EncodeMorton3((triangles[i].worldBound().centroid() - box.m_min) / (box.m_max - box.m_min) * 1024);
     }
 
+    std::cout << "Sort Morton Code\n";
     std::sort(mortons.begin(), mortons.end(), 
         [](const MortonInfo& m1, const MortonInfo& m2) {return m1.m_morton < m2.m_morton; });
 
+    std::cout << "Recursice Build\n";
     std::vector<BVHBuildNode> build_nodes(2 * tri_num - 1);
     uint32 build_nodes_num = 0;
     BVHBuildNode* root = recursive_build(mortons, triangles, 0, tri_num, build_nodes, build_nodes_num);
 
+    std::cout << "Flatten BVH\n";
     std::vector<BVHLinearNode> bvh_buffer(2 * tri_num - 1);
     uint32 linear_nodes_num = 0;
     flatten_nodes(root, bvh_buffer.data(), linear_nodes_num);

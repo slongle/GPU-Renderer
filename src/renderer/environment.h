@@ -40,6 +40,7 @@ public:
     EnvironmentLight() :m_has(false) {}
     EnvironmentLight(const std::string& filename, Transform o2w);
     void setup(const std::string& filename, Transform o2w);
+    void setup(const Spectrum& r);
     EnvironmentLightView view() const { return EnvironmentLightView(this); }
 
 public:

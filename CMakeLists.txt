@@ -95,7 +95,7 @@ set(sources
 	src/renderer/imageio.h
 	src/renderer/imageio.cpp
 	src/renderer/material.h
-	src/renderer/pathtracer.cpp
+	src/renderer/pathtracer.cu
 	src/renderer/pathtracer.h
 	src/renderer/pathtracer_kernel.h
 	src/renderer/ray.h

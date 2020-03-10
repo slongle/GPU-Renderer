@@ -25,7 +25,7 @@ public:
         triangle.setupDifferential(make_float2(hit.u, hit.v), &m_geom);                
         m_wo = -normalize(ray.d);
 
-        const Material& material = triangle.m_mesh.m_material;
+        Material& material = triangle.m_mesh.m_material;
         m_bsdf = BSDF(m_geom, material);
     }
 

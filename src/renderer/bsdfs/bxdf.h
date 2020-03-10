@@ -18,6 +18,7 @@ enum BxDFType
 {
     BXDF_LAMBERT_REFLECT,
     BXDF_FRESNEL_SPECULAR,
+    BXDF_FRESNEL_BLEND,
     BXDF_MICROFACET_REFLECT,
     BXDF_MICROFACET_REFRACT,
 };
@@ -61,6 +62,7 @@ public:
     bool isDelta() const { return (m_property & BXDF_SPECULAR) != 0; }
 
     Spectrum m_color;
+    Spectrum m_color1;
     float m_ior;
     float m_alpha_x, m_alpha_y;
     Fresnel m_fresnel;
@@ -84,7 +86,11 @@ void BxDF::eval(
     }
     else if (m_type == BXDF_MICROFACET_REFLECT)
     {
-        MicrofacetReflectEval(wo, wi, f, m_color, m_alpha_x, m_alpha_y, m_fresnel);        
+        MicrofacetReflectEval(wo, wi, f, m_color, m_alpha_x, m_alpha_y, m_fresnel);
+    }
+    else if (m_type == BXDF_FRESNEL_BLEND)
+    {
+        FresnelBlendEval(wo, wi, f, m_color, m_color1, m_alpha_x, m_alpha_y);
     }
     else
     {
@@ -109,6 +115,10 @@ void BxDF::pdf(
     else if (m_type == BXDF_MICROFACET_REFLECT)
     {
         MicrofacetReflectPdf(wo, wi, pdf, m_color, m_alpha_x, m_alpha_y);        
+    }
+    else if (m_type == BXDF_FRESNEL_BLEND)
+    {
+        FresnelBlendPdf(wo, wi, pdf, m_color, m_color1, m_alpha_x, m_alpha_y);
     }
     else
     {
@@ -135,6 +145,10 @@ void BxDF::sample(
     else if (m_type == BXDF_MICROFACET_REFLECT)
     {
         MicrofacetReflectSample(u, wo, wi, f, pdf, m_color, m_alpha_x, m_alpha_y, m_fresnel);        
+    }
+    else if (m_type == BXDF_FRESNEL_BLEND)
+    {
+        FresnelBlendSample(u, wo, wi, f, pdf, m_color, m_color1, m_alpha_x, m_alpha_y);
     }
     else
     {
@@ -164,6 +178,21 @@ BxDF CreateFresnelSpecularBxDF(
     ret.m_ior = material.m_ior.evalFloat(geom.uv);
     ret.m_property = BxDFProperty(BXDF_REFLECTION | BXDF_TRANSMISSION | BXDF_SPECULAR);
     ret.m_type = BXDF_FRESNEL_SPECULAR;
+    return ret;
+}
+
+inline HOST_DEVICE
+BxDF CreateFresnelBlendBxDF(
+    const Differential& geom,
+    const Material& material)
+{
+    BxDF ret;
+    ret.m_color = material.m_color.evalSpectrum(geom.uv);
+    ret.m_color1 = material.m_color1.evalSpectrum(geom.uv);
+    ret.m_alpha_x = material.m_alpha_x.evalFloat(geom.uv);
+    ret.m_alpha_y = material.m_alpha_y.evalFloat(geom.uv);
+    ret.m_property = BxDFProperty(BXDF_REFLECTION | BXDF_GLOSSY);
+    ret.m_type = BXDF_FRESNEL_BLEND;
     return ret;
 }
 

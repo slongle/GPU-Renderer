@@ -23,6 +23,17 @@ public:
     TextureView(const Texture* texture);
 
     HOST_DEVICE
+    void operator = (TextureView& t)
+    {
+        m_uvoffset = t.m_uvoffset;
+        m_uvscale = t.m_uvscale;
+        m_width = t.m_width;
+        m_height = t.m_height;
+        m_buffer = t.m_buffer;
+        m_type = t.m_type;
+    }
+
+    HOST_DEVICE
     Spectrum evalSpectrum(const float2& uv) const
     {
         float2 now_uv = uv * m_uvscale + m_uvoffset;

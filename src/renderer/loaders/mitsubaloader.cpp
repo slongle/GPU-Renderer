@@ -288,7 +288,6 @@ void ParseRecord::createFilm(const std::string& type, const PropertyList& list)
 
 void ParseRecord::createMaterial(const std::string& type, const PropertyList& list)
 {
-    //m_current_material.setZero();
     if (type == "diffuse")
     {
         std::shared_ptr<Texture> color = list.getTexture("reflectance", Spectrum(0.3f));
@@ -319,7 +318,7 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
         m_current_material.m_ior = ior->view();
         m_current_material.m_type = MaterialType::MATERIAL_SPECULAR;
     }
-    else if (type == "dielectric")
+    else if (type == "roughdielectric" || type == "dielectric")
     {
         std::shared_ptr<Texture> color = list.getTexture("reflectance", Spectrum(1.0f));
         float ior;
@@ -341,7 +340,7 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
         m_current_material.m_ior = ior_texture->view();
         m_current_material.m_type = MaterialType::MATERIAL_SPECULAR;
     }
-    else if (type == "roughconductor")
+    else if (type == "roughconductor" || type == "conductor")
     {
         std::shared_ptr<Texture> color = list.getTexture("specularReflectance", Spectrum(0.3f));
         std::shared_ptr<Texture> etaI, etaT;
@@ -384,6 +383,49 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
         m_current_material.m_alpha_y = alphaV_texture->view();
         m_current_material.m_type = MaterialType::MATERIAL_ROUGH_CONDUCTOR;
     }
+    else if (type == "roughplastic")
+    {
+        std::shared_ptr<Texture> etaI, etaT;
+        if (list.findColor("etaI"))
+        {
+            etaI = list.getTexture("etaI", Spectrum(1.5f));
+            etaT = list.getTexture("etaT", Spectrum(1.0f));
+        }
+        else
+        {
+            etaI = list.getTexture("eta", Spectrum(1.5f));
+            etaT = list.getTexture("etaI", Spectrum(1.0f));
+        }
+        float alphaU, alphaV;
+        if (list.findFloat("alphaU"))
+        {
+            alphaU = list.getFloat("alphaU", 0.1);
+            alphaV = list.getFloat("alphaV", 0.1);
+        }
+        else
+        {
+            alphaU = alphaV = list.getFloat("alpha", 0.1);
+        }
+        std::shared_ptr<Texture> alphaU_texture = list.getTexture("alphaU", alphaU);
+        std::shared_ptr<Texture> alphaV_texture = list.getTexture("alphaU", alphaV);
+        std::shared_ptr<Texture> color0 = list.getTexture("diffuseReflectance", Spectrum(0.5f));
+        std::shared_ptr<Texture> color1 = list.getTexture("specularReflectance", Spectrum(1.0f));
+
+        m_scene->m_textures.push_back(color0);
+        m_scene->m_textures.push_back(color1);
+        m_scene->m_textures.push_back(etaI);
+        m_scene->m_textures.push_back(etaT);
+        m_scene->m_textures.push_back(alphaU_texture);
+        m_scene->m_textures.push_back(alphaV_texture);
+
+        m_current_material.m_color = color0->view(); // Diffuse
+        m_current_material.m_color1 = color1->view(); // Specular
+        m_current_material.m_etaI = etaI->view();
+        m_current_material.m_etaT = etaT->view();
+        m_current_material.m_alpha_x = alphaU_texture->view();
+        m_current_material.m_alpha_y = alphaV_texture->view();
+        m_current_material.m_type = MaterialType::MATERIAL_ROUGH_PLASTIC;
+    }
     else if (type == "disney")
     {
         Spectrum color = list.getColor("color", Spectrum(0.5f));
@@ -393,27 +435,41 @@ void ParseRecord::createMaterial(const std::string& type, const PropertyList& li
     }
     else {
         std::cout << type << std::endl;
-        m_current_material.m_color = list.getTexture("Unknown", Spectrum(0.5f))->view();
+        m_current_material.m_color = list.getTexture("Unknown", Spectrum(0.2f))->view();
         m_current_material.m_type = MaterialType::MATERIAL_DIFFUSE;
     }
 }
 
-void ParseRecord::createNamedMaterial(const std::string& id, const std::string& type, const PropertyList& list)
+void ParseRecord::createNamedMaterial(
+    const std::string& id, 
+    const std::string& type, 
+    const PropertyList& list)
 {
     createMaterial(type, list);
     m_named_material[id] = m_current_material;
 }
 
+void ParseRecord::createNamedMaterial(
+    const std::string& id)
+{
+    m_named_material[id] = m_current_material;
+}
+
 void ParseRecord::createLight(const std::string& type, const PropertyList& list)
 {
-    assert(type == "area" || type == "envmap");
+    assert(type == "area" || type == "envmap" || type == "constant");
     if (type == "area")
     {
         float scale = list.getFloat("scale", 1.f);
         Spectrum radiance = list.getColor("radiance", Spectrum(1.f));
         m_current_light = radiance * scale;
     }
-    else
+    else if (type == "constant")
+    {
+        Spectrum r = list.getColor("radiance", Spectrum(1.f));
+        m_scene->m_environment_light.setup(r);
+    }
+    else if (type == "envmap")
     {
         std::string filename = list.getString("filename");
         filename = (m_path / filename).string();
@@ -432,7 +488,7 @@ void ParseRecord::createShape(const std::string& type, const PropertyList& list)
     if (type == "obj")
     {
         std::string filename = list.getString("filename");
-        std::cout << filename << std::endl;
+        //std::cout << filename << std::endl;
         filename = (m_path / filename).string();
         load_obj_file(filename, &mesh);        
     }
@@ -589,12 +645,23 @@ void HandleTag(
             //RainbowFilter(type, myList);
             break;
         case EBSDF:
-            if (id == "") {
-                record.createMaterial(type, myList);
+            if (type == "twosided")
+            {
+                if (id == "") {
+                }
+                else {
+                    record.createNamedMaterial(id);
+                }
             }
-            else {
-                record.createNamedMaterial(id, type, myList);
-            }
+            else
+            {
+                if (id == "") {
+                    record.createMaterial(type, myList);
+                }
+                else {
+                    record.createNamedMaterial(id, type, myList);
+                }
+            }            
             break;
         case EMedium: {
             //if (id == "") {

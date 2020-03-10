@@ -19,7 +19,9 @@ Scene::Scene(const std::string& filename)
         }
     }    
     std::cout << "# of light : " << m_cpu_lights.size() << std::endl;
+    std::cout << "Build BVH\n";
     m_cpu_bvh = LBVH_build(m_cpu_triangles);
+    std::cout << "Build BVH Success\n";
     
     AABB world_box = m_cpu_bvh[0].m_box;
     m_environment_light.m_world_center = world_box.centroid();

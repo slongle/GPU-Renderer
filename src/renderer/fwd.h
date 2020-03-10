@@ -37,3 +37,11 @@ inline T divideRoundInf(const T& x, const T& y)
     return (x + y - 1) / y;
 }
 
+template<typename T>
+inline HOST_DEVICE
+void Swap(T& a, T& b)
+{
+    T temp = a;
+    a = b;
+    b = temp;
+}

@@ -4,6 +4,12 @@
 #include "renderer/sampling.h"
 
 inline HOST_DEVICE
+float pow5(float v)
+{
+    return (v * v) * (v * v) * v; 
+}
+
+inline HOST_DEVICE
 float3 Reflect(float3 wo, float3 n) {
     return -wo + n * 2 * dot(wo, n);
 }
@@ -25,6 +31,12 @@ bool Refract(
     float cosThetaT = sqrt(1 - sin2ThetaT);
     *wt = -wi * eta + float3(n) * (eta * cosThetaI - cosThetaT);
     return true;
+}
+
+inline HOST_DEVICE
+Spectrum SchlickFresnel(const Spectrum& f, float cosTheta)
+{    
+    return f + pow5(1 - cosTheta) * (Spectrum(1.) - f);
 }
 
 inline HOST_DEVICE

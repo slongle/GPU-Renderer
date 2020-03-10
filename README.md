@@ -6,6 +6,12 @@
 
   
 
+## Performance
+
+4-13x speedup compared CPU unidirectional Path Tracing.
+
+![](images/Performance.png)
+
 ## Tips
 
 - If you haven’t written OOP program using CUDA and now you want to write a renderer using CUDA, I strongly recommend you learning Fermat’s structure before everything starts.  
