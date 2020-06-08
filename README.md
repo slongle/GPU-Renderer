@@ -1,10 +1,6 @@
 # GPU Renderer
 
-![](images/0003.gif)
-
-![](images/0004.gif)
-
-  
+![](images/veach-ajar_1494spp.png)
 
 ## Performance
 
@@ -39,7 +35,13 @@
 
 ## Selected images
 
-![](images/veach-ajar_1494spp.png)
+
+
+![](images/0003.gif)
+
+![](images/0004.gif)
+
+
 
 ![](images/CornellBox_Box_1000spp.png)
 
