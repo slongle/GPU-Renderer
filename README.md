@@ -59,3 +59,4 @@
 
 ![](images/gold_1023spp.png)
 
+![](images/veach-ajar_1494spp.png)
